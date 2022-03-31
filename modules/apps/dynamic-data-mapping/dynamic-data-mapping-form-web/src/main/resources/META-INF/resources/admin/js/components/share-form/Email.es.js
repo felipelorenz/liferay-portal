@@ -97,8 +97,8 @@ const Email = ({
 
 										if (
 											!!newItems.length &&
-											isEmailAddressValid(
-												newItems[newItems.length - 1]
+											isEmailAddressValid( // criar um for para checar
+												newItems[newItems.length - 1] 
 													?.label
 											)
 										) {
@@ -106,6 +106,7 @@ const Email = ({
 
 											return onMultiSelectItemsChanged(
 												newItems
+
 											);
 										}
 									}}
