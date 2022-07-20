@@ -2357,7 +2357,155 @@ public class SXPBlueprintSearchResultTest {
 		_assertSearch("[coca cola most fields, coca cola]");
 	}
 
-	
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields01() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields02() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields03() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields04() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields05() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields06() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields07() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields08() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields09() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields10() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields11() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields12() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields13() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields14() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields15() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields16() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields17() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields18() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields19() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields20() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields21() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields22() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields23() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields24() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields25() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields26() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields27() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields28() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields29() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
+	@Test
+	public void testTextMatchOverMultipleFields_mostFields30() throws Exception {
+		testTextMatchOverMultipleFields_mostFields();
+	}
+
 	@Test
 	public void testTextMatchOverMultipleFields_phrase() throws Exception {
 		_journalArticleBuilder.setTitle(
