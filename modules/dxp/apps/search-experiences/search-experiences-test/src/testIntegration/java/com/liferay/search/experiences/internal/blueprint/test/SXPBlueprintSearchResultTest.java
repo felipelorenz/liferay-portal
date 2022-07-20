@@ -673,6 +673,154 @@ public class SXPBlueprintSearchResultTest {
 	}
 
 	@Test
+	public void testBoostContentsWithMoreVersions01() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions02() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions03() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions04() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions05() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions06() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions07() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions08() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions09() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions10() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions11() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions12() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions13() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions14() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions15() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions16() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions17() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions18() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions19() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions20() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}@Test
+	public void testBoostContentsWithMoreVersions21() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions22() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions23() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions24() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions25() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions26() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions27() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions28() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions29() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
+	public void testBoostContentsWithMoreVersions30() throws Exception {
+		testBoostContentsWithMoreVersions();
+	}
+
+	@Test
 	public void testBoostFreshness() throws Exception {
 		_journalArticleBuilder.setTitle(
 			"First Created"
