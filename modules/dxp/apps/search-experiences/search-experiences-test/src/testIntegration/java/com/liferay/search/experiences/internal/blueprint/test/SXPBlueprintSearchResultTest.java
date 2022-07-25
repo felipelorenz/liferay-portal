@@ -1890,6 +1890,9 @@ public class SXPBlueprintSearchResultTest {
 
 	@Test
 	public void testTextMatchOverMultipleFields_bestFields() throws Exception {
+		_updateConfigurationJSON(
+			"queryConfiguration", JSONUtil.put("applyIndexerClauses", false));
+
 		_journalArticleBuilder.setTitle(
 			"coca cola"
 		).build();
@@ -2024,7 +2027,10 @@ public class SXPBlueprintSearchResultTest {
 
 	@Test
 	public void testTextMatchOverMultipleFields_mostFields() throws Exception {
-		_journalArticleBuilder.setTitle(
+		_updateConfigurationJSON(
+			"queryConfiguration", JSONUtil.put("applyIndexerClauses", false));
+
+		_journalArticleBuilder.setLocalizedTitle(
 			"coca cola most fields"
 		).build();
 
@@ -2032,23 +2038,20 @@ public class SXPBlueprintSearchResultTest {
 			"coca cola"
 		).build();
 
-		JournalTestUtil.updateArticle(
-			_journalArticles.get(0), "coca cola most fields");
-
 		Map<String, Object> textMatchOverMultipleFields =
 			_getTextMatchOverMultipleFields();
 
-		String[] fields = {
-			"localized_title_en_US^1", "localized_title_de_DE^1",
-			"localized_title_es_ES^1"
-		};
+		String[] fields = {"title_en_US", "title_de_DE", "title_es_ES"};
 
 		textMatchOverMultipleFields.replace("type", "most_fields");
 		textMatchOverMultipleFields.replace("fields", fields);
 
 		_updateElementInstancesJSON(
-			new Object[] {textMatchOverMultipleFields},
-			new String[] {"Text Match Over Multiple Fields"});
+			new Object[] {textMatchOverMultipleFields, null},
+			new String[] {
+				"Text Match Over Multiple Fields",
+				"Limit Search to Head Version"
+			});
 
 		_keywords = "coca cola";
 
@@ -2601,10 +2604,16 @@ public class SXPBlueprintSearchResultTest {
 				journalFolderId = _journalFolder.getFolderId();
 			}
 
-			_journalArticles.add(
-				_addJournalArticle(
-					_getGroupId(), journalFolderId, _title, _content,
-					_workflowEnabled, _approved));
+			if (!_localizedTitle.equals(StringPool.BLANK)) {
+				JournalTestUtil.updateArticle(
+					_journalArticles.get(_journalArticles.size() - 1),
+					_localizedTitle);
+			}else{
+				_journalArticles.add(
+					_addJournalArticle(
+						_getGroupId(), journalFolderId, _title, _content,
+						_workflowEnabled, _approved));
+			}
 
 			_reset();
 		}
@@ -2669,6 +2678,12 @@ public class SXPBlueprintSearchResultTest {
 			return this;
 		}
 
+		public JournalArticleBuilder setLocalizedTitle(String localizedTitle) {
+			_localizedTitle = localizedTitle;
+
+			return this;
+		}
+
 		public JournalArticleBuilder setTitle(String title) {
 			_title = title;
 
@@ -2722,6 +2737,7 @@ public class SXPBlueprintSearchResultTest {
 			_longitude = 200;
 			_title = StringPool.BLANK;
 			_workflowEnabled = false;
+			_localizedTitle = StringPool.BLANK;
 		}
 
 		private boolean _approved;
@@ -2735,6 +2751,7 @@ public class SXPBlueprintSearchResultTest {
 		private final List<JournalArticle> _journalArticles;
 		private JournalFolder _journalFolder;
 		private double _latitude;
+		private String _localizedTitle;
 		private double _longitude;
 		private ServiceContext _serviceContext;
 		private String _title;
