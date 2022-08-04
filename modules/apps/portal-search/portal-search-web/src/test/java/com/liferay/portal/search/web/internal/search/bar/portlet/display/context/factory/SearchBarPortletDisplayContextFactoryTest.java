@@ -84,6 +84,9 @@ public class SearchBarPortletDisplayContextFactoryTest {
 			searchBarPortletDisplayContextFactory =
 				_createSearchBarPortletDisplayContextFactory(StringPool.BLANK);
 
+		_stubSearchBarPortletDisplayContextFactory(
+			searchBarPortletDisplayContextFactory);
+
 		SearchBarPortletDisplayContext searchBarPortletDisplayContext =
 			searchBarPortletDisplayContextFactory.create(
 				_portletPreferencesLookup, _portletSharedSearchRequest,
@@ -98,6 +101,9 @@ public class SearchBarPortletDisplayContextFactoryTest {
 		SearchBarPortletDisplayContextFactory
 			searchBarPortletDisplayContextFactory =
 				_createSearchBarPortletDisplayContextFactory(null);
+
+		_stubSearchBarPortletDisplayContextFactory(
+			searchBarPortletDisplayContextFactory);
 
 		SearchBarPortletDisplayContext searchBarPortletDisplayContext =
 			searchBarPortletDisplayContextFactory.create(
@@ -117,6 +123,9 @@ public class SearchBarPortletDisplayContextFactoryTest {
 		SearchBarPortletDisplayContextFactory
 			searchBarPortletDisplayContextFactory =
 				_createSearchBarPortletDisplayContextFactory(destination);
+
+		_stubSearchBarPortletDisplayContextFactory(
+			searchBarPortletDisplayContextFactory);
 
 		SearchBarPortletDisplayContext searchBarPortletDisplayContext =
 			searchBarPortletDisplayContextFactory.create(
@@ -143,6 +152,9 @@ public class SearchBarPortletDisplayContextFactoryTest {
 			searchBarPortletDisplayContextFactory =
 				_createSearchBarPortletDisplayContextFactory(
 					StringPool.SLASH.concat(destination));
+
+		_stubSearchBarPortletDisplayContextFactory(
+			searchBarPortletDisplayContextFactory);
 
 		SearchBarPortletDisplayContext searchBarPortletDisplayContext =
 			searchBarPortletDisplayContextFactory.create(
@@ -172,6 +184,9 @@ public class SearchBarPortletDisplayContextFactoryTest {
 			searchBarPortletDisplayContextFactory =
 				_createSearchBarPortletDisplayContextFactory(destination);
 
+		_stubSearchBarPortletDisplayContextFactory(
+			searchBarPortletDisplayContextFactory);
+
 		SearchBarPortletDisplayContext searchBarPortletDisplayContext =
 			searchBarPortletDisplayContextFactory.create(
 				_portletPreferencesLookup, _portletSharedSearchRequest,
@@ -196,6 +211,9 @@ public class SearchBarPortletDisplayContextFactoryTest {
 			searchBarPortletDisplayContextFactory =
 				_createSearchBarPortletDisplayContextFactory(null);
 
+		_stubSearchBarPortletDisplayContextFactory(
+			searchBarPortletDisplayContextFactory);
+
 		SearchBarPortletDisplayContext searchBarPortletDisplayContext =
 			searchBarPortletDisplayContextFactory.create(
 				_portletPreferencesLookup, _portletSharedSearchRequest,
@@ -214,6 +232,9 @@ public class SearchBarPortletDisplayContextFactoryTest {
 			searchBarPortletDisplayContextFactory =
 				_createSearchBarPortletDisplayContextFactory(null, "sp", null);
 
+		_stubSearchBarPortletDisplayContextFactory(
+			searchBarPortletDisplayContextFactory);
+
 		SearchBarPortletDisplayContext searchBarPortletDisplayContext =
 			searchBarPortletDisplayContextFactory.create(
 				_portletPreferencesLookup, _portletSharedSearchRequest,
@@ -228,6 +249,9 @@ public class SearchBarPortletDisplayContextFactoryTest {
 		SearchBarPortletDisplayContextFactory
 			searchBarPortletDisplayContextFactory =
 				_createSearchBarPortletDisplayContextFactory(null, null, null);
+
+		_stubSearchBarPortletDisplayContextFactory(
+			searchBarPortletDisplayContextFactory);
 
 		SearchBarPortletDisplayContext searchBarPortletDisplayContext =
 			searchBarPortletDisplayContextFactory.create(
@@ -363,6 +387,9 @@ public class SearchBarPortletDisplayContextFactoryTest {
 			searchBarPortletDisplayContextFactory,
 		boolean expectedLetTheUserChoose, boolean expectedSelectedCurrentSite,
 		boolean expectedSelectedEverything) {
+
+		_stubSearchBarPortletDisplayContextFactory(
+			searchBarPortletDisplayContextFactory);
 
 		SearchBarPortletDisplayContext searchBarPortletDisplayContext =
 			searchBarPortletDisplayContextFactory.create(
@@ -544,6 +571,19 @@ public class SearchBarPortletDisplayContextFactoryTest {
 		);
 	}
 
+	private void _stubSearchBarPortletDisplayContextFactory(
+		SearchBarPortletDisplayContextFactory
+			searchBarPortletDisplayContextFactory) {
+
+		Mockito.doReturn(
+			_searchSuggestionsCompanyConfiguration
+		).when(
+			searchBarPortletDisplayContextFactory
+		).getSearchSuggestionsCompanyConfiguration(
+			0
+		);
+	}
+
 	private void _whenLayoutLocalServiceFetchLayoutByFriendlyURL(
 		String friendlyURL, Layout layout) {
 
@@ -573,12 +613,6 @@ public class SearchBarPortletDisplayContextFactoryTest {
 		);
 	}
 
-	private void _stubSearchBarPortletDisplayContextFactory(SearchBarPortletDisplayContextFactory searchBarPortletDisplayContextFactory){
-		Mockito.doReturn(_searchSuggestionsCompanyConfiguration)
-			.when(searchBarPortletDisplayContextFactory)
-				.getSearchSuggestionsCompanyConfiguration(0);
-	}
-
 	private static final String _DEFAULT_SCOPE_PARAMETER_NAME = "scope";
 
 	private final Group _group = Mockito.mock(Group.class);
@@ -593,9 +627,9 @@ public class SearchBarPortletDisplayContextFactoryTest {
 		Mockito.mock(PortletSharedSearchRequest.class);
 	private final SearchBarPrecedenceHelper _searchBarPrecedenceHelper =
 		Mockito.mock(SearchBarPrecedenceHelper.class);
-	private final ThemeDisplay _themeDisplay = Mockito.mock(ThemeDisplay.class);
 	private final SearchSuggestionsCompanyConfiguration
-		_searchSuggestionsCompanyConfiguration =
-			Mockito.mock(SearchSuggestionsCompanyConfiguration.class);
+		_searchSuggestionsCompanyConfiguration = Mockito.mock(
+			SearchSuggestionsCompanyConfiguration.class);
+	private final ThemeDisplay _themeDisplay = Mockito.mock(ThemeDisplay.class);
 
 }
