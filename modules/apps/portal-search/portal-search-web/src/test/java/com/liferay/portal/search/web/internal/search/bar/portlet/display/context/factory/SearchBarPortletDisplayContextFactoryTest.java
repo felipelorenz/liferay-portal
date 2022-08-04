@@ -500,7 +500,7 @@ public class SearchBarPortletDisplayContextFactoryTest {
 			searchResponse
 		);
 
-		return searchBarPortletDisplayContextFactory;
+		return Mockito.spy(searchBarPortletDisplayContextFactory);
 	}
 
 	private void _setUpLanguageUtil() {
