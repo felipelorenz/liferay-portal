@@ -16,7 +16,6 @@ package com.liferay.portal.search.web.internal.folder.facet.portlet;
 
 import com.liferay.portal.kernel.module.configuration.ConfigurationException;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCPortlet;
-import com.liferay.portal.kernel.search.facet.Facet;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.search.searcher.SearchRequest;
@@ -104,8 +103,13 @@ public class FolderFacetPortlet extends MVCPortlet {
 		PortletSharedSearchResponse portletSharedSearchResponse,
 		RenderRequest renderRequest) {
 
-		Facet facet = portletSharedSearchResponse.getFacet(
-			_getAggregationName(renderRequest));
+		FolderSearchFacetDisplayContextBuilder
+			folderSearchFacetDisplayContextBuilder =
+				_createFolderSearchFacetDisplayContextBuilder(renderRequest);
+
+		folderSearchFacetDisplayContextBuilder.setFacet(
+			portletSharedSearchResponse.getFacet(
+				_getAggregationName(renderRequest)));
 
 		FolderTitleLookup folderTitleLookup = new FolderTitleLookupImpl(
 			new FolderSearcher(), portal.getHttpServletRequest(renderRequest));
@@ -115,11 +119,6 @@ public class FolderFacetPortlet extends MVCPortlet {
 				portletSharedSearchResponse.getPortletPreferences(
 					renderRequest));
 
-		FolderSearchFacetDisplayContextBuilder
-			folderSearchFacetDisplayContextBuilder =
-				_createFolderSearchFacetDisplayContextBuilder(renderRequest);
-
-		folderSearchFacetDisplayContextBuilder.setFacet(facet);
 		folderSearchFacetDisplayContextBuilder.setFolderTitleLookup(
 			folderTitleLookup);
 		folderSearchFacetDisplayContextBuilder.setFrequenciesVisible(

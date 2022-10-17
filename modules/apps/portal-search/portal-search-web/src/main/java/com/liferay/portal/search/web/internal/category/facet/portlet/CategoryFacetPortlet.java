@@ -18,7 +18,6 @@ import com.liferay.asset.kernel.service.AssetCategoryLocalService;
 import com.liferay.asset.kernel.service.AssetVocabularyLocalService;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.portlet.bridges.mvc.MVCPortlet;
-import com.liferay.portal.kernel.search.facet.Facet;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -113,18 +112,19 @@ public class CategoryFacetPortlet extends MVCPortlet {
 		PortletSharedSearchResponse portletSharedSearchResponse,
 		RenderRequest renderRequest) {
 
-		Facet facet = portletSharedSearchResponse.getFacet(
-			_getAggregationName(renderRequest));
+		AssetCategoriesSearchFacetDisplayContextBuilder
+			assetCategoriesSearchFacetDisplayContextBuilder =
+				new AssetCategoriesSearchFacetDisplayContextBuilder(
+					renderRequest);
+
+		assetCategoriesSearchFacetDisplayContextBuilder.setFacet(
+			portletSharedSearchResponse.getFacet(
+				_getAggregationName(renderRequest)));
 
 		CategoryFacetPortletPreferences categoryFacetPortletPreferences =
 			new CategoryFacetPortletPreferencesImpl(
 				portletSharedSearchResponse.getPortletPreferences(
 					renderRequest));
-
-		AssetCategoriesSearchFacetDisplayContextBuilder
-			assetCategoriesSearchFacetDisplayContextBuilder =
-				new AssetCategoriesSearchFacetDisplayContextBuilder(
-					renderRequest);
 
 		assetCategoriesSearchFacetDisplayContextBuilder.
 			setAssetCategoryLocalService(assetCategoryLocalService);
@@ -132,7 +132,6 @@ public class CategoryFacetPortlet extends MVCPortlet {
 			setAssetVocabularyLocalService(assetVocabularyLocalService);
 		assetCategoriesSearchFacetDisplayContextBuilder.setDisplayStyle(
 			categoryFacetPortletPreferences.getDisplayStyle());
-		assetCategoriesSearchFacetDisplayContextBuilder.setFacet(facet);
 		assetCategoriesSearchFacetDisplayContextBuilder.setFrequenciesVisible(
 			categoryFacetPortletPreferences.isFrequenciesVisible());
 		assetCategoriesSearchFacetDisplayContextBuilder.setFrequencyThreshold(
