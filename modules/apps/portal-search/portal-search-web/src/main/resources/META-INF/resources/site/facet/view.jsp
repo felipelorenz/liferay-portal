@@ -94,7 +94,7 @@ SiteFacetPortletInstanceConfiguration siteFacetPortletInstanceConfiguration = sc
 											<label class="facet-checkbox-label" for="<portlet:namespace />term_<%= i %>">
 												<input
 													class="custom-control-input facet-term"
-													data-term-id="<%= scopeSearchFacetTermDisplayContext.getGroupId() %>"
+													data-term-id="<%= scopeSearchFacetTermDisplayContext.getFilterValue() %>"
 													disabled
 													id="<portlet:namespace />term_<%= i %>"
 													name="<portlet:namespace />term_<%= i %>"
@@ -104,12 +104,12 @@ SiteFacetPortletInstanceConfiguration siteFacetPortletInstanceConfiguration = sc
 												/>
 
 												<span class="custom-control-label term-name <%= scopeSearchFacetTermDisplayContext.isSelected() ? "facet-term-selected" : "facet-term-unselected" %>">
-													<span class="custom-control-label-text"><%= HtmlUtil.escape(scopeSearchFacetTermDisplayContext.getDescriptiveName()) %></span>
+													<span class="custom-control-label-text"><%= HtmlUtil.escape(scopeSearchFacetTermDisplayContext.getBucketText()) %></span>
 												</span>
 
-												<c:if test="<%= scopeSearchFacetTermDisplayContext.isShowCount() %>">
+												<c:if test="<%= scopeSearchFacetTermDisplayContext.isFrequencyVisible() %>">
 													<small class="term-count">
-														(<%= scopeSearchFacetTermDisplayContext.getCount() %>)
+														(<%= scopeSearchFacetTermDisplayContext.getFrequency() %>)
 													</small>
 												</c:if>
 											</label>

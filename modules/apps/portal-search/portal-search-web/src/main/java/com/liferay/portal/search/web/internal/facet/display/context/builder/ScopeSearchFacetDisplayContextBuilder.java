@@ -155,12 +155,13 @@ public class ScopeSearchFacetDisplayContextBuilder {
 		ScopeSearchFacetTermDisplayContext scopeSearchFacetTermDisplayContext =
 			new ScopeSearchFacetTermDisplayContext();
 
-		scopeSearchFacetTermDisplayContext.setCount(count);
-		scopeSearchFacetTermDisplayContext.setDescriptiveName(
+		scopeSearchFacetTermDisplayContext.setFrequency(count);
+		scopeSearchFacetTermDisplayContext.setBucketText(
 			_getDescriptiveName(groupId));
-		scopeSearchFacetTermDisplayContext.setGroupId(groupId);
+		scopeSearchFacetTermDisplayContext.setFilterValue(
+			String.valueOf(groupId));
 		scopeSearchFacetTermDisplayContext.setSelected(selected);
-		scopeSearchFacetTermDisplayContext.setShowCount(_showCounts);
+		scopeSearchFacetTermDisplayContext.setFrequencyVisible(_showCounts);
 
 		return scopeSearchFacetTermDisplayContext;
 	}
