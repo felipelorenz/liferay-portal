@@ -85,15 +85,19 @@ public class ElasticsearchIndexSearcher extends BaseIndexSearcher {
 
 			SearchRequest searchRequest = _getSearchRequest(searchContext);
 
-			Integer from = searchRequest.getFrom();
 			Integer size = searchRequest.getSize();
 
-			if ((from == null) && (size != null) && (size > end)) {
+			if ((size != null) && (size > end)) {
 				end = size;
+			}
+
+			Integer from = searchRequest.getFrom();
+
+			if (from == null) {
 				start = 0;
 			}
-			else if ((from != null) && (size != null) && (size > end)) {
-				end = from + size;
+			else {
+				end = from + end;
 				start = from;
 			}
 
