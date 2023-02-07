@@ -28,4 +28,6 @@ public class SearchContextAttributes {
 	public static final String ATTRIBUTE_KEY_LUCENE_SYNTAX =
 		"search.lucene.syntax";
 
+	public static final String ATTRIBUTE_PERMISSIONED_SEARCHER =
+		"permissionedSearch";
 }
