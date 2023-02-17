@@ -33,6 +33,7 @@ import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.search.configuration.DefaultSearchResultPermissionFilterConfiguration;
 import com.liferay.portal.search.internal.facet.FacetPostProcessorImpl;
 import com.liferay.portal.search.internal.permission.DefaultSearchResultPermissionFilter;
+import com.liferay.portal.search.legacy.searcher.SearchRequestBuilderFactory;
 import com.liferay.portal.search.test.util.IdempotentRetryAssert;
 import com.liferay.portal.search.test.util.indexing.BaseIndexingTestCase;
 import com.liferay.portal.search.test.util.indexing.DocumentCreationHelpers;
@@ -309,7 +310,8 @@ public abstract class BasePermissionFilteredPaginationTestCase
 
 		return new DefaultSearchResultPermissionFilter(
 			new FacetPostProcessorImpl(), indexerRegistry, permissionChecker,
-			props, relatedEntryIndexerRegistry, this::doSearch,
+			props, relatedEntryIndexerRegistry, this::doSearch,Mockito.mock(
+			SearchRequestBuilderFactory.class) ,
 			defaultSearchResultPermissionFilterConfiguration);
 	}
 

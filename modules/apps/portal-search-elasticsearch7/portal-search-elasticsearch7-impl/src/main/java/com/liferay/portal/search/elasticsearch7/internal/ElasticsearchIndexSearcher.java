@@ -85,33 +85,6 @@ public class ElasticsearchIndexSearcher extends BaseIndexSearcher {
 
 			SearchRequest searchRequest = _getSearchRequest(searchContext);
 
-			Integer from = searchRequest.getFrom();
-			Integer size = searchRequest.getSize();
-
-			if ((from == null) && (size != null)) {
-				end = size;
-				start = 0;
-			}
-			else if ((from != null) && (size != null)) {
-				end = from + size;
-				start = from;
-			}
-
-			if (start == QueryUtil.ALL_POS) {
-				start = 0;
-			}
-			else if (start < 0) {
-				throw new IllegalArgumentException("Invalid start " + start);
-			}
-
-			if (end == QueryUtil.ALL_POS) {
-				end = GetterUtil.getInteger(
-					_props.get(PropsKeys.INDEX_SEARCH_LIMIT));
-			}
-			else if (end < 0) {
-				throw new IllegalArgumentException("Invalid end " + end);
-			}
-
 			SearchResponseBuilder searchResponseBuilder =
 				_getSearchResponseBuilder(searchContext);
 

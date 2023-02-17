@@ -26,6 +26,9 @@ import com.liferay.portal.kernel.search.facet.FacetPostProcessor;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.util.Props;
 import com.liferay.portal.search.configuration.DefaultSearchResultPermissionFilterConfiguration;
+import com.liferay.portal.search.legacy.searcher.SearchRequestBuilderFactory;
+import com.liferay.portal.search.searcher.SearchRequest;
+import com.liferay.portal.search.searcher.SearchRequestBuilder;
 import com.liferay.portal.test.rule.LiferayUnitTestRule;
 
 import java.util.Arrays;
@@ -52,6 +55,8 @@ public class DefaultSearchResultPermissionFilterTest {
 	@Before
 	public void setUp() {
 		_mockSearchResultPermissionFilterConfiguration(0, 100);
+		SearchRequestBuilderFactory
+			_searchRequestBuilderFactory = getSearchRequestBuilderFactory();
 
 		_defaultSearchResultPermissionFilter =
 			new DefaultSearchResultPermissionFilter(
@@ -59,7 +64,27 @@ public class DefaultSearchResultPermissionFilterTest {
 				Mockito.mock(IndexerRegistry.class), _permissionChecker,
 				Mockito.mock(Props.class),
 				Mockito.mock(RelatedEntryIndexerRegistry.class),
-				_searchFunction, _searchResultPermissionFilterConfiguration);
+				_searchFunction, _searchRequestBuilderFactory, _searchResultPermissionFilterConfiguration);
+	}
+
+	private static SearchRequestBuilderFactory getSearchRequestBuilderFactory() {
+		SearchRequestBuilderFactory _searchRequestBuilderFactory =
+			Mockito.mock(SearchRequestBuilderFactory.class);
+
+		SearchRequestBuilder searchRequestBuilder = Mockito.mock(SearchRequestBuilder.class);
+		Mockito.when(
+			_searchRequestBuilderFactory.builder(Mockito.any())
+		).thenReturn(
+			searchRequestBuilder
+		);
+
+		Mockito.when(
+			searchRequestBuilder.build()
+		).thenReturn(
+			_searchRequest
+		);
+
+		return _searchRequestBuilderFactory;
 	}
 
 	@Test
@@ -76,6 +101,7 @@ public class DefaultSearchResultPermissionFilterTest {
 		_mockGetHits(spyHits, searchContext);
 		_mockIsGroupAdmin(true, searchContext);
 		_mockQueryConfig(true, searchContext);
+		_mockSearchRequest(4, 10);
 		_mockStartAndEnd(20, searchContext, 0);
 
 		Hits resultHits = _defaultSearchResultPermissionFilter.search(
@@ -100,6 +126,7 @@ public class DefaultSearchResultPermissionFilterTest {
 		_mockGetHits(spyHits, searchContext);
 		_mockIsGroupAdmin(false, searchContext);
 		_mockQueryConfig(true, searchContext);
+		_mockSearchRequest(4, 10);
 		_mockStartAndEnd(20, searchContext, 0);
 
 		Hits resultHits = _defaultSearchResultPermissionFilter.search(
@@ -254,6 +281,21 @@ public class DefaultSearchResultPermissionFilterTest {
 		return document;
 	}
 
+	private void _mockSearchRequest(int from, int size){
+
+		Mockito.when(
+			_searchRequest.getFrom()
+		).thenReturn(
+			from
+		);
+
+		Mockito.when(
+			_searchRequest.getSize()
+		).thenReturn(
+			size
+		);
+	}
+
 	private DefaultSearchResultPermissionFilter
 		_defaultSearchResultPermissionFilter;
 	private final PermissionChecker _permissionChecker = Mockito.mock(
@@ -263,5 +305,5 @@ public class DefaultSearchResultPermissionFilterTest {
 	private final DefaultSearchResultPermissionFilterConfiguration
 		_searchResultPermissionFilterConfiguration = Mockito.mock(
 			DefaultSearchResultPermissionFilterConfiguration.class);
-
+	private static SearchRequest _searchRequest = Mockito.mock(SearchRequest.class);
 }

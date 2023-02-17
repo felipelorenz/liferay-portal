@@ -30,6 +30,7 @@ import com.liferay.portal.search.configuration.DefaultSearchResultPermissionFilt
 
 import java.util.Map;
 
+import com.liferay.portal.search.legacy.searcher.SearchRequestBuilderFactory;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Modified;
@@ -56,6 +57,7 @@ public class SearchResultPermissionFilterFactoryImpl
 			relatedEntryIndexerRegistry,
 			searchContext -> _search(
 				searchResultPermissionFilterSearcher, searchContext),
+			searchRequestBuilderFactory,
 			_defaultSearchResultPermissionFilterConfiguration);
 	}
 
@@ -79,6 +81,9 @@ public class SearchResultPermissionFilterFactoryImpl
 
 	@Reference
 	protected RelatedEntryIndexerRegistry relatedEntryIndexerRegistry;
+
+	@Reference
+	protected SearchRequestBuilderFactory searchRequestBuilderFactory;
 
 	private Hits _search(
 		SearchResultPermissionFilterSearcher

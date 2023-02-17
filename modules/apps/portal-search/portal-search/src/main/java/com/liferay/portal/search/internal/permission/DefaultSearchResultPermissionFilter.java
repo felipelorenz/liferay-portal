@@ -49,6 +49,9 @@ import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.Time;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.search.configuration.DefaultSearchResultPermissionFilterConfiguration;
+import com.liferay.portal.search.legacy.searcher.SearchRequestBuilderFactory;
+import com.liferay.portal.search.searcher.SearchRequest;
+import com.liferay.portal.search.searcher.SearchRequestBuilder;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -68,7 +71,7 @@ public class DefaultSearchResultPermissionFilter
 		FacetPostProcessor facetPostProcessor, IndexerRegistry indexerRegistry,
 		PermissionChecker permissionChecker, Props props,
 		RelatedEntryIndexerRegistry relatedEntryIndexerRegistry,
-		Function<SearchContext, Hits> searchFunction,
+		Function<SearchContext, Hits> searchFunction, SearchRequestBuilderFactory searchRequestBuilderFactory,
 		DefaultSearchResultPermissionFilterConfiguration
 			defaultSearchResultPermissionFilterConfiguration) {
 
@@ -77,6 +80,7 @@ public class DefaultSearchResultPermissionFilter
 		_permissionChecker = permissionChecker;
 		_relatedEntryIndexerRegistry = relatedEntryIndexerRegistry;
 		_searchFunction = searchFunction;
+		_searchRequestBuilderFactory = searchRequestBuilderFactory;
 
 		_permissionFilteredSearchResultAccurateCountThreshold =
 			defaultSearchResultPermissionFilterConfiguration.
@@ -168,26 +172,37 @@ public class DefaultSearchResultPermissionFilter
 	}
 
 	private Hits _getHits(SearchContext searchContext) {
-		if ((searchContext != null) &&
-			(searchContext.getEnd() != QueryUtil.ALL_POS)) {
-
+		if (searchContext != null) {
 			int end = searchContext.getEnd();
 
 			int start = searchContext.getStart();
 
-			if (start == QueryUtil.ALL_POS) {
-				start = 0;
+			if ((searchContext.getEnd() != QueryUtil.ALL_POS)) {
+
+				if (start == QueryUtil.ALL_POS) {
+					start = 0;
+				}
+
+				int searchResultWindow = end - start;
+
+				if (searchResultWindow > _searchQueryResultWindowLimit) {
+					throw new SystemException(
+						StringBundler.concat(
+							"Search result window size of ", searchResultWindow,
+							" exceeds the configured limit of ",
+							_searchQueryResultWindowLimit));
+				}
 			}
 
-			int searchResultWindow = end - start;
+			SearchRequest searchRequest =
+				_getSearchRequest(searchContext);
 
-			if (searchResultWindow > _searchQueryResultWindowLimit) {
-				throw new SystemException(
-					StringBundler.concat(
-						"Search result window size of ", searchResultWindow,
-						" exceeds the configured limit of ",
-						_searchQueryResultWindowLimit));
-			}
+			int[] initialStartAndEnd = makeSureThatStartAndEndNotBeLowerThanZero( //please rename
+				searchRequest, end, start);
+
+			searchContext.setStart(initialStartAndEnd[0]);
+
+			searchContext.setEnd(initialStartAndEnd[1]);
 		}
 
 		return _searchFunction.apply(searchContext);
@@ -332,6 +347,55 @@ public class DefaultSearchResultPermissionFilter
 		Field.COMPANY_ID, Field.ENTRY_CLASS_NAME, Field.ENTRY_CLASS_PK
 	};
 
+	public int[] makeSureThatStartAndEndNotBeLowerThanZero(
+		SearchRequest searchRequest, int start, int end) {
+
+		if(_permissionFilteredSearchResultAccurateCountThreshold == 0) {
+
+			Integer from = searchRequest.getFrom();
+			Integer size = searchRequest.getSize();
+
+			if ((from == null) && (size != null)) {
+				end = size;
+				start = 0;
+			}
+			else if ((from != null) && (size != null)) {
+				end = from + size;
+				start = from;
+			}
+		}
+
+		if (start == QueryUtil.ALL_POS) {
+			start = 0;
+		}
+		else if (start < 0) {
+			throw new IllegalArgumentException("Invalid start " + start);
+		}
+
+		if (end == QueryUtil.ALL_POS) {
+			end = GetterUtil.getInteger(
+				_props.get(PropsKeys.INDEX_SEARCH_LIMIT));
+		}
+		else if (end < 0) {
+			throw new IllegalArgumentException("Invalid end " + end);
+		}
+
+		return new int[] {start, end};
+	}
+
+	private SearchRequest _getSearchRequest(SearchContext searchContext) {
+		SearchRequestBuilder searchRequestBuilder = _getSearchRequestBuilder(
+			searchContext);
+
+		return searchRequestBuilder.build();
+	}
+
+	private SearchRequestBuilder _getSearchRequestBuilder(
+		SearchContext searchContext) {
+
+		return _searchRequestBuilderFactory.builder(searchContext);
+	}
+
 	private static final Log _log = LogFactoryUtil.getLog(
 		DefaultSearchResultPermissionFilter.class);
 
@@ -344,6 +408,7 @@ public class DefaultSearchResultPermissionFilter
 	private final RelatedEntryIndexerRegistry _relatedEntryIndexerRegistry;
 	private final Function<SearchContext, Hits> _searchFunction;
 	private final int _searchQueryResultWindowLimit;
+	private final SearchRequestBuilderFactory _searchRequestBuilderFactory;
 
 	private class SlidingWindowSearcher {
 
