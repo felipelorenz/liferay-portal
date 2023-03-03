@@ -254,8 +254,16 @@ components:
                                                     type: array
                                                 helpText:
                                                     type: string
+                                                helpText_i18n:
+                                                    additionalProperties:
+                                                        type: string
+                                                    type: object
                                                 label:
                                                     type: string
+                                                label_i18n:
+                                                    additionalProperties:
+                                                        type: string
+                                                    type: object
                                                 name:
                                                     type: string
                                                 type:
