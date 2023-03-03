@@ -19,6 +19,7 @@ import com.liferay.search.experiences.rest.client.serdes.v1_0.FieldSerDes;
 
 import java.io.Serializable;
 
+import java.util.Map;
 import java.util.Objects;
 
 import javax.annotation.Generated;
@@ -97,6 +98,28 @@ public class Field implements Cloneable, Serializable {
 
 	protected String helpText;
 
+	public Map<String, String> getHelpText_i18n() {
+		return helpText_i18n;
+	}
+
+	public void setHelpText_i18n(Map<String, String> helpText_i18n) {
+		this.helpText_i18n = helpText_i18n;
+	}
+
+	public void setHelpText_i18n(
+		UnsafeSupplier<Map<String, String>, Exception>
+			helpText_i18nUnsafeSupplier) {
+
+		try {
+			helpText_i18n = helpText_i18nUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected Map<String, String> helpText_i18n;
+
 	public String getLabel() {
 		return label;
 	}
@@ -117,6 +140,28 @@ public class Field implements Cloneable, Serializable {
 	}
 
 	protected String label;
+
+	public Map<String, String> getLabel_i18n() {
+		return label_i18n;
+	}
+
+	public void setLabel_i18n(Map<String, String> label_i18n) {
+		this.label_i18n = label_i18n;
+	}
+
+	public void setLabel_i18n(
+		UnsafeSupplier<Map<String, String>, Exception>
+			label_i18nUnsafeSupplier) {
+
+		try {
+			label_i18n = label_i18nUnsafeSupplier.get();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected Map<String, String> label_i18n;
 
 	public String getName() {
 		return name;

@@ -146,6 +146,36 @@ public class Field implements Serializable {
 	protected String helpText;
 
 	@Schema
+	@Valid
+	public Map<String, String> getHelpText_i18n() {
+		return helpText_i18n;
+	}
+
+	public void setHelpText_i18n(Map<String, String> helpText_i18n) {
+		this.helpText_i18n = helpText_i18n;
+	}
+
+	@JsonIgnore
+	public void setHelpText_i18n(
+		UnsafeSupplier<Map<String, String>, Exception>
+			helpText_i18nUnsafeSupplier) {
+
+		try {
+			helpText_i18n = helpText_i18nUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected Map<String, String> helpText_i18n;
+
+	@Schema
 	public String getLabel() {
 		return label;
 	}
@@ -172,6 +202,36 @@ public class Field implements Serializable {
 	@GraphQLField
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
 	protected String label;
+
+	@Schema
+	@Valid
+	public Map<String, String> getLabel_i18n() {
+		return label_i18n;
+	}
+
+	public void setLabel_i18n(Map<String, String> label_i18n) {
+		this.label_i18n = label_i18n;
+	}
+
+	@JsonIgnore
+	public void setLabel_i18n(
+		UnsafeSupplier<Map<String, String>, Exception>
+			label_i18nUnsafeSupplier) {
+
+		try {
+			label_i18n = label_i18nUnsafeSupplier.get();
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@GraphQLField
+	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
+	protected Map<String, String> label_i18n;
 
 	@Schema
 	public String getName() {
@@ -336,6 +396,16 @@ public class Field implements Serializable {
 			sb.append("\"");
 		}
 
+		if (helpText_i18n != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"helpText_i18n\": ");
+
+			sb.append(_toJSON(helpText_i18n));
+		}
+
 		if (label != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -348,6 +418,16 @@ public class Field implements Serializable {
 			sb.append(_escape(label));
 
 			sb.append("\"");
+		}
+
+		if (label_i18n != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"label_i18n\": ");
+
+			sb.append(_toJSON(label_i18n));
 		}
 
 		if (name != null) {

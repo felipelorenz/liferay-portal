@@ -106,6 +106,16 @@ public class FieldSerDes {
 			sb.append("\"");
 		}
 
+		if (field.getHelpText_i18n() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"helpText_i18n\": ");
+
+			sb.append(_toJSON(field.getHelpText_i18n()));
+		}
+
 		if (field.getLabel() != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
@@ -118,6 +128,16 @@ public class FieldSerDes {
 			sb.append(_escape(field.getLabel()));
 
 			sb.append("\"");
+		}
+
+		if (field.getLabel_i18n() != null) {
+			if (sb.length() > 1) {
+				sb.append(", ");
+			}
+
+			sb.append("\"label_i18n\": ");
+
+			sb.append(_toJSON(field.getLabel_i18n()));
 		}
 
 		if (field.getName() != null) {
@@ -197,11 +217,25 @@ public class FieldSerDes {
 			map.put("helpText", String.valueOf(field.getHelpText()));
 		}
 
+		if (field.getHelpText_i18n() == null) {
+			map.put("helpText_i18n", null);
+		}
+		else {
+			map.put("helpText_i18n", String.valueOf(field.getHelpText_i18n()));
+		}
+
 		if (field.getLabel() == null) {
 			map.put("label", null);
 		}
 		else {
 			map.put("label", String.valueOf(field.getLabel()));
+		}
+
+		if (field.getLabel_i18n() == null) {
+			map.put("label_i18n", null);
+		}
+		else {
+			map.put("label_i18n", String.valueOf(field.getLabel_i18n()));
 		}
 
 		if (field.getName() == null) {
@@ -267,9 +301,21 @@ public class FieldSerDes {
 					field.setHelpText((String)jsonParserFieldValue);
 				}
 			}
+			else if (Objects.equals(jsonParserFieldName, "helpText_i18n")) {
+				if (jsonParserFieldValue != null) {
+					field.setHelpText_i18n(
+						(Map)FieldSerDes.toMap((String)jsonParserFieldValue));
+				}
+			}
 			else if (Objects.equals(jsonParserFieldName, "label")) {
 				if (jsonParserFieldValue != null) {
 					field.setLabel((String)jsonParserFieldValue);
+				}
+			}
+			else if (Objects.equals(jsonParserFieldName, "label_i18n")) {
+				if (jsonParserFieldValue != null) {
+					field.setLabel_i18n(
+						(Map)FieldSerDes.toMap((String)jsonParserFieldValue));
 				}
 			}
 			else if (Objects.equals(jsonParserFieldName, "name")) {
