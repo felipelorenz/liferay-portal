@@ -48,7 +48,9 @@
 									"locale": "${context.language_id}"
 								}
 							],
-							"label": "Fields",
+							"label_i18n": {
+								"en_US": "fields"
+							},
 							"name": "fields",
 							"type": "fieldMappingList",
 							"typeOptions": {
@@ -57,7 +59,9 @@
 						},
 						{
 							"defaultValue": "or",
-							"label": "Operator",
+							"label_i18n": {
+								"en_US": "operator"
+							},
 							"name": "operator",
 							"type": "select",
 							"typeOptions": {
@@ -75,7 +79,9 @@
 						},
 						{
 							"defaultValue": "best_fields",
-							"label": "Match Type",
+							"label_i18n": {
+								"en_US": "match-type"
+							},
 							"name": "type",
 							"type": "select",
 							"typeOptions": {
@@ -109,8 +115,12 @@
 						},
 						{
 							"defaultValue": "AUTO",
-							"helpText": "Only use fuzziness with the following match types: most fields, best fields, bool prefix.",
-							"label": "Fuzziness",
+							"helpText_i18n": {
+								"en_US": "fuzziness-field-help"
+							},
+							"label_i18n": {
+								"en_US": "fuzziness"
+							},
 							"name": "fuzziness",
 							"type": "select",
 							"typeOptions": {
@@ -137,7 +147,9 @@
 						},
 						{
 							"defaultValue": "0",
-							"label": "Minimum Should Match",
+							"label_i18n": {
+								"en_US": "min-should-match"
+							},
 							"name": "minimum_should_match",
 							"type": "text",
 							"typeOptions": {
@@ -146,8 +158,12 @@
 						},
 						{
 							"defaultValue": "",
-							"helpText": "Only use slop with the following match types: phrase, phrase prefix.",
-							"label": "Slop",
+							"helpText_i18n": {
+								"en_US": "slop-field-help"
+							},
+							"label_i18n": {
+								"en_US": "slop"
+							},
 							"name": "slop",
 							"type": "number",
 							"typeOptions": {
@@ -158,7 +174,9 @@
 						},
 						{
 							"defaultValue": 1,
-							"label": "Boost",
+							"label_i18n": {
+								"en_US": "boost"
+							},
 							"name": "boost",
 							"type": "number",
 							"typeOptions": {
@@ -166,8 +184,12 @@
 							}
 						},
 						{
-							"helpText": "If this is set, the search terms entered in the search bar will be replaced by this value.",
-							"label": "Text to Match",
+							"helpText_i18n": {
+								"en_US": "text-to-match-field-help"
+							},
+							"label_i18n": {
+								"en_US": "text-to-match"
+							},
 							"name": "keywords",
 							"type": "keywords",
 							"typeOptions": {

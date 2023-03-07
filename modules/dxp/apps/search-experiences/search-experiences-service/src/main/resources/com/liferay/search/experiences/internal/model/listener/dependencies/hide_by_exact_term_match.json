@@ -37,12 +37,16 @@
 				{
 					"fields": [
 						{
-							"label": "Field",
+							"label_i18n": {
+								"en_US": "field"
+							},
 							"name": "field",
 							"type": "fieldMapping"
 						},
 						{
-							"label": "Value",
+							"label_i18n": {
+								"en_US": "value"
+							},
 							"name": "value",
 							"type": "text"
 						}

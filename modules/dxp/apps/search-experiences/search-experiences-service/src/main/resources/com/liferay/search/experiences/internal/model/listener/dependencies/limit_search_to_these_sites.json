@@ -29,7 +29,9 @@
 				{
 					"fields": [
 						{
-							"label": "Group IDs",
+							"label_i18n": {
+								"en_US": "group-ids"
+							},
 							"name": "scope_group_ids",
 							"type": "multiselect"
 						}

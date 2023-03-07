@@ -38,18 +38,24 @@
 				{
 					"fields": [
 						{
-							"label": "Asset Category ID",
+							"label_i18n": {
+								"en_US": "asset-category-ids"
+							},
 							"name": "asset_category_id",
 							"type": "number"
 						},
 						{
-							"label": "Keywords",
+							"label_i18n": {
+								"en_US": "keywords"
+							},
 							"name": "keywords",
 							"type": "multiselect"
 						},
 						{
 							"defaultValue": 10,
-							"label": "Boost",
+							"label_i18n": {
+								"en_US": "boost"
+							},
 							"name": "boost",
 							"type": "number",
 							"typeOptions": {

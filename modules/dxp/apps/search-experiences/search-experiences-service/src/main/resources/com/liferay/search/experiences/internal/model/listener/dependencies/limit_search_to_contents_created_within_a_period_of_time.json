@@ -34,12 +34,16 @@
 				{
 					"fields": [
 						{
-							"label": "Create Date: From",
+							"label_i18n": {
+								"en_US": "create-date-from"
+							},
 							"name": "start_date",
 							"type": "date"
 						},
 						{
-							"label": "Create Date: To",
+							"label_i18n": {
+								"en_US": "create-date-to"
+							},
 							"name": "end_date",
 							"type": "date"
 						}

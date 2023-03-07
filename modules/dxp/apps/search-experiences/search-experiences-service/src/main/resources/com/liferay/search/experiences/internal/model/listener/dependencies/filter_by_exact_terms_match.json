@@ -29,12 +29,16 @@
 				{
 					"fields": [
 						{
-							"label": "Field",
+							"label_i18n": {
+								"en_US": "field"
+							},
 							"name": "field",
 							"type": "fieldMapping"
 						},
 						{
-							"label": "Values",
+							"label_i18n": {
+								"en_US": "values"
+							},
 							"name": "values",
 							"type": "multiselect"
 						}

@@ -36,18 +36,24 @@
 				{
 					"fields": [
 						{
-							"label": "Article IDs",
+							"label_i18n": {
+								"en_US": "article-ids"
+							},
 							"name": "article_ids",
 							"type": "multiselect"
 						},
 						{
-							"label": "Keywords",
+							"label_i18n": {
+								"en_US": "keywords"
+							},
 							"name": "values",
 							"type": "multiselect"
 						},
 						{
 							"defaultValue": 20,
-							"label": "Boost",
+							"label_i18n": {
+								"en_US": "boost"
+							},
 							"name": "boost",
 							"type": "number",
 							"typeOptions": {

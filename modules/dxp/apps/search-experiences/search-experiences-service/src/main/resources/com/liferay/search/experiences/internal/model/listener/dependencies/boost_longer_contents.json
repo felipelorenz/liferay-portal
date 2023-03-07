@@ -37,7 +37,9 @@
 					"fields": [
 						{
 							"defaultValue": 30,
-							"label": "Boost",
+							"label_i18n": {
+								"en_US": "boost"
+							},
 							"name": "boost",
 							"type": "number",
 							"typeOptions": {
@@ -46,7 +48,9 @@
 						},
 						{
 							"defaultValue": 1.5,
-							"label": "Factor",
+							"label_i18n": {
+								"en_US": "factor"
+							},
 							"name": "factor",
 							"type": "number",
 							"typeOptions": {
@@ -55,7 +59,9 @@
 						},
 						{
 							"defaultValue": "ln",
-							"label": "Modifier",
+							"label_i18n": {
+								"en_US": "modifier"
+							},
 							"name": "modifier",
 							"type": "select",
 							"typeOptions": {

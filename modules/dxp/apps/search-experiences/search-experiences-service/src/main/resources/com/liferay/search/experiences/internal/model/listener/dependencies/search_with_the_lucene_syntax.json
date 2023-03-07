@@ -44,7 +44,9 @@
 									"locale": "${context.language_id}"
 								}
 							],
-							"label": "Fields",
+							"label_i18n": {
+								"en_US": "fields"
+							},
 							"name": "fields",
 							"type": "fieldMappingList",
 							"typeOptions": {
@@ -52,7 +54,9 @@
 							}
 						},
 						{
-							"label": "Operator",
+							"label_i18n": {
+								"en_US": "operator"
+							},
 							"name": "operator",
 							"type": "select",
 							"typeOptions": {
@@ -70,7 +74,9 @@
 						},
 						{
 							"defaultValue": 1,
-							"label": "Boost",
+							"label_i18n": {
+								"en_US": "boost"
+							},
 							"name": "boost",
 							"type": "number",
 							"typeOptions": {

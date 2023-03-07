@@ -45,7 +45,9 @@
 									"locale": "${context.language_id}"
 								}
 							],
-							"label": "Field",
+							"label_i18n": {
+								"en_US": "field"
+							},
 							"name": "fields",
 							"type": "fieldMappingList",
 							"typeOptions": {
@@ -54,7 +56,9 @@
 						},
 						{
 							"defaultValue": "best_fields",
-							"label": "Match Type",
+							"label_i18n": {
+								"en_US": "match-type"
+							},
 							"name": "type",
 							"type": "select",
 							"typeOptions": {
@@ -88,7 +92,9 @@
 						},
 						{
 							"defaultValue": 10,
-							"label": "Boost",
+							"label_i18n": {
+								"en_US": "boost"
+							},
 							"name": "boost",
 							"type": "number",
 							"typeOptions": {
@@ -96,8 +102,12 @@
 							}
 						},
 						{
-							"helpText": "If this is set, the search terms entered in the search bar will be replaced by this value.",
-							"label": "Text to Match",
+							"helpText_i18n": {
+								"en_US": "text-to-match-field-help"
+							},
+							"label_i18n": {
+								"en_US": "text-to-match"
+							},
 							"name": "keywords",
 							"type": "keywords",
 							"typeOptions": {

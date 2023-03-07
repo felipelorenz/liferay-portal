@@ -47,7 +47,9 @@
 					"fields": [
 						{
 							"defaultValue": 20,
-							"label": "Boost",
+							"label_i18n": {
+								"en_US": "boost"
+							},
 							"name": "boost",
 							"type": "number",
 							"typeOptions": {

@@ -30,13 +30,17 @@
 				{
 					"fields": [
 						{
-							"label": "Asset Tags",
+							"label_i18n": {
+								"en_US": "asset-tags"
+							},
 							"name": "asset_tags",
 							"type": "multiselect"
 						},
 						{
 							"defaultValue": 5,
-							"label": "Boost",
+							"label_i18n": {
+								"en_US": "boost"
+							},
 							"name": "boost",
 							"type": "number",
 							"typeOptions": {
