@@ -754,9 +754,7 @@ public class DLImpl implements DL {
 
 	@Override
 	public boolean isValidVersion(String version) {
-		if (version.endsWith(".index")) {
-			version = StringUtil.removeLast(version, ".index");
-		}
+		version = _stripVersionSuffix(version);
 
 		if (version.equals(DLFileEntryConstants.PRIVATE_WORKING_COPY_VERSION)) {
 			return true;
@@ -932,6 +930,20 @@ public class DLImpl implements DL {
 		}
 
 		return true;
+	}
+
+	private String _stripVersionSuffix(String version) {
+		int index = version.indexOf(CharPool.TILDE);
+
+		if (index != -1) {
+			return version.substring(0, index);
+		}
+
+		if (version.endsWith(".index")) {
+			return StringUtil.removeLast(version, ".index");
+		}
+
+		return version;
 	}
 
 	private static final String _DEFAULT_FILE_ICON = "page";

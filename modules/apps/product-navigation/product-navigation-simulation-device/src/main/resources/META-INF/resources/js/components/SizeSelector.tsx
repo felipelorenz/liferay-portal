@@ -86,6 +86,13 @@ export default function SizeSelector({
 					previewRef={previewRef}
 				/>
 			)}
+
+			<span aria-live="polite" className="sr-only">
+				{sub(
+					Liferay.Language.get('x-screen-size-is-selected'),
+					activeSize.label
+				)}
+			</span>
 		</ClayLayout.Container>
 	);
 }
@@ -130,6 +137,7 @@ function SizeButton({
 			aria-controls={
 				id === SIZES.custom.id ? customSizeSelectorId : undefined
 			}
+			aria-current={activeSize.id === id}
 			aria-expanded={
 				id === SIZES.custom.id
 					? activeSize.id === id

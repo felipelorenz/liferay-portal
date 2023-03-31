@@ -78,6 +78,11 @@
 		<td></td>
 	</tr>
 	<tr>
+		<td>MANDATORY_FIELD</td>
+		<td>//label[contains(text(),'${key_fieldName}')]/*[contains(text(),'Mandatory')]</td>
+		<td></td>
+	</tr>
+	<tr>
 		<td>MANDATORY_TOGGLE_DISABLED</td>
 		<td>//input[@name="required" and @disabled]</td>
 		<td></td>

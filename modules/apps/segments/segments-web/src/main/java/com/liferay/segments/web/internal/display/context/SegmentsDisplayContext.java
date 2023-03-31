@@ -26,7 +26,6 @@ import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.search.EmptyOnClickRowChecker;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -301,35 +300,11 @@ public class SegmentsDisplayContext {
 			return _language.get(_themeDisplay.getLocale(), "global");
 		}
 
-		if (!FeatureFlagManagerUtil.isEnabled("LPS-166954")) {
-			if (segmentsEntry.getGroupId() == _themeDisplay.getScopeGroupId()) {
-				return _language.get(_themeDisplay.getLocale(), "current-site");
-			}
-
-			return _language.get(_themeDisplay.getLocale(), "parent-site");
+		if (segmentsEntry.getGroupId() == _themeDisplay.getScopeGroupId()) {
+			return _language.get(_themeDisplay.getLocale(), "current-site");
 		}
 
-		Group group = _groupLocalService.fetchGroup(segmentsEntry.getGroupId());
-
-		if (group == null) {
-			return StringPool.BLANK;
-		}
-
-		try {
-			String descriptiveName = group.getDescriptiveName(
-				_themeDisplay.getLocale());
-
-			if (descriptiveName != null) {
-				return descriptiveName;
-			}
-
-			return group.getName(_themeDisplay.getLocale());
-		}
-		catch (PortalException portalException) {
-			_log.error(portalException);
-
-			return group.getName(_themeDisplay.getLocale());
-		}
+		return _language.get(_themeDisplay.getLocale(), "parent-site");
 	}
 
 	public String getSearchActionURL() {
@@ -352,41 +327,21 @@ public class SegmentsDisplayContext {
 		searchContainer.setOrderByType(getOrderByType());
 
 		if (_isSearch()) {
-			if (!FeatureFlagManagerUtil.isEnabled("LPS-166954")) {
-				searchContainer.setResultsAndTotal(
-					_segmentsEntryService.searchSegmentsEntries(
-						_themeDisplay.getCompanyId(),
-						_themeDisplay.getScopeGroupId(), _getKeywords(), true,
-						searchContainer.getStart(), searchContainer.getEnd(),
-						_getSort()));
-			}
-			else {
-				searchContainer.setResultsAndTotal(
-					_segmentsEntryService.searchSegmentsEntries(
-						_themeDisplay.getCompanyId(), _getKeywords(),
-						searchContainer.getStart(), searchContainer.getEnd(),
-						_getSort()));
-			}
+			searchContainer.setResultsAndTotal(
+				_segmentsEntryService.searchSegmentsEntries(
+					_themeDisplay.getCompanyId(),
+					_themeDisplay.getScopeGroupId(), _getKeywords(), true,
+					searchContainer.getStart(), searchContainer.getEnd(),
+					_getSort()));
 		}
 		else {
-			if (!FeatureFlagManagerUtil.isEnabled("LPS-166954")) {
-				searchContainer.setResultsAndTotal(
-					() -> _segmentsEntryService.getSegmentsEntries(
-						_themeDisplay.getScopeGroupId(), true,
-						searchContainer.getStart(), searchContainer.getEnd(),
-						searchContainer.getOrderByComparator()),
-					_segmentsEntryService.getSegmentsEntriesCount(
-						_themeDisplay.getScopeGroupId(), true));
-			}
-			else {
-				searchContainer.setResultsAndTotal(
-					() -> _segmentsEntryService.getSegmentsEntries(
-						_themeDisplay.getCompanyId(),
-						searchContainer.getStart(), searchContainer.getEnd(),
-						searchContainer.getOrderByComparator()),
-					_segmentsEntryService.getSegmentsEntriesCount(
-						_themeDisplay.getCompanyId()));
-			}
+			searchContainer.setResultsAndTotal(
+				() -> _segmentsEntryService.getSegmentsEntries(
+					_themeDisplay.getScopeGroupId(), true,
+					searchContainer.getStart(), searchContainer.getEnd(),
+					searchContainer.getOrderByComparator()),
+				_segmentsEntryService.getSegmentsEntriesCount(
+					_themeDisplay.getScopeGroupId(), true));
 		}
 
 		searchContainer.setRowChecker(
@@ -550,21 +505,12 @@ public class SegmentsDisplayContext {
 
 	public boolean isShowDeleteAction(SegmentsEntry segmentsEntry) {
 		try {
-			if (!FeatureFlagManagerUtil.isEnabled("LPS-166954")) {
-				if ((segmentsEntry.getGroupId() ==
-						_themeDisplay.getScopeGroupId()) &&
-					SegmentsEntryPermission.contains(
-						_permissionChecker, segmentsEntry, ActionKeys.DELETE)) {
+			if ((segmentsEntry.getGroupId() ==
+					_themeDisplay.getScopeGroupId()) &&
+				SegmentsEntryPermission.contains(
+					_permissionChecker, segmentsEntry, ActionKeys.DELETE)) {
 
-					return true;
-				}
-			}
-			else {
-				if (SegmentsEntryPermission.contains(
-						_permissionChecker, segmentsEntry, ActionKeys.DELETE)) {
-
-					return true;
-				}
+				return true;
 			}
 
 			return false;

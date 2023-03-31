@@ -15,6 +15,7 @@
 package com.liferay.user.groups.admin.web.internal.search.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Role;
@@ -114,17 +115,18 @@ public class UserGroupIndexerTest {
 				baseName
 			).build());
 
-		Stream<UserGroup> stream = userGroups.stream();
-
 		DocumentsAssert.assertValuesIgnoreRelevance(
 			searchResponse1.getRequestString(), searchResponse1.getDocuments(),
-			Field.NAME, stream.map(UserGroup::getName));
+			Field.NAME,
+			TransformUtil.transform(userGroups, UserGroup::getName));
 
 		SearchRequestBuilder searchRequestBuilder2 = _getSearchRequestBuilder(
 			companyId);
 
 		SearchResponse searchResponse2 = searcher.search(
-			searchRequestBuilder2.size(
+			searchRequestBuilder2.emptySearchEnabled(
+				true
+			).size(
 				0
 			).build());
 

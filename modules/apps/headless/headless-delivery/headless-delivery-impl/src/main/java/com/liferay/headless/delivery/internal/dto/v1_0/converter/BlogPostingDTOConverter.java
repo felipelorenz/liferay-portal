@@ -96,7 +96,7 @@ public class BlogPostingDTOConverter
 				alternativeHeadline = blogsEntry.getSubtitle();
 				articleBody = blogsEntry.getContent();
 				creator = CreatorUtil.toCreator(
-					_portal, dtoConverterContext.getUriInfoOptional(),
+					_portal, dtoConverterContext.getUriInfo(),
 					_userLocalService.fetchUser(blogsEntry.getUserId()));
 				customFields = CustomFieldsUtil.toCustomFields(
 					dtoConverterContext.isAcceptAllLanguages(),
@@ -179,7 +179,7 @@ public class BlogPostingDTOConverter
 					false);
 				contentValue = ContentValueUtil.toContentValue(
 					"image.contentValue", fileEntry::getContentStream,
-					dtoConverterContext.getUriInfoOptional());
+					dtoConverterContext.getUriInfo());
 				imageId = coverImageFileEntryId;
 			}
 		};

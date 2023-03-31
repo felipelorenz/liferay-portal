@@ -103,25 +103,27 @@ definition {
 	@description = "LRQA-70845 Verify that cannot bypass workflow by duplicating article."
 	@priority = 5
 	test CannotBypassWorkflowByduplicatingArticle {
-		property portal.upstream = "quarantine";
+		property custom.properties = "jsonws.web.service.paths.excludes=";
 
 		Workflow.configureWCWorkflowViaFolderInfo(workflowDefinition = "Single Approver");
 
-		ApplicationsMenu.gotoPortlet(
-			category = "Users",
-			panel = "Control Panel",
-			portlet = "Users and Organizations");
-
-		User.addCP(
+		JSONUser.addUser(
 			userEmailAddress = "user1@liferay.com",
 			userFirstName = "user1",
 			userLastName = "user1",
 			userScreenName = "user1");
 
+		JSONUser.setFirstPassword(
+			agreeToTermsAndAnswerReminderQuery = "true",
+			requireReset = "false",
+			userEmailAddress = "user1@liferay.com");
+
+		var siteName = TestCase.getSiteName(siteName = ${siteName});
+
 		User.openUsersAdmin();
 
 		User.editUserSiteCP(
-			siteName = "Liferay",
+			siteName = ${siteName},
 			userScreenName = "user1");
 
 		ApplicationsMenu.gotoPortlet(
@@ -133,23 +135,11 @@ definition {
 			siteRoleName = "Site Owner",
 			userScreenName = "user1");
 
-		UserNavigator.gotoPassword();
-
-		User.setPasswordByResetLink(
-			newPassword1 = "password",
-			newPassword2 = "password");
-
-		User.logoutPG();
-
-		User.loginPG(
-			password = "password",
-			userEmailAddress = "user1@liferay.com");
-
-		User.setPasswordByResetLink(
-			newPassword1 = "test",
-			newPassword2 = "test");
-
 		Navigator.openURL();
+
+		User.logoutAndLoginPG(
+			userLoginEmailAddress = "user1@liferay.com",
+			userLoginFullName = "user1 user1");
 
 		ProductMenu.gotoPortlet(
 			category = "Content & Data",

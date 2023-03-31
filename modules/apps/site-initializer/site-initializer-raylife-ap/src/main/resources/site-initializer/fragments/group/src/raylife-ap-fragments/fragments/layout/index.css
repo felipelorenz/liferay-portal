@@ -113,8 +113,8 @@
 }
 
 .ray-sidebar-container .footer-bar .notification-container {
-	height: 24px;
-	width: 24px;
+	height: 50px;
+	width: 50px;
 }
 
 .ray-sidebar-container .footer-bar .indicator-icon {
@@ -197,12 +197,35 @@
 }
 
 .layout-container .notification-panel {
-	height: 100%;
 	opacity: 0;
 	overflow: hidden;
-	overflow-x: none;
-	overflow-y: auto;
 	top: 0;
 	transition: all 0.15s ease-in;
 	width: 0;
+}
+
+.layout-container .notification-sidebar {
+	height: 100%;
+	opacity: 0;
+	overflow-x: none;
+	overflow-y: auto;
+	width: 0px;
+}
+
+.panel-notifications-count {
+	color: #fff;
+	font-size: 0.75rem;
+	font-weight: 600;
+	height: 19px;
+	margin-bottom: -1px;
+}
+
+.badge-danger {
+	background-color: #ec0d6b;
+	color: #fff;
+}
+
+.badge {
+	display: inline-flex;
+	margin-left: 15px;
 }

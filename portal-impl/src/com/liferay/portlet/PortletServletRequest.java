@@ -58,11 +58,10 @@ public class PortletServletRequest extends HttpServletRequestWrapper {
 		super(httpServletRequest);
 
 		_httpServletRequest = httpServletRequest;
-
 		_portletRequest = portletRequest;
 
 		_liferayPortletRequest = LiferayPortletUtil.getLiferayPortletRequest(
-			_portletRequest);
+			portletRequest);
 
 		_pathInfo = pathInfo;
 		_queryString = queryString;

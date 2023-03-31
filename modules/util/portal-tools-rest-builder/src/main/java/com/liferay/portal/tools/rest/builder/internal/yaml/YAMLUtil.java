@@ -71,18 +71,13 @@ public class YAMLUtil {
 	private static final Yaml _YAML_OPEN_API;
 
 	static {
-		Representer representer = new Representer(new DumperOptions());
+		Representer representer = new Representer();
 
 		PropertyUtils propertyUtils = representer.getPropertyUtils();
 
 		propertyUtils.setSkipMissingProperties(true);
 
-		LoaderOptions loaderOptions = new LoaderOptions();
-
-		loaderOptions.setAllowDuplicateKeys(false);
-
-		Constructor configYAMLConstructor = new Constructor(
-			ConfigYAML.class, loaderOptions);
+		Constructor configYAMLConstructor = new Constructor(ConfigYAML.class);
 
 		TypeDescription securityTypeDescription = new TypeDescription(
 			Security.class);
@@ -92,12 +87,15 @@ public class YAMLUtil {
 
 		configYAMLConstructor.addTypeDescription(securityTypeDescription);
 
+		LoaderOptions loaderOptions = new LoaderOptions();
+
+		loaderOptions.setAllowDuplicateKeys(false);
+
 		_YAML_CONFIG = new Yaml(
 			configYAMLConstructor, representer, new DumperOptions(),
 			loaderOptions);
 
-		Constructor openAPIYAMLConstructor = new Constructor(
-			OpenAPIYAML.class, loaderOptions);
+		Constructor openAPIYAMLConstructor = new Constructor(OpenAPIYAML.class);
 
 		TypeDescription itemsTypeDescription = new TypeDescription(Items.class);
 

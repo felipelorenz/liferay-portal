@@ -475,8 +475,8 @@ public class PropsValues {
 	public static final String DATABASE_MYSQL_ENGINE = PropsUtil.get(
 		PropsKeys.DATABASE_MYSQL_ENGINE);
 
-	public static final String DEFAULT_ADMIN_EMAIL_ADDRESS_PREFIX =
-		PropsUtil.get(PropsKeys.DEFAULT_ADMIN_EMAIL_ADDRESS_PREFIX);
+	public static String DEFAULT_ADMIN_EMAIL_ADDRESS_PREFIX = PropsUtil.get(
+		PropsKeys.DEFAULT_ADMIN_EMAIL_ADDRESS_PREFIX);
 
 	public static String DEFAULT_ADMIN_FIRST_NAME = PropsUtil.get(
 		PropsKeys.DEFAULT_ADMIN_FIRST_NAME);
@@ -1497,10 +1497,6 @@ public class PropsValues {
 
 	public static final int NOTIFICATIONS_MAX_EVENTS = GetterUtil.getInteger(
 		PropsUtil.get(PropsKeys.NOTIFICATIONS_MAX_EVENTS));
-
-	public static final int OBJECT_ENTRY_SCRIPT_VARIABLES_VERSION =
-		GetterUtil.getInteger(
-			PropsUtil.get(PropsKeys.OBJECT_ENTRY_SCRIPT_VARIABLES_VERSION));
 
 	public static final int OBJECT_NESTED_FIELDS_MAX_QUERY_DEPTH =
 		GetterUtil.getInteger(

@@ -17,6 +17,9 @@ package com.liferay.redirect.internal.provider;
 import com.liferay.portal.configuration.metatype.bnd.util.ConfigurableUtil;
 import com.liferay.portal.kernel.model.GroupConstants;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
+import com.liferay.redirect.constants.RedirectConstants;
 import com.liferay.redirect.internal.configuration.RedirectPatternConfiguration;
 import com.liferay.redirect.internal.util.PatternUtil;
 import com.liferay.redirect.model.RedirectEntry;
@@ -29,6 +32,7 @@ import java.util.Collections;
 import java.util.Dictionary;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -62,7 +66,7 @@ public class RedirectProviderImpl
 
 	@Override
 	public Redirect getRedirect(
-		long groupId, String friendlyURL, String fullURL) {
+		long groupId, String friendlyURL, String fullURL, String userAgent) {
 
 		if (friendlyURL.contains("/control_panel/manage")) {
 			return null;
@@ -82,6 +86,8 @@ public class RedirectProviderImpl
 				redirectEntry.getDestinationURL(), redirectEntry.isPermanent());
 		}
 
+		userAgent = StringUtil.toLowerCase(userAgent);
+
 		List<RedirectPatternEntry> redirectPatternEntries =
 			_redirectPatternEntries.getOrDefault(
 				groupId, Collections.emptyList());
@@ -89,15 +95,17 @@ public class RedirectProviderImpl
 		for (RedirectPatternEntry redirectPatternEntry :
 				redirectPatternEntries) {
 
-			Pattern pattern = redirectPatternEntry.getPattern();
+			if (_isUserAgentMatch(redirectPatternEntry, userAgent)) {
+				Pattern pattern = redirectPatternEntry.getPattern();
 
-			Matcher matcher = pattern.matcher(friendlyURL);
+				Matcher matcher = pattern.matcher(friendlyURL);
 
-			if (matcher.matches()) {
-				return new RedirectImpl(
-					matcher.replaceFirst(
-						redirectPatternEntry.getDestinationURL()),
-					false);
+				if (matcher.matches()) {
+					return new RedirectImpl(
+						matcher.replaceFirst(
+							redirectPatternEntry.getDestinationURL()),
+						false);
+				}
 			}
 		}
 
@@ -140,6 +148,10 @@ public class RedirectProviderImpl
 			PatternUtil.parse(redirectPatternConfiguration.patternStrings()));
 	}
 
+	protected void setCrawlerUserAgents(String[] crawlerUserAgents) {
+		_crawlerUserAgents = crawlerUserAgents;
+	}
+
 	protected void setRedirectEntryLocalService(
 		RedirectEntryLocalService redirectEntryLocalService) {
 
@@ -152,6 +164,61 @@ public class RedirectProviderImpl
 		_redirectPatternEntries = redirectPatternEntries;
 	}
 
+	private String[] _getCrawlerUserAgents() {
+		if (_crawlerUserAgents == null) {
+			return new String[0];
+		}
+
+		return _crawlerUserAgents;
+	}
+
+	private boolean _isCrawlerUserAgent(String userAgent) {
+		if (Validator.isNull(userAgent)) {
+			return false;
+		}
+
+		for (String crawlerUserAgent : _getCrawlerUserAgents()) {
+			if (userAgent.contains(StringUtil.toLowerCase(crawlerUserAgent))) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	private boolean _isUserAgentMatch(
+		RedirectPatternEntry redirectPatternEntry, String userAgent) {
+
+		if (Validator.isNull(redirectPatternEntry.getUserAgent()) ||
+			Validator.isNull(userAgent) ||
+			Objects.equals(
+				RedirectConstants.USER_AGENT_ALL,
+				redirectPatternEntry.getUserAgent())) {
+
+			return true;
+		}
+
+		boolean crawlerUserAgent = _isCrawlerUserAgent(userAgent);
+
+		if (crawlerUserAgent &&
+			Objects.equals(
+				RedirectConstants.USER_AGENT_BOT,
+				redirectPatternEntry.getUserAgent())) {
+
+			return true;
+		}
+
+		if (!crawlerUserAgent &&
+			Objects.equals(
+				RedirectConstants.USER_AGENT_HUMAN,
+				redirectPatternEntry.getUserAgent())) {
+
+			return true;
+		}
+
+		return false;
+	}
+
 	private void _unmapPid(String pid) {
 		if (_groupIds.containsKey(pid)) {
 			Long groupId = _groupIds.remove(pid);
@@ -160,6 +227,7 @@ public class RedirectProviderImpl
 		}
 	}
 
+	private String[] _crawlerUserAgents;
 	private final Map<String, Long> _groupIds = new ConcurrentHashMap<>();
 
 	@Reference

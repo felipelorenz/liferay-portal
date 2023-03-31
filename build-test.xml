@@ -464,6 +464,8 @@ typeSettings=&#91;&quot;friendlyURLMapping=perico&quot;,&quot;instanceable=false
 
 	<macrodef name="docker-execute">
 		<attribute name="container" />
+		<attribute default="/bin/bash" name="shell.path" />
+
 		<text name="script" />
 
 		<sequential>
@@ -471,19 +473,13 @@ typeSettings=&#91;&quot;friendlyURLMapping=perico&quot;,&quot;instanceable=false
 
 			<echo file="${script.sh.file}"><![CDATA[@{script}]]></echo>
 
-			<get-operating-system-property property.name="operating.system.docker.shell.path" />
-
-			<condition else="/bin/bash" property="docker.shell.path" value="${operating.system.docker.shell.path}">
-				<isset property="operating.system.docker.shell.path" />
-			</condition>
-
 			<execute>
 				<![CDATA[
 					docker exec @{container} mkdir -p /tmp
 
 					docker cp ${script.sh.file} @{container}:/tmp/script.sh
 
-					docker exec @{container} ${docker.shell.path} /tmp/script.sh
+					docker exec @{container} @{shell.path} /tmp/script.sh
 
 					docker exec --user root @{container} rm -f /tmp/script.sh
 				]]>
@@ -4763,10 +4759,6 @@ tell application "Safari" to quit
 							<gradle-execute dir="${project.dir}/modules/core" task="deploy">
 								<arg value="-Dportal.build=true" />
 							</gradle-execute>
-
-							<gradle-execute dir="${project.dir}/modules/apps/petra" task="deploy">
-								<arg value="-Dportal.build=true" />
-							</gradle-execute>
 						</then>
 						<else>
 							<ant antfile="build-dist.xml" inheritAll="false" target="build-dist-tomcat" />
@@ -6876,9 +6868,10 @@ org.apache.catalina.startup.ClassLoaderFactory.level=INFO]]>
 									<then>
 										<sequential>
 											<get-app-server-property property.name="max.log.size.in.mb" />
+											<get-operating-system-property property.name="operating.system.docker.shell.path" />
 											<get-operating-system-property property.name="operating.system.host" />
 
-											<docker-execute container="${operating.system.host}">
+											<docker-execute container="${operating.system.host}" shell.path="${operating.system.docker.shell.path}">
 												chmod +x ${test.app.server.bin.dir}/${app.server.start.executable}
 
 												${test.app.server.bin.dir}/${app.server.start.executable} ${app.server.start.executable.arg.line} | head -c ${app.server.max.log.size}M
@@ -7125,7 +7118,45 @@ ${docker.start.error}</fail>
 					<equals arg1="${database.type}" arg2="db2" />
 				</and>
 				<then>
-					<property name="docker.database.wait.condition">[[ "$(/bin/su - db2inst1 -c '~/sqllib/bin/db2 db2start')" =~ "SQL1026N" ]]</property>
+					<sequential>
+						<property location="db2_wait.sh" name="db2.wait.script" />
+
+						<echo file="${db2.wait.script}">
+							<![CDATA[
+								while [ -z "$(docker logs ${database.host} | grep "Setup has completed.")" ]
+								do
+									echo "Searching for db2 initialization message"
+
+									sleep 5
+								done
+
+								echo "db2 initialization message found"
+							]]>
+						</echo>
+
+						<print-file file.name="${db2.wait.script}" />
+
+						<chmod
+							perm="a+x"
+						>
+							<fileset
+								dir="/opt/dev/projects/github/liferay-portal/"
+								includes="db2_wait.sh"
+							/>
+						</chmod>
+
+						<echo>
+							executing db2_wait.sh
+						</echo>
+
+						<exec executable="/bin/bash">
+							<arg value="${db2.wait.script}" />
+						</exec>
+
+						<delete file="${db2.wait.script}" />
+
+						<property name="docker.database.wait.condition">[[ "$(/bin/su - db2inst1 -c '/database/config/db2inst1/sqllib/bin/db2 db2start')" =~ "SQL1026N" ]]</property>
+					</sequential>
 				</then>
 				<elseif>
 					<equals arg1="${database.type}" arg2="db2" />
@@ -7521,7 +7552,7 @@ ${docker.start.error}</fail>
 
 					docker kill @{name}
 
-					docker rm -f @{name}
+					docker rm -fv @{name}
 
 					docker network disconnect -f ${docker.network.name} @{name} 2>/dev/null || true
 				]]>
@@ -10044,6 +10075,44 @@ org.apache.catalina.tribes.level = FINE]]>
 				</unzip>
 			</then>
 		</if>
+	</target>
+
+	<target name="deploy-workspaces">
+		<for list="${workspaces.includes}" param="workspace.name">
+			<sequential>
+				<local name="workspace.name" />
+
+				<antelope:stringutil property="workspace.name" string="@{workspace.name}">
+					<antelope:trim />
+				</antelope:stringutil>
+
+				<property location="${project.dir}/workspaces/${workspace.name}" name="workspace.dir" />
+
+				<if>
+					<available file="${workspace.dir}" />
+					<then>
+						<execute dir="${workspace.dir}">
+							./gradlew clean assemble
+						</execute>
+
+						<for param="client.extension.zip.file">
+							<path>
+								<fileset
+									dir="${workspace.dir}/client-extensions"
+									includes="**/dist/*.zip"
+								/>
+							</path>
+							<sequential>
+								<copy
+									file="@{client.extension.zip.file}"
+									todir="${liferay.home}/deploy"
+								/>
+							</sequential>
+						</for>
+					</then>
+				</if>
+			</sequential>
+		</for>
 	</target>
 
 	<target name="execute-groovy-script-from-gogo-shell">
@@ -14903,7 +14972,7 @@ mail.send.blacklist=</echo>
 		<if>
 			<equals arg1="${cas.enabled}" arg2="true" />
 			<then>
-				<ant antfile="build-test-authentication.xml" target="setup-cas" />
+				<ant antfile="build-test-cas.xml" target="setup-cas" />
 			</then>
 		</if>
 
@@ -14921,9 +14990,9 @@ mail.send.blacklist=</echo>
 		<if>
 			<equals arg1="${openam.enabled}" arg2="true" />
 			<then>
-				<ant antfile="build-test-authentication.xml" target="delete-openam-config" />
+				<ant antfile="build-test-openam.xml" target="delete-openam-config" />
 
-				<ant antfile="build-test-authentication.xml" target="setup-openam" />
+				<ant antfile="build-test-openam.xml" target="setup-openam" />
 			</then>
 		</if>
 
@@ -15019,6 +15088,10 @@ mail.send.blacklist=</echo>
 		<antcall target="hot-deploy-osgi-apps" />
 
 		<antcall target="deploy-osgi-modules" />
+
+		<get-testcase-property property.name="workspaces.includes" />
+
+		<antcall if:set="workspaces.includes" target="deploy-workspaces" />
 
 		<get-testcase-property property.name="liferay.data.guard.enabled" />
 
@@ -15438,7 +15511,7 @@ mail.send.blacklist=</echo>
 		<if>
 			<equals arg1="${openam.enabled}" arg2="true" />
 			<then>
-				<ant antfile="build-test-authentication.xml" target="delete-openam-config" />
+				<ant antfile="build-test-openam.xml" target="delete-openam-config" />
 			</then>
 		</if>
 

@@ -1814,9 +1814,23 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 		defaultUser.setPassword("password");
 		defaultUser.setScreenName(String.valueOf(defaultUser.getUserId()));
 		defaultUser.setEmailAddress("default@" + company.getMx());
-		defaultUser.setLanguageId(
-			LocaleUtil.toLanguageId(
-				LocaleUtil.fromLanguageId(PropsValues.COMPANY_DEFAULT_LOCALE)));
+
+		Locale locale = null;
+
+		if (Validator.isNotNull(PropsValues.COMPANY_DEFAULT_LOCALE)) {
+			locale = LocaleUtil.fromLanguageId(
+				PropsValues.COMPANY_DEFAULT_LOCALE);
+		}
+		else {
+			User defaultCompanyDefaultUser = _userLocalService.fetchDefaultUser(
+				PortalUtil.getDefaultCompanyId());
+
+			if (defaultCompanyDefaultUser != null) {
+				locale = defaultCompanyDefaultUser.getLocale();
+			}
+		}
+
+		defaultUser.setLanguageId(LocaleUtil.toLanguageId(locale));
 
 		if (Validator.isNotNull(PropsValues.COMPANY_DEFAULT_TIME_ZONE)) {
 			defaultUser.setTimeZoneId(PropsValues.COMPANY_DEFAULT_TIME_ZONE);
@@ -1924,9 +1938,39 @@ public class CompanyLocalServiceImpl extends CompanyLocalServiceBaseImpl {
 				company.getCompanyId(), true);
 
 			if (defaultUser != null) {
+				boolean modified = false;
+
 				if (!defaultUser.isAgreedToTermsOfUse()) {
 					defaultUser.setAgreedToTermsOfUse(true);
 
+					modified = true;
+				}
+
+				if (defaultUser.getLocale() != companyDefaultLocale) {
+					defaultUser.setLanguageId(
+						LocaleUtil.toLanguageId(companyDefaultLocale));
+
+					String greeting = LanguageUtil.format(
+						defaultUser.getLocale(), "welcome", null, false);
+
+					defaultUser.setGreeting(greeting + StringPool.EXCLAMATION);
+
+					modified = true;
+				}
+
+				if (Validator.isNotNull(
+						PropsValues.COMPANY_DEFAULT_TIME_ZONE) &&
+					!Objects.equals(
+						defaultUser.getTimeZoneId(),
+						PropsValues.COMPANY_DEFAULT_TIME_ZONE)) {
+
+					defaultUser.setTimeZoneId(
+						PropsValues.COMPANY_DEFAULT_TIME_ZONE);
+
+					modified = true;
+				}
+
+				if (modified) {
 					defaultUser = _userPersistence.update(defaultUser);
 				}
 			}

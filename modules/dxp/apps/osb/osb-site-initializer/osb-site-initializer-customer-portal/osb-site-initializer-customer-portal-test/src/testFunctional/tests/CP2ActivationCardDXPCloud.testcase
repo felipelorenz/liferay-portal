@@ -103,16 +103,14 @@ definition {
 		}
 
 		task ("Delete the entries and objects created") {
-			CP2Utils.clearCloudEntries(
-				position = 1,
-				status = "Active");
+			CustomerPortal.clearStatus(status = "Active");
 
 			CP2Utils.deleteSpecificObjectEntry(
-				email = "ERC-001",
+				entry = "ERC-001",
 				portlet = "DXP Cloud Environments");
 
 			CP2Utils.deleteSpecificObjectEntry(
-				email = "test@liferay.com",
+				entry = "test@liferay.com",
 				portlet = "Admins DXP Cloud");
 		}
 	}
@@ -184,20 +182,18 @@ definition {
 		//task ("Assert the card legend change") {
 		//	AssertElementPresent(
 		//		locator1 = "CustomerPortalSite#CARD_SUBSCRIPTION",
-		//		title = "Your LXC - SM environments are being set up and will be available soon");
+		//		key_text = "Your LXC - SM environments are being set up and will be available soon");
 		//}
 
 		task ("Delete the entries and objects created") {
-			CP2Utils.clearCloudEntries(
-				position = 1,
-				status = "In-Progress");
+			CustomerPortal.clearStatus(status = "In-Progress");
 
 			CP2Utils.deleteSpecificObjectEntry(
-				email = "ERC-001",
+				entry = "ERC-001",
 				portlet = "DXP Cloud Environments");
 
 			CP2Utils.deleteSpecificObjectEntry(
-				email = "test@liferay.com",
+				entry = "test@liferay.com",
 				portlet = "Admins DXP Cloud");
 		}
 	}

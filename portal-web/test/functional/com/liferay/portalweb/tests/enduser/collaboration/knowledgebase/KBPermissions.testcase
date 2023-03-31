@@ -68,7 +68,7 @@ definition {
 	@priority = 4
 	@refactorneeded
 	test ViewSuggestionsWithPermissions {
-		property custom.properties = "jsonws.web.service.paths.excludes=${line.separator}feature.flag.LPS-156421=true";
+		property custom.properties = "jsonws.web.service.paths.excludes=";
 
 		JSONUser.addUser(
 			userEmailAddress = "user1@liferay.com",
@@ -131,9 +131,7 @@ definition {
 
 		KBArticle.openPageTreePanel(section = "Suggestions");
 
-		KBArticle.viewDefaultCP(
-			featureFlag = "true",
-			suggestions = "true");
+		KBArticle.viewDefaultCP(suggestions = "true");
 
 		Navigator.gotoPage(pageName = "Knowledge Base Display Page");
 

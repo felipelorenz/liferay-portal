@@ -57,7 +57,6 @@ import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.service.ServiceContext;
-import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.CalendarFactoryUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
@@ -74,13 +73,13 @@ import java.lang.reflect.Method;
 
 import java.math.BigDecimal;
 
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Stream;
+import java.util.Set;
 
 import javax.ws.rs.HttpMethod;
 import javax.ws.rs.core.MultivaluedMap;
@@ -439,11 +438,11 @@ public class OrderResourceImpl extends BaseOrderResourceImpl {
 				order.getOrderTypeExternalReferenceCode(),
 				contextCompany.getCompanyId());
 
-		if (commerceOrderType != null) {
-			return commerceOrderType.getCommerceOrderTypeId();
+		if (commerceOrderType == null) {
+			return 0;
 		}
 
-		return 0;
+		return commerceOrderType.getCommerceOrderTypeId();
 	}
 
 	private Map<String, Serializable> _getExpandoBridgeAttributes(
@@ -482,11 +481,9 @@ public class OrderResourceImpl extends BaseOrderResourceImpl {
 
 	private Method _getMethod(Class<?> clazz, String methodName) {
 		for (Method method : clazz.getMethods()) {
-			if (!methodName.equals(method.getName())) {
-				continue;
+			if (methodName.equals(method.getName())) {
+				return method;
 			}
-
-			return method;
 		}
 
 		return null;
@@ -495,53 +492,53 @@ public class OrderResourceImpl extends BaseOrderResourceImpl {
 	private String[] _getOrderItemExternalReferenceCodes(
 		OrderItem[] orderItems) {
 
-		Stream<OrderItem> stream = Arrays.stream(orderItems);
+		Set<String> orderItemExternalReferenceCodes = new HashSet<>();
 
-		String[] strings = stream.map(
-			OrderItem::getExternalReferenceCode
-		).filter(
-			Objects::nonNull
-		).distinct(
-		).toArray(
-			String[]::new
-		);
+		for (OrderItem orderItem : orderItems) {
+			String externalReferenceCode = orderItem.getExternalReferenceCode();
 
-		if (ArrayUtil.isEmpty(strings)) {
-			strings = null;
+			if (Objects.nonNull(externalReferenceCode)) {
+				orderItemExternalReferenceCodes.add(externalReferenceCode);
+			}
 		}
 
-		return strings;
+		if (orderItemExternalReferenceCodes.isEmpty()) {
+			return null;
+		}
+
+		return transformToArray(
+			orderItemExternalReferenceCodes,
+			orderItemExternalReferenceCode -> orderItemExternalReferenceCode,
+			String.class);
 	}
 
 	private Long[] _getOrderItemIds(OrderItem[] orderItems) {
-		Stream<OrderItem> stream = Arrays.stream(orderItems);
+		Set<Long> orderItemIds = new HashSet<>();
 
-		Long[] longs = stream.map(
-			OrderItem::getId
-		).filter(
-			Objects::nonNull
-		).distinct(
-		).toArray(
-			Long[]::new
-		);
+		for (OrderItem orderItem : orderItems) {
+			Long id = orderItem.getId();
 
-		if (ArrayUtil.isEmpty(longs)) {
-			longs = new Long[] {0L};
+			if (Objects.nonNull(id)) {
+				orderItemIds.add(id);
+			}
 		}
 
-		return longs;
+		if (orderItemIds.isEmpty()) {
+			return new Long[] {0L};
+		}
+
+		return transformToArray(
+			orderItemIds, orderItemId -> orderItemId, Long.class);
 	}
 
 	private String _getVersion(UriInfo uriInfo) {
-		String version = "";
-
 		List<String> matchedURIs = uriInfo.getMatchedURIs();
 
-		if (!matchedURIs.isEmpty()) {
-			version = matchedURIs.get(matchedURIs.size() - 1);
+		if (matchedURIs.isEmpty()) {
+			return "";
 		}
 
-		return version;
+		return matchedURIs.get(matchedURIs.size() - 1);
 	}
 
 	private CommerceOrder _updateNestedResources(

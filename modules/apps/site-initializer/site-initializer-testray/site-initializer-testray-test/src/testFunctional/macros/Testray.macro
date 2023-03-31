@@ -225,7 +225,7 @@ definition {
 			numberItems = 20,
 			valuePagination = 150);
 
-		TestrayContextMenu.clickContextMenuProjects(name = ${nameProject});
+		TestrayContextMenu.clickContextMenuProjects(name = ${projectName});
 
 		TestrayContextMenu.selectItemFromProjectsContextMenu(item = "Delete");
 	}
@@ -360,6 +360,12 @@ definition {
 			value1 = ${description});
 
 		Click(locator1 = "TestrayManage#SAVE_BUTTON");
+	}
+
+	macro viewAlert {
+		var key_alertText = ${alertText};
+
+		AssertVisible(locator1 = "CustomerPortalSite#ALERT_NOTIFICATIONS");
 	}
 
 	macro viewErrorMessage {

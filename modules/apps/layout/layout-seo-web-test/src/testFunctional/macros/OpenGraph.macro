@@ -13,8 +13,7 @@ definition {
 	macro clearImage {
 		Click(
 			key_fieldLabel = "Image",
-			key_text = "Clear",
-			locator1 = "Button#ANY_WITH_LABEL");
+			locator1 = "Button#IMAGE_CLEAR");
 	}
 
 	macro configureOpenGraph {
@@ -48,13 +47,11 @@ definition {
 
 			WaitForVisible(
 				key_fieldLabel = "Image",
-				key_text = "Select",
-				locator1 = "Button#ANY_WITH_LABEL");
+				locator1 = "Button#IMAGE_SELECTOR");
 
 			Click(
 				key_fieldLabel = "Image",
-				key_text = "Select",
-				locator1 = "Button#ANY_WITH_LABEL");
+				locator1 = "Button#IMAGE_SELECTOR");
 
 			AssertTextEquals(
 				locator1 = "Modal#HEADER",
@@ -238,8 +235,7 @@ definition {
 
 			AssertElementPresent(
 				key_fieldLabel = "Image",
-				key_text = "Select",
-				locator1 = "Button#ANY_WITH_LABEL");
+				locator1 = "Button#IMAGE_SELECTOR");
 		}
 	}
 

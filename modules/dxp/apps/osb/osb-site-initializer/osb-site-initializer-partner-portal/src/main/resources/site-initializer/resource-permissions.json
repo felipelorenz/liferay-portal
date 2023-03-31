@@ -37,6 +37,46 @@
 		"actionIds": [
 			"VIEW"
 		],
+		"resourceName": "com.liferay.portal.kernel.model.Role",
+		"roleName": "Channel General Manager",
+		"scope": "1"
+	},
+	{
+		"actionIds": [
+			"VIEW"
+		],
+		"resourceName": "com.liferay.portal.kernel.model.Role",
+		"roleName": "Channel Account Manager",
+		"scope": "1"
+	},
+	{
+		"actionIds": [
+			"VIEW"
+		],
+		"resourceName": "com.liferay.portal.kernel.model.Role",
+		"roleName": "Channel Regional Marketing Manager",
+		"scope": "1"
+	},
+	{
+		"actionIds": [
+			"VIEW"
+		],
+		"resourceName": "com.liferay.portal.kernel.model.Role",
+		"roleName": "Channel Global Marketing Manager",
+		"scope": "1"
+	},
+	{
+		"actionIds": [
+			"VIEW"
+		],
+		"resourceName": "com.liferay.portal.kernel.model.Role",
+		"roleName": "Channel Finance Manager",
+		"scope": "1"
+	},
+	{
+		"actionIds": [
+			"VIEW"
+		],
 		"primKey": "[$OBJECT_DEFINITION_ID:MDFClaim$]",
 		"resourceName": "com.liferay.object.model.ObjectDefinition",
 		"roleName": "User",
@@ -93,6 +133,14 @@
 			"ADD_OBJECT_ENTRY"
 		],
 		"resourceName": "com.liferay.object#[$OBJECT_DEFINITION_ID:Budget$]",
+		"roleName": "User",
+		"scope": "1"
+	},
+	{
+		"actionIds": [
+			"ADD_SUBFOLDER"
+		],
+		"resourceName": "com.liferay.document.library.kernel.model.DLFolder",
 		"roleName": "User",
 		"scope": "1"
 	},

@@ -1387,9 +1387,8 @@ definition {
 	@description = "This is a use case for LPS-50757."
 	@priority = 4
 	test EditAllFormFieldsTypesUsedBySystemSettings {
-		property portal.acceptance = "quarantine";
-		property portal.release = "quarantine";
-		property portal.upstream = "quarantine";
+		property portal.release = "true";
+		property portal.upstream = "true";
 		property test.name.skip.portal.instance = "Forms#EditAllFormFieldsTypesUsedBySystemSettings";
 
 		Navigator.openURL();
@@ -1520,16 +1519,16 @@ definition {
 		FormFields.viewTextField(
 			fieldHelpText = "Configure how long a lock is held before releasing due to suspected deadlock.",
 			fieldLabel = "Lock Timeout Milliseconds",
-			fieldName = "ds.lock.timeout.milliseconds");
+			fieldName = "Lock Timeout Milliseconds");
 
 		Refresh();
 
-		FormFields.editTextWithBackspace(fieldName = "ds.lock.timeout.milliseconds");
+		FormFields.editTextWithBackspace(fieldName = "Lock Timeout Milliseconds");
 
 		Button.clickSave();
 
 		FormFields.viewFieldValidationErrorMessage(
-			fieldName = "ds.lock.timeout.milliseconds",
+			fieldName = "Lock Timeout Milliseconds",
 			fieldValidationErrorMessage = "This field is required.");
 
 		SystemSettings.exitEditConfiguration();
@@ -2025,7 +2024,6 @@ definition {
 	@priority = 5
 	test ShouldHaveAtLeastOneField {
 		property portal.acceptance = "true";
-		property portal.upstream = "quarantine";
 
 		FormsAdmin.addForm();
 

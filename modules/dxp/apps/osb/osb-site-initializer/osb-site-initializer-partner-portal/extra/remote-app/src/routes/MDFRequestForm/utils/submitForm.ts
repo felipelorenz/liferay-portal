@@ -15,6 +15,7 @@ import {PRMPageRoute} from '../../../common/enums/prmPageRoute';
 import mdfRequestDTO from '../../../common/interfaces/dto/mdfRequestDTO';
 import LiferayPicklist from '../../../common/interfaces/liferayPicklist';
 import MDFRequest from '../../../common/interfaces/mdfRequest';
+import Role from '../../../common/interfaces/role';
 import {Liferay} from '../../../common/services/liferay';
 import createMDFRequestActivities from '../../../common/services/liferay/object/activity/createMDFRequestActivities';
 import updateMDFRequestActivities from '../../../common/services/liferay/object/activity/updateMDFRequestActivities';
@@ -24,7 +25,7 @@ import {ResourceName} from '../../../common/services/liferay/object/enum/resourc
 import createMDFRequest from '../../../common/services/liferay/object/mdf-requests/createMDFRequest';
 import updateMDFRequest from '../../../common/services/liferay/object/mdf-requests/updateMDFRequest';
 import {Status} from '../../../common/utils/constants/status';
-import getTotalMDFRequest from '../../../common/utils/getTotalMDFRequest';
+import {isLiferayManager} from '../../../common/utils/isLiferayManager';
 import createMDFRequestActivitiesProxyAPI from './createMDFRequestActivitiesProxyAPI';
 import createMDFRequestProxyAPI from './createMDFRequestProxyAPI';
 
@@ -32,18 +33,19 @@ export default async function submitForm(
 	values: MDFRequest,
 	formikHelpers: Omit<FormikHelpers<MDFRequest>, 'setFieldValue'>,
 	siteURL: string,
-	currentRequestStatus?: LiferayPicklist
+	currentRequestStatus?: LiferayPicklist,
+	roles?: Role[]
 ) {
 	formikHelpers.setSubmitting(true);
 
-	if (currentRequestStatus) {
+	if (!values.id) {
 		values.mdfRequestStatus = currentRequestStatus;
 	}
 
-	const totalMDFRequestAmount = getTotalMDFRequest(values.activities);
-
 	if (
-		totalMDFRequestAmount >= 15000 &&
+		roles &&
+		!isLiferayManager(roles) &&
+		values.totalMDFRequestAmount >= 15000 &&
 		values.mdfRequestStatus !== Status.DRAFT
 	) {
 		values.mdfRequestStatus = Status.MARKETING_DIRECTOR_REVIEW;

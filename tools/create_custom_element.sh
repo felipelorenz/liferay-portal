@@ -6,7 +6,7 @@ function check_usage {
 		echo "Usage: create_custom_element.sh <custom-element-name> <js-framework>"
 		echo ""
 		echo "  custom-element-name: liferay-hello-world"
-		echo "  js-framework: angular, react, vue2, vue3"
+		echo "  js-framework: angular, react, vue2, vite-vue3"
 		echo ""
 		echo "Example: create_custom_element.sh liferay-hello-world react"
 
@@ -179,12 +179,27 @@ function create_vue_2_app {
 
 	vue create ${CUSTOM_ELEMENT_NAME} --default
 
-	sed -i -e "s|<div id=\"app\"></div>|<${CUSTOM_ELEMENT_NAME}></${CUSTOM_ELEMENT_NAME}>|g" ${CUSTOM_ELEMENT_NAME}/public/index.html
 	sed -i -e "s|#app|${CUSTOM_ELEMENT_NAME}|g" ${CUSTOM_ELEMENT_NAME}/src/main.js
+	sed -i -e "s|<div id=\"app\"></div>|<${CUSTOM_ELEMENT_NAME}></${CUSTOM_ELEMENT_NAME}>|g" ${CUSTOM_ELEMENT_NAME}/public/index.html
 }
 
-function create_vue_3_app {
-	echo ""
+function create_vite_vue_3_app {
+	check_utils yarn
+
+	npm create vite@latest ${CUSTOM_ELEMENT_NAME} -- --template vue
+
+	cd ${CUSTOM_ELEMENT_NAME}
+
+	sed -i -e "s|"./assets/vue.svg"|"https://github.com/vuejs.png"|g" src/App.vue
+	sed -i -e "s|"/vite.svg"|"https://github.com/vitejs.png"|g" src/App.vue
+	sed -i -e "s|#app|${CUSTOM_ELEMENT_NAME}|g" src/style.css
+	sed -i -e "s|<div id=\"app\"></div>|<${CUSTOM_ELEMENT_NAME}></${CUSTOM_ELEMENT_NAME}>|g" index.html
+	sed -i -e "s|display: flex;|display: block;|g" src/style.css
+	sed -i -e "s|mount('#app')|mount('${CUSTOM_ELEMENT_NAME}')|g" src/main.js
+
+	rm -f index.html-e src/App.vue-e src/main.js-e src/style.css-e
+
+	yarn
 }
 
 function main {
@@ -210,9 +225,9 @@ function main {
 	elif [ "${2}" == "vue2" ]
 	then
 		create_vue_2_app
-	elif [ "${2}" == "vue3" ]
+	elif [ "${2}" == "vite-vue3" ]
 	then
-		create_vue_3_app
+		create_vite_vue_3_app
 	else
 		echo "Unknown JavaScript framework: ${2}."
 
@@ -450,11 +465,11 @@ EOF
 
 function write_react_client_extension {
 	echo "assemble:" > client-extension.yaml
-	echo "    - from: build" >> client-extension.yaml
+	echo "    - from: build/static" >> client-extension.yaml
 	echo "      into: static" >> client-extension.yaml
 	echo "${CUSTOM_ELEMENT_NAME}:" >> client-extension.yaml
 	echo "    cssURLs:" >> client-extension.yaml
-	echo "        - static/css/main.*.css" >> client-extension.yaml
+	echo "        - css/main.*.css" >> client-extension.yaml
 	echo "    friendlyURLMapping: ${CUSTOM_ELEMENT_NAME}" >> client-extension.yaml
 	echo "    htmlElementName: ${CUSTOM_ELEMENT_NAME}" >> client-extension.yaml
 	echo "    instanceable: false" >> client-extension.yaml
@@ -462,7 +477,7 @@ function write_react_client_extension {
 	echo "    portletCategoryName: category.client-extensions" >> client-extension.yaml
 	echo "    type: customElement" >> client-extension.yaml
 	echo "    urls:" >> client-extension.yaml
-	echo "        - static/js/main.*.js" >> client-extension.yaml
+	echo "        - js/main.*.js" >> client-extension.yaml
 	echo -n "    useESM: true" >> client-extension.yaml
 }
 

@@ -125,7 +125,13 @@ export function getApplicationByExternalReferenceCode(
 	);
 }
 
-export function getApplicationsById(id: number) {
+export function getApplicationsById(id: number, fields?: string) {
+	if (fields) {
+		return axios.get(
+			`${DeliveryAPI}/?filter=id eq '${id}'&fields=${fields}`
+		);
+	}
+
 	return axios.get(`${DeliveryAPI}/?filter=id eq '${id}'`);
 }
 

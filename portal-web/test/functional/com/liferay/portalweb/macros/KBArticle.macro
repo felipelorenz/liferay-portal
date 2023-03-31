@@ -208,10 +208,16 @@ definition {
 			if (isSet(extendedMinutes)) {
 				if (isSet(getExpirationDateByPortal)) {
 					var expirationDateHour = selenium.getAttribute("//input[contains(@id,'expirationDateHour')]@value");
-					var expirationDateAmpm = selenium.getAttribute("//input[contains(@id,'expirationDateAmPm')]@value");
-					var expirationDateAmpm = StringUtil.replace(${displayDateAmpm}, 0, "AM");
-					var expirationDateAmpm = StringUtil.replace(${displayDateAmpm}, 1, "PM");
+					var expirationDateAmpmValue = selenium.getAttribute("//input[contains(@id,'expirationDateAmPm')]@value");
 					var expirationDateMinute = selenium.getAttribute("//input[contains(@id,'expirationDateMinute')]@value");
+
+					if (${expirationDateAmpmValue} == 0) {
+						var expirationDateAmpm = "AM";
+					}
+
+					if (${expirationDateAmpmValue} == 1) {
+						var expirationDateAmpm = "PM";
+					}
 
 					var expirationDateMinuteFuture = ${expirationDateMinute} + ${extendedMinutes};
 
@@ -761,12 +767,6 @@ definition {
 			value1 = ${kbDisplayPreviousArticle});
 	}
 
-	macro gotoSuggestionsNavigationCP {
-		AssertClick(
-			locator1 = "KnowledgeBase#ADMIN_TABS_SUGGESTIONS",
-			value1 = "Suggestions");
-	}
-
 	macro gotoViaKBAdminCP {
 		var key_kbArticleTitle = ${kbArticleTitle};
 
@@ -890,10 +890,6 @@ definition {
 			WaitForVisible(locator1 = "KnowledgeBase#PAGE_TREE_SUGGESTIONS");
 
 			Click(locator1 = "KnowledgeBase#PAGE_TREE_SUGGESTIONS");
-
-			if (IsElementNotPresent(key_header = ${section}, locator1 = "KnowledgeBase#PAGE_TREE_PANEL_HEADER")) {
-				Click.javaScriptClick(locator1 = "KnowledgeBase#PAGE_TREE_SUGGESTIONS");
-			}
 		}
 	}
 
@@ -989,15 +985,24 @@ definition {
 	macro searchForKB {
 		var key_knowledgeBaseName = ${knowledgeBaseName};
 
-		Click(locator1 = "KnowledgeBase#SEARCH_FIELD");
+		if (isSet(searchFromCenterPanel)) {
+			Type(
+				locator1 = "TextInput#SITE_SEARCH_KEYWORDS",
+				value1 = ${knowledgeBaseName});
 
-		Type(
-			locator1 = "KnowledgeBase#SEARCH_FIELD",
-			value1 = ${knowledgeBaseName});
+			KeyPress(
+				locator1 = "TextInput#SITE_SEARCH_KEYWORDS",
+				value1 = "\RETURN");
+		}
+		else {
+			Type(
+				locator1 = "KnowledgeBase#SEARCH_FIELD",
+				value1 = ${knowledgeBaseName});
 
-		KeyPress(
-			locator1 = "TextInput#SEARCH",
-			value1 = "\RETURN");
+			KeyPress(
+				locator1 = "KnowledgeBase#SEARCH_FIELD",
+				value1 = "\RETURN");
+		}
 	}
 
 	macro selectAllCP {
@@ -1454,12 +1459,6 @@ definition {
 					value1 = ${kbArticleTitle});
 			}
 
-			if (isSet(kbStatus)) {
-				AssertTextEquals(
-					locator1 = "KnowledgeBase#ARTICLE_TABLE_ARTICLE_STATUS",
-					value1 = ${kbStatus});
-			}
-
 			AssertClick(
 				locator1 = "KnowledgeBase#DESCRIPTIVE_VIEW_ARTICLE_TITLE",
 				value1 = ${kbArticleTitle});
@@ -1476,15 +1475,22 @@ definition {
 			}
 
 			if (isSet(kbStatus)) {
-				AssertTextEquals(
-					key_kbArticleStatus = ${kbStatus},
-					locator1 = "WorkflowKnowledgeBaseArticle#ARTICLE_PREVIEW_ARTICLE_STATUS",
+				if (IsElementNotPresent(locator1 = "DocumentsAndMedia#SIDEBAR_INFO_ACTIVE")) {
+					ManagementBar.clickInfo();
+				}
+
+				AssertTextEquals.assertPartialText(
+					locator1 = "Message#WORKFLOW_STATUS",
 					value1 = ${kbStatus});
 			}
 
 			if (isSet(versionNumber)) {
-				AssertTextEquals(
-					locator1 = "KnowledgeBase#ARTICLE_PREVIEW_VERSION_NUMBER",
+				if (IsElementNotPresent(locator1 = "DocumentsAndMedia#SIDEBAR_INFO_ACTIVE")) {
+					ManagementBar.clickInfo();
+				}
+
+				AssertTextEquals.assertPartialText(
+					locator1 = "KnowledgeBase#ARTICLE_VERSION_NUMBER",
 					value1 = ${versionNumber});
 			}
 
@@ -1583,31 +1589,24 @@ definition {
 	}
 
 	macro viewDefaultCP {
-		if (isSet(featureFlag)) {
-			if (isSet(defaultHome)) {
-				AssertTextEquals(
-					locator1 = "Message#EMPTY_INFO_TAGLIB_TITLE",
-					value1 = "Knowledge base is empty.");
-			}
-			else if (isSet(suggestions)) {
-				AssertTextEquals.assertPartialText(
-					locator1 = "Message#EMPTY_INFO",
-					value1 = "There are no suggestions.");
-			}
-			else {
-				AssertTextEquals(
-					locator1 = "Message#EMPTY_INFO_TAGLIB_TITLE",
-					value1 = "This folder is empty.");
-			}
+		if (isSet(newFolder)) {
+			AssertTextEquals(
+				locator1 = "Message#EMPTY_INFO_TAGLIB_TITLE",
+				value1 = "This folder is empty.");
 		}
-		else {
+		else if (isSet(suggestions)) {
 			AssertTextEquals.assertPartialText(
 				locator1 = "Message#EMPTY_INFO",
-				value1 = "No articles were found.");
+				value1 = "There are no suggestions.");
+		}
+		else {
+			AssertTextEquals(
+				locator1 = "Message#EMPTY_INFO_TAGLIB_TITLE",
+				value1 = "Knowledge base is empty.");
+		}
 
-			if (isSet(disabledActionToolbar)) {
-				AssertElementPresent(locator1 = "TextInput#SEARCH_DISABLED");
-			}
+		if (isSet(disabledActionToolbar)) {
+			AssertElementPresent(locator1 = "TextInput#SEARCH_DISABLED");
 		}
 
 		AssertElementNotPresent(locator1 = "KnowledgeBase#ARTICLE_TABLE_KB_GENERIC");

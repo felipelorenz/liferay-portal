@@ -14,6 +14,7 @@
 
 import {useEffect, useState} from 'react';
 
+import ActionDetail from '../../../../common/components/action-detail/action-content';
 import MultiSteps from '../../../../common/components/multi-steps';
 import Summary from '../../../../common/components/summary';
 import {getClaimsData} from '../../../../common/services';
@@ -21,6 +22,7 @@ import {setFirstLetterUpperCase} from '../../../../common/utils';
 import {CONSTANTS} from '../../../../common/utils/constants';
 import {currencyFormatter} from '../../../../common/utils/currencyFormatter';
 import {dateFormatter} from '../../../../common/utils/dateFormatter';
+import ClaimActionComponent from './claims-action-details';
 
 import './index.scss';
 import {ClaimDetailDataType, ClaimType} from './Types';
@@ -41,14 +43,28 @@ const ClaimDetails = () => {
 
 	const [claimData, setClaimData] = useState<ClaimType>();
 
-	const [isClaimSettled, setIsClaimSettled] = useState<boolean>(false);
+	const [isClaimSettled, setIsClaimSettled] = useState<boolean>();
+
+	const handleSetStepTitle = (title: string) => {
+		const claimStatus = CONSTANTS.CLAIM_STATUS[title].NAME;
+
+		const splittedUpperCaseCharacter = setFirstLetterUpperCase(claimStatus)
+			.split(/(?=[A-Z])/)
+			.join(' ');
+
+		if (claimStatus === 'approved' || claimStatus === 'repair') {
+			setFirstLetterUpperCase(claimStatus);
+		}
+
+		return splittedUpperCaseCharacter;
+	};
 
 	const steps = [
 		{
 			active: currentStep === STEP.CLAIMSUBMITTED,
 			complete: currentStep > STEP.CLAIMSUBMITTED,
 			show: true,
-			title: setFirstLetterUpperCase(
+			title: handleSetStepTitle(
 				CONSTANTS.CLAIM_STATUS['claimSubmitted'].NAME
 			),
 		},
@@ -56,7 +72,7 @@ const ClaimDetails = () => {
 			active: currentStep === STEP.ININVESTIGATION,
 			complete: currentStep > STEP.ININVESTIGATION,
 			show: true,
-			title: setFirstLetterUpperCase(
+			title: handleSetStepTitle(
 				CONSTANTS.CLAIM_STATUS['inInvestigation'].NAME
 			),
 		},
@@ -64,7 +80,7 @@ const ClaimDetails = () => {
 			active: currentStep === STEP.INESTIMATION,
 			complete: currentStep > STEP.INESTIMATION,
 			show: true,
-			title: setFirstLetterUpperCase(
+			title: handleSetStepTitle(
 				CONSTANTS.CLAIM_STATUS['inEstimation'].NAME
 			),
 		},
@@ -72,23 +88,19 @@ const ClaimDetails = () => {
 			active: currentStep === STEP.APPROVED,
 			complete: currentStep > STEP.APPROVED,
 			show: true,
-			title: setFirstLetterUpperCase(
-				CONSTANTS.CLAIM_STATUS['approved'].NAME
-			),
+			title: handleSetStepTitle(CONSTANTS.CLAIM_STATUS['approved'].NAME),
 		},
 		{
 			active: currentStep === STEP.REPAIR,
 			complete: currentStep > STEP.REPAIR,
 			show: true,
-			title: setFirstLetterUpperCase(
-				CONSTANTS.CLAIM_STATUS['repair'].NAME
-			),
+			title: handleSetStepTitle(CONSTANTS.CLAIM_STATUS['repair'].NAME),
 		},
 		{
 			active: currentStep === STEP.PEDDINGSETTLEMENT,
 			complete: currentStep > STEP.PEDDINGSETTLEMENT,
 			show: true,
-			title: setFirstLetterUpperCase(
+			title: handleSetStepTitle(
 				CONSTANTS.CLAIM_STATUS['pendingSettlement'].NAME
 			),
 		},
@@ -110,9 +122,9 @@ const ClaimDetails = () => {
 
 				const claimStatus = claimData?.claimStatus?.key;
 
-				if (claimStatus === 'settled') {
-					setIsClaimSettled(true);
-				}
+				claimStatus === 'settled'
+					? setIsClaimSettled(true)
+					: setIsClaimSettled(false);
 
 				selectCurrentStep(claimStatus);
 
@@ -131,6 +143,8 @@ const ClaimDetails = () => {
 	const fullName = applicationData?.firstName
 		? `${applicationData?.firstName} ${applicationData?.lastName}`
 		: applicationData?.firstName;
+
+	const claimStatus = claimData?.claimStatus.key;
 
 	const summaryClaimData: ClaimDetailDataType[] = [
 		{
@@ -184,25 +198,41 @@ const ClaimDetails = () => {
 	];
 
 	return (
-		<div className="claim-details-container">
-			{!isClaimSettled && (
-				<div className="align-items-center bg-neutral-0 d-flex justify-content-center multi-steps-content">
-					<MultiSteps steps={steps.filter((step) => step.show)} />
+		<>
+			{claimData && (
+				<div className="claim-details-container">
+					{!isClaimSettled && (
+						<div className="align-items-center bg-neutral-0 d-flex justify-content-center multi-steps-content">
+							<MultiSteps
+								steps={steps.filter((step) => step.show)}
+							/>
+						</div>
+					)}
+
+					<div className="claim-detail-content d-flex py-4 row">
+						<div className="col-xl-3 d-flex mb-4">
+							<Summary
+								dataSummary={
+									isClaimSettled
+										? summaryClaimDataSettled
+										: summaryClaimData
+								}
+							/>
+						</div>
+
+						{claimStatus && (
+							<div className="col-xl-9 d-flex mb-4">
+								<ActionDetail>
+									<ClaimActionComponent
+										claimStatus={claimStatus}
+									/>
+								</ActionDetail>
+							</div>
+						)}
+					</div>
 				</div>
 			)}
-
-			<div className="claim-detail-content d-flex py-4 row">
-				<div className="col-xl-3 d-flex mb-4">
-					<Summary
-						dataSummary={
-							isClaimSettled
-								? summaryClaimDataSettled
-								: summaryClaimData
-						}
-					/>
-				</div>
-			</div>
-		</div>
+		</>
 	);
 };
 

@@ -36,7 +36,7 @@ import org.osgi.service.component.annotations.Reference;
  */
 @Component(
 	property = "dto.class.name=com.liferay.commerce.product.model.CPInstance",
-	service = {DTOConverter.class, SkuDTOConverter.class}
+	service = DTOConverter.class
 )
 public class SkuDTOConverter implements DTOConverter<CPInstance, Sku> {
 
@@ -61,6 +61,7 @@ public class SkuDTOConverter implements DTOConverter<CPInstance, Sku> {
 				cost = cpInstance.getCost();
 				depth = cpInstance.getDepth();
 				discontinued = cpInstance.isDiscontinued();
+				discontinuedDate = cpInstance.getDiscontinuedDate();
 				displayDate = cpInstance.getDisplayDate();
 				expirationDate = cpInstance.getExpirationDate();
 				externalReferenceCode = cpInstance.getExternalReferenceCode();

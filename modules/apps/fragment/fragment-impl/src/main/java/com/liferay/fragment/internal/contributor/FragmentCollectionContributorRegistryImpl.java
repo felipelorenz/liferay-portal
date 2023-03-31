@@ -14,6 +14,7 @@
 
 package com.liferay.fragment.internal.contributor;
 
+import com.liferay.fragment.configuration.FragmentServiceConfiguration;
 import com.liferay.fragment.constants.FragmentConstants;
 import com.liferay.fragment.contributor.FragmentCollectionContributor;
 import com.liferay.fragment.contributor.FragmentCollectionContributorRegistry;
@@ -26,21 +27,36 @@ import com.liferay.fragment.validator.FragmentEntryValidator;
 import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMap;
 import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMapFactory;
 import com.liferay.petra.string.CharPool;
+import com.liferay.petra.string.StringBundler;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
+import com.liferay.portal.kernel.module.configuration.ConfigurationException;
+import com.liferay.portal.kernel.module.configuration.ConfigurationProviderUtil;
 import com.liferay.portal.kernel.resource.bundle.AggregateResourceBundleLoader;
 import com.liferay.portal.kernel.resource.bundle.ResourceBundleLoader;
+import com.liferay.portal.kernel.service.CompanyLocalService;
+import com.liferay.portal.kernel.service.PortalPreferencesLocalService;
 import com.liferay.portal.kernel.util.MapUtil;
+import com.liferay.portal.kernel.util.PortletKeys;
+
+import java.io.IOException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+
+import javax.portlet.PortletPreferences;
 
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
+import org.osgi.service.cm.Configuration;
+import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
@@ -137,14 +153,12 @@ public class FragmentCollectionContributorRegistryImpl
 			FragmentCollectionContributor fragmentCollectionContributor =
 				fragmentCollectionBag._fragmentCollectionContributor;
 
-			for (int type : _SUPPORTED_FRAGMENT_TYPES) {
-				for (FragmentEntry fragmentEntry :
-						fragmentCollectionContributor.getFragmentEntries(
-							type, locale)) {
+			for (FragmentEntry fragmentEntry :
+					fragmentCollectionContributor.getFragmentEntries(
+						_SUPPORTED_FRAGMENT_TYPES, locale)) {
 
-					fragmentEntries.put(
-						fragmentEntry.getFragmentEntryKey(), fragmentEntry);
-				}
+				fragmentEntries.put(
+					fragmentEntry.getFragmentEntryKey(), fragmentEntry);
 			}
 		}
 
@@ -218,20 +232,103 @@ public class FragmentCollectionContributorRegistryImpl
 	@Reference
 	protected FragmentEntryValidator fragmentEntryValidator;
 
-	private void _updateFragmentEntryLinks(FragmentEntry fragmentEntry) {
-		List<FragmentEntryLink> fragmentEntryLinks =
-			_fragmentEntryLinkLocalService.getFragmentEntryLinks(
-				fragmentEntry.getFragmentEntryKey());
+	private Configuration _getFragmentServiceCompanyConfiguration(
+			long companyId)
+		throws ConfigurationException {
 
-		for (FragmentEntryLink fragmentEntryLink : fragmentEntryLinks) {
-			try {
-				_fragmentEntryLinkLocalService.updateLatestChanges(
-					fragmentEntry, fragmentEntryLink);
+		try {
+			String filterString = StringBundler.concat(
+				"(&(", ConfigurationAdmin.SERVICE_FACTORYPID, StringPool.EQUAL,
+				FragmentServiceConfiguration.class.getName(), ".scoped",
+				")(companyId=", companyId, "))");
+
+			Configuration[] configurations =
+				_configurationAdmin.listConfigurations(filterString);
+
+			if (configurations != null) {
+				return configurations[0];
 			}
-			catch (PortalException portalException) {
-				_log.error(portalException);
-			}
+
+			return null;
 		}
+		catch (InvalidSyntaxException | IOException exception) {
+			throw new ConfigurationException(exception);
+		}
+	}
+
+	private boolean _isPropagateContributedFragmentChanges(long companyId)
+		throws ConfigurationException {
+
+		if (_getFragmentServiceCompanyConfiguration(companyId) != null) {
+			FragmentServiceConfiguration companyFragmentServiceConfiguration =
+				ConfigurationProviderUtil.getCompanyConfiguration(
+					FragmentServiceConfiguration.class, companyId);
+
+			return companyFragmentServiceConfiguration.
+				propagateContributedFragmentChanges();
+		}
+
+		FragmentServiceConfiguration systemFragmentServiceConfiguration =
+			ConfigurationProviderUtil.getSystemConfiguration(
+				FragmentServiceConfiguration.class);
+
+		return systemFragmentServiceConfiguration.
+			propagateContributedFragmentChanges();
+	}
+
+	private void _updateFragmentEntryLinks(
+		Map<String, FragmentEntry> fragmentEntries) {
+
+		_companyLocalService.forEachCompany(
+			company -> {
+				try {
+					if (!_isPropagateContributedFragmentChanges(
+							company.getCompanyId())) {
+
+						PortletPreferences portletPreferences =
+							_portalPreferencesLocalService.getPreferences(
+								company.getCompanyId(),
+								PortletKeys.PREFS_OWNER_TYPE_COMPANY);
+
+						portletPreferences.setValue(
+							"alreadyPropagateContributedFragmentChanges",
+							Boolean.FALSE.toString());
+
+						portletPreferences.store();
+
+						return;
+					}
+				}
+				catch (Exception exception) {
+					_log.error(exception);
+
+					return;
+				}
+
+				Set<String> fragmentEntriesSet = fragmentEntries.keySet();
+
+				List<FragmentEntryLink> fragmentEntryLinks =
+					_fragmentEntryLinkLocalService.getFragmentEntryLinks(
+						company.getCompanyId(),
+						fragmentEntriesSet.toArray(new String[0]));
+
+				for (FragmentEntryLink fragmentEntryLink : fragmentEntryLinks) {
+					FragmentEntry fragmentEntry = fragmentEntries.get(
+						fragmentEntryLink.getRendererKey());
+
+					if (fragmentEntry == null) {
+						continue;
+					}
+
+					try {
+						_fragmentEntryLinkLocalService.updateLatestChanges(
+							fragmentEntry, fragmentEntryLink);
+					}
+					catch (PortalException portalException) {
+						_log.error(portalException);
+					}
+				}
+			});
 	}
 
 	private boolean _validateFragmentEntry(FragmentEntry fragmentEntry) {
@@ -262,7 +359,16 @@ public class FragmentCollectionContributorRegistryImpl
 		FragmentCollectionContributorRegistryImpl.class);
 
 	@Reference
+	private CompanyLocalService _companyLocalService;
+
+	@Reference
+	private ConfigurationAdmin _configurationAdmin;
+
+	@Reference
 	private FragmentEntryLinkLocalService _fragmentEntryLinkLocalService;
+
+	@Reference
+	private PortalPreferencesLocalService _portalPreferencesLocalService;
 
 	private ServiceTrackerMap<String, FragmentCollectionBag> _serviceTrackerMap;
 
@@ -308,21 +414,19 @@ public class FragmentCollectionContributorRegistryImpl
 					fragmentComposition);
 			}
 
-			for (int type : _SUPPORTED_FRAGMENT_TYPES) {
-				for (FragmentEntry fragmentEntry :
-						fragmentCollectionContributor.getFragmentEntries(
-							type)) {
+			for (FragmentEntry fragmentEntry :
+					fragmentCollectionContributor.getFragmentEntries(
+						_SUPPORTED_FRAGMENT_TYPES)) {
 
-					if (!_validateFragmentEntry(fragmentEntry)) {
-						continue;
-					}
-
-					fragmentEntries.put(
-						fragmentEntry.getFragmentEntryKey(), fragmentEntry);
-
-					_updateFragmentEntryLinks(fragmentEntry);
+				if (!_validateFragmentEntry(fragmentEntry)) {
+					continue;
 				}
+
+				fragmentEntries.put(
+					fragmentEntry.getFragmentEntryKey(), fragmentEntry);
 			}
+
+			_updateFragmentEntryLinks(fragmentEntries);
 
 			return new FragmentCollectionBag(
 				fragmentCollectionContributor, fragmentCompositions,

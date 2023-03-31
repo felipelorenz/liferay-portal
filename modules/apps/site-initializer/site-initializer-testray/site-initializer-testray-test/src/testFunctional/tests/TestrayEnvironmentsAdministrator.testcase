@@ -28,11 +28,11 @@ definition {
 	tearDown {
 		var testPortalInstance = PropsUtil.get("test.portal.instance");
 
-		JSONTestrayAPI.deleteProject(projectName = ${projectName});
-
 		JSONTestrayAPI.deleteObjectViaAPI(
 			object = "factorcategories",
 			objectName = "Category 1");
+
+		JSONTestrayAPI.deleteProject(projectName = ${projectName});
 
 		Testray.testrayApisTearDown();
 
@@ -279,15 +279,6 @@ definition {
 				object = "factorcategories",
 				objectName = "Category 2");
 		}
-	}
-
-	@description = "Story ID: LPS-159465 | Test Summary: Verify if as an Administrator I am able to edit the Option Name"
-	@ignore = "true"
-	@priority = 5
-	test AdminCanEditOptionName {
-
-		// This test will be dropped as it is being covered in the above test
-
 	}
 
 	@description = "Story ID: LPS-165582 | Test Summary: Verify if As an Administrator I should not be able to add a duplicate Factor Category"

@@ -1229,7 +1229,8 @@ public class ObjectEntryDisplayContextImpl
 
 		serviceBuilderObjectEntry.setExternalReferenceCode(
 			objectEntry.getExternalReferenceCode());
-		serviceBuilderObjectEntry.setObjectEntryId(objectEntry.getId());
+		serviceBuilderObjectEntry.setObjectEntryId(
+			GetterUtil.getLong(objectEntry.getId()));
 		serviceBuilderObjectEntry.setObjectDefinitionId(
 			objectDefinition.getObjectDefinitionId());
 

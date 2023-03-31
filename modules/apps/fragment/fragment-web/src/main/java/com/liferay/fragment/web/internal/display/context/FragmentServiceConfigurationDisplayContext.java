@@ -18,11 +18,16 @@ import com.liferay.fragment.web.internal.configuration.admin.service.FragmentSer
 import com.liferay.portal.configuration.metatype.annotations.ExtendedObjectClassDefinition;
 import com.liferay.portal.kernel.portlet.LiferayPortletResponse;
 import com.liferay.portal.kernel.portlet.url.builder.PortletURLBuilder;
+import com.liferay.portal.kernel.service.PortalPreferencesLocalServiceUtil;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.PortletKeys;
 import com.liferay.portal.kernel.util.WebKeys;
 
 import java.util.Objects;
+
+import javax.portlet.PortletPreferences;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -59,9 +64,56 @@ public class FragmentServiceConfigurationDisplayContext {
 		).buildString();
 	}
 
+	public String getPropagateContributedFragmentEntriesChangesURL() {
+		return PortletURLBuilder.createActionURL(
+			_liferayPortletResponse
+		).setActionName(
+			"/instance_settings/propagate_contributed_fragment_entries_changes"
+		).setRedirect(
+			PortalUtil.getCurrentURL(_httpServletRequest)
+		).setParameter(
+			"scope", _scope
+		).setParameter(
+			"scopePK", _getScopePk()
+		).buildString();
+	}
+
+	public boolean isAlreadyPropagateContributedFragmentChanges() {
+		ThemeDisplay themeDisplay =
+			(ThemeDisplay)_httpServletRequest.getAttribute(
+				WebKeys.THEME_DISPLAY);
+
+		PortletPreferences portletPreferences =
+			PortalPreferencesLocalServiceUtil.getPreferences(
+				themeDisplay.getCompanyId(),
+				PortletKeys.PREFS_OWNER_TYPE_COMPANY);
+
+		return GetterUtil.getBoolean(
+			portletPreferences.getValue(
+				"alreadyPropagateContributedFragmentChanges", null));
+	}
+
 	public boolean isPropagateChangesEnabled() {
 		return _fragmentServiceManagedServiceFactory.isPropagateChanges(
 			_scope, _getScopePk());
+	}
+
+	public boolean isPropagateContributedFragmentChangesEnabled() {
+		return _fragmentServiceManagedServiceFactory.
+			isPropagateContributedFragmentChanges(_scope, _getScopePk());
+	}
+
+	public boolean showInfoMessage() throws Exception {
+		if (!Objects.equals(
+				_scope,
+				ExtendedObjectClassDefinition.Scope.COMPANY.getValue()) ||
+			_fragmentServiceManagedServiceFactory.hasScopedConfiguration(
+				_getScopePk())) {
+
+			return false;
+		}
+
+		return true;
 	}
 
 	private long _getScopePk() {

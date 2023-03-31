@@ -59,7 +59,10 @@ definition {
 			caseName = ${caseName},
 			caseTypeId = ${caseTypeId},
 			componentId = ${componentId},
-			projectId = ${projectId});
+			description = ${description},
+			priority = ${priority},
+			projectId = ${projectId},
+			steps = ${steps});
 	}
 
 	macro addCaseType {
@@ -156,6 +159,7 @@ definition {
 		var requirementId = JSONTestrayAPI.createRequirementAPI(
 			componentId = ${componentId},
 			linkTitle = ${linkTitle},
+			linkURL = ${linkURL},
 			projectId = ${projectId},
 			requirementName = ${requirementName});
 	}

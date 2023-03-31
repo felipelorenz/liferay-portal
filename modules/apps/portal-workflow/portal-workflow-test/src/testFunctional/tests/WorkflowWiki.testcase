@@ -26,16 +26,19 @@ definition {
 			workflowDefinition = "Single Approver",
 			workflowResourceValue = "Wiki Page");
 
-		ProductMenu.gotoPortlet(
-			category = "Site Builder",
-			panel = "Site Administration",
-			portlet = "Pages");
+		JSONLayout.addPublicLayout(
+			groupName = "Guest",
+			layoutName = "Wiki Page");
 
-		PagesAdmin.addPage(pageName = "Wiki Page");
+		JSONLayout.updateLayoutTemplateOfPublicLayout(
+			groupName = "Guest",
+			layoutName = "Wiki Page",
+			layoutTemplate = "1 Column");
 
-		Navigator.gotoPage(pageName = "Wiki Page");
-
-		Portlet.addPG(portletName = "Wiki");
+		JSONLayout.addWidgetToPublicLayout(
+			groupName = "Guest",
+			layoutName = "Wiki Page",
+			widgetName = "Wiki");
 	}
 
 	tearDown {
@@ -425,8 +428,6 @@ definition {
 	@description = "This is a test for LRQA-69561. Verify that the Child Page status are displayed correctly on approval."
 	@priority = 2
 	test WikiChildPageStatusOnApprove {
-		property portal.upstream = "quarantine";
-
 		ProductMenu.gotoPortlet(
 			category = "Content & Data",
 			portlet = "Wiki");
@@ -445,7 +446,9 @@ definition {
 
 		Navigator.gotoBack();
 
-		WikiPage.addChildPageViaEllipsis(wikiChildPageTitle = "Child Page Title");
+		WikiPage.addChildPageViaEllipsis(
+			wikiChildPageTitle = "Child Page Title",
+			wikiPageTitle = "FrontPage");
 
 		PortletEntry.submitForWorkflow();
 
@@ -477,8 +480,6 @@ definition {
 	@description = "This is a test for LRQA-69567. Verify that the a rejected Child Page is not displayed on list."
 	@priority = 4
 	test WikiChildPageStatusOnReject {
-		property portal.upstream = "quarantine";
-
 		ProductMenu.gotoPortlet(
 			category = "Content & Data",
 			portlet = "Wiki");
@@ -497,7 +498,9 @@ definition {
 
 		Navigator.gotoBack();
 
-		WikiPage.addChildPageViaEllipsis(wikiChildPageTitle = "Child Page Title");
+		WikiPage.addChildPageViaEllipsis(
+			wikiChildPageTitle = "Child Page Title",
+			wikiPageTitle = "FrontPage");
 
 		PortletEntry.submitForWorkflow();
 

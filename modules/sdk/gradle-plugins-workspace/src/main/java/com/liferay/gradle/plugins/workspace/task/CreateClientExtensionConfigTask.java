@@ -99,6 +99,12 @@ public class CreateClientExtensionConfigTask extends DefaultTask {
 				String pid = _clientExtensionProperties.getProperty(
 					clientExtension.type + ".pid");
 
+				if (Objects.equals(
+						clientExtension.type, "instanceConfiguration")) {
+
+					pid = (String)clientExtension.typeSettings.remove("pid");
+				}
+
 				if (pid != null) {
 					jsonMap.putAll(clientExtension.toJSONMap(pid));
 				}
@@ -108,9 +114,11 @@ public class CreateClientExtensionConfigTask extends DefaultTask {
 						"Liferay-Client-Extension-Batch", "batch/");
 				}
 
-				if (Objects.equals(clientExtension.classification, "static")) {
+				if (Objects.equals(
+						clientExtension.classification, "frontend")) {
+
 					pluginPackageProperties.put(
-						"Liferay-Client-Extension-Static", "static/");
+						"Liferay-Client-Extension-Frontend", "static/");
 				}
 			});
 
@@ -131,8 +139,8 @@ public class CreateClientExtensionConfigTask extends DefaultTask {
 				return entrySetStream.map(
 					entry -> new AbstractMap.SimpleEntry<>(
 						StringBundler.concat(
-							"__", clientExtension.id, ".", entry.getKey(),
-							"__"),
+							"__", _getIdOrBatch(clientExtension), ".",
+							entry.getKey(), "__"),
 						String.valueOf(entry.getValue())));
 			}
 		).collect(
@@ -297,6 +305,16 @@ public class CreateClientExtensionConfigTask extends DefaultTask {
 		return null;
 	}
 
+	private String _getIdOrBatch(ClientExtension clientExtension) {
+		String id = clientExtension.id;
+
+		if (Objects.equals(clientExtension.type, "batch")) {
+			id = "batch";
+		}
+
+		return id;
+	}
+
 	private Properties _getPluginPackageProperties() {
 		Properties pluginPackageProperties = new Properties();
 
@@ -376,6 +394,9 @@ public class CreateClientExtensionConfigTask extends DefaultTask {
 				clientExtension.classification));
 
 		if (_groupConfiguration.containsAll(classifications)) {
+
+			// Configuration must be first. The rest can be sorted.
+
 			return "configuration";
 		}
 
@@ -394,34 +415,24 @@ public class CreateClientExtensionConfigTask extends DefaultTask {
 						"one batch type client extension");
 			}
 
-			ClientExtension batchClientExtension = batches.get(0);
-
-			if (!Objects.equals(batchClientExtension.id, "batch")) {
-				throw new GradleException(
-					"The batch client extension must be named batch");
-			}
-
 			return "batch";
 		}
-
-		if (_groupService.containsAll(classifications)) {
-			return "service";
+		else if (_groupFrontend.containsAll(classifications)) {
+			return "frontend";
 		}
-
-		if (_groupStatic.containsAll(classifications)) {
-			return "static";
+		else if (_groupMicroservice.containsAll(classifications)) {
+			return "microservice";
 		}
-
-		if (!classifications.isEmpty()) {
+		else if (!classifications.isEmpty()) {
 			throw new GradleException(
 				StringBundler.concat(
 					"The combination of client extensions in ", classifications,
 					" cannot be grouped in a single project. The following ",
-					"groupings are allowed: ", _groupBatch, _groupService,
-					_groupStatic));
+					"groupings are allowed: ", _groupBatch, _groupFrontend,
+					_groupMicroservice));
 		}
 
-		return "static";
+		return "frontend";
 	}
 
 	private static final String _CLIENT_EXTENSION_CONFIG_FILE_NAME =
@@ -434,10 +445,10 @@ public class CreateClientExtensionConfigTask extends DefaultTask {
 		"batch", "configuration");
 	private static final Set<String> _groupConfiguration = Sets.newHashSet(
 		"configuration");
-	private static final Set<String> _groupService = Sets.newHashSet(
-		"configuration", "service");
-	private static final Set<String> _groupStatic = Sets.newHashSet(
-		"configuration", "static");
+	private static final Set<String> _groupFrontend = Sets.newHashSet(
+		"configuration", "frontend");
+	private static final Set<String> _groupMicroservice = Sets.newHashSet(
+		"configuration", "microservice");
 
 	private final Object _clientExtensionConfigFile;
 	private Properties _clientExtensionProperties;
@@ -446,6 +457,6 @@ public class CreateClientExtensionConfigTask extends DefaultTask {
 	private Object _dockerFile;
 	private Object _lcpJsonFile;
 	private final Object _pluginPackagePropertiesFile;
-	private String _type = "static";
+	private String _type = "frontend";
 
 }

@@ -58,7 +58,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 import org.apache.commons.lang.time.StopWatch;
 
@@ -256,7 +255,9 @@ public class UserReindexerPerformanceOfLargeUserGroupInManySitesTest {
 
 		DocumentsAssert.assertValuesIgnoreRelevance(
 			searchResponse.getRequestString(), searchResponse.getDocuments(),
-			Field.USER_ID, _getUserIdsStream(users));
+			Field.USER_ID,
+			TransformUtil.transform(
+				users, user -> String.valueOf(user.getUserId())));
 	}
 
 	protected SearchRequestBuilder getSearchRequestBuilder(long companyId) {
@@ -314,6 +315,8 @@ public class UserReindexerPerformanceOfLargeUserGroupInManySitesTest {
 		return _searcher.search(
 			getSearchRequestBuilder(
 				group.getCompanyId()
+			).emptySearchEnabled(
+				true
 			).fields(
 				Field.USER_ID
 			).modelIndexerClasses(
@@ -339,12 +342,6 @@ public class UserReindexerPerformanceOfLargeUserGroupInManySitesTest {
 		}
 
 		return sb.toString();
-	}
-
-	private Stream<Long> _getUserIdsStream(List<User> users) {
-		Stream<User> stream = users.stream();
-
-		return stream.map(User::getUserId);
 	}
 
 	private Dictionary<String, Object> _toDictionary(Map<String, String> map) {

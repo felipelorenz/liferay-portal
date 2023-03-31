@@ -91,11 +91,9 @@ class TestrayCaseResultRest extends Rest<CaseResultForm, TestrayCaseResult> {
 				component: caseResult?.r_componentToCaseResult_c_component
 					? {
 							...caseResult.r_componentToCaseResult_c_component,
-							team: caseResult.r_componentToCaseResult_c_component
-								.r_teamToComponents_c_team
-								? caseResult.r_componentToCaseResult_c_component
-										.r_teamToComponents_c_team
-								: undefined,
+							team:
+								caseResult.r_componentToCaseResult_c_component
+									.r_teamToComponents_c_team,
 					  }
 					: undefined,
 				issues: caseResult.caseResultToCaseResultsIssues ?? [],
@@ -105,6 +103,7 @@ class TestrayCaseResultRest extends Rest<CaseResultForm, TestrayCaseResult> {
 							build: caseResult?.r_runToCaseResult_c_run?.build,
 					  }
 					: undefined,
+				runId: caseResult?.r_runToCaseResult_c_runId,
 				user: caseResult?.r_userToCaseResults_user,
 			}),
 			uri: 'caseresults',

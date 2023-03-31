@@ -1,10 +1,7 @@
-import {Dispatch, SetStateAction, useState} from 'react';
+import {Dispatch, ReactNode, SetStateAction, useState} from 'react';
 
 import {DashboardNavigation} from '../../components/DashboardNavigation/DashboardNavigation';
-import {
-	AppProps,
-	DashboardTable,
-} from '../../components/DashboardTable/DashboardTable';
+import {AppProps} from '../../components/DashboardTable/DashboardTable';
 import {Footer} from '../../components/Footer/Footer';
 import {Header} from '../../components/Header/Header';
 import {AppDetailsPage} from '../AppDetailsPage/AppDetailsPage';
@@ -24,8 +21,8 @@ type DashBoardPageProps = {
 	accountLogo: string;
 	accountTitle: string;
 	buttonMessage: string;
+	children: ReactNode;
 	dashboardNavigationItems: DashboardListItems[];
-	items: AppProps[];
 	messages: {
 		description: string;
 		emptyStateMessage: {
@@ -43,8 +40,8 @@ export function DashboardPage({
 	accountLogo,
 	accountTitle,
 	buttonMessage,
+	children,
 	dashboardNavigationItems,
-	items,
 	messages,
 	setDashboardNavigationItems,
 }: DashBoardPageProps) {
@@ -86,10 +83,7 @@ export function DashboardPage({
 								</a>
 							</div>
 
-							<DashboardTable
-								emptyStateMessage={messages.emptyStateMessage}
-								items={items}
-							/>
+							{children}
 						</div>
 					)}
 				</div>

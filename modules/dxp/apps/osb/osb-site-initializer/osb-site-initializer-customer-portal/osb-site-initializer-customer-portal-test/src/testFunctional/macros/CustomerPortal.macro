@@ -285,7 +285,7 @@ definition {
 		Check.checkToggleSwitch(locator1 = "CP2LiferayContact#HIDE_WIDGET");
 	}
 
-	macro clearActivationStatus {
+	macro clearStatus {
 		ApplicationsMenu.gotoPortlet(
 			category = "Object",
 			panel = "Control Panel",
@@ -293,10 +293,14 @@ definition {
 
 		var key_status = ${status};
 
-		if (IsElementPresent(locator1 = "CustomerPortalSite#DND_TABLE_ELEMENT")) {
-			CustomerPortal.viewCPObjectCustomInfo(position = ${position});
+		Search.searchCP(searchTerm = ${key_status});
 
-			Refresh();
+		if (IsElementPresent(key_accountName = ${key_status}, locator1 = "CP2Utils#ANY_ACCOUNT_ELLIPSIS_BUTTON")) {
+			Click(
+				key_accountName = ${key_status},
+				locator1 = "CP2Utils#ANY_ACCOUNT_ELLIPSIS_BUTTON");
+
+			MenuItem.click(menuItem = "View");
 
 			CP2DXPCloudSetup.typeSetupDXPCloudInfoFields(
 				label = "activationStatus",
@@ -434,6 +438,11 @@ definition {
 	}
 
 	macro deleteEntryAccountFlag {
+		ApplicationsMenu.gotoPortlet(
+			category = "Object",
+			panel = "Control Panel",
+			portlet = "Account Flags");
+
 		ObjectPortlet.deleteEntry(entry = ${entry});
 	}
 
@@ -739,8 +748,8 @@ definition {
 
 	macro viewActivationStatusCardChange {
 		AssertElementPresent(
-			locator1 = "CustomerPortalSite#CARD_SUBSCRIPTION",
-			title = ${subtitle});
+			key_text = ${subtitle},
+			locator1 = "CustomerPortalSite#CARD_SUBSCRIPTION");
 
 		AssertElementPresent(
 			key_status = ${status},
@@ -749,8 +758,8 @@ definition {
 
 	macro viewActivationStatusCardValue {
 		AssertElementPresent(
-			locator1 = "CustomerPortalSite#CARD_SUBSCRIPTION",
-			title = ${subtitle});
+			key_text = ${subtitle},
+			locator1 = "CustomerPortalSite#CARD_SUBSCRIPTION");
 
 		AssertElementPresent(
 			locator1 = "CustomerPortalSite#CARD_LOGO",
@@ -794,25 +803,25 @@ definition {
 	macro viewCardValue {
 		AssertElementPresent(
 			locator1 = "CustomerPortalSite#PROJECT_LOGO",
-			logo = "dxp_icon");
+			logo = ${logo});
 
 		AssertElementPresent(
-			cardName = "Non-Production",
+			cardName = ${cardName},
 			locator1 = "CustomerPortalSite#CARD_NAME");
 
 		AssertElementPresent(
-			key_index = 2,
+			key_index = ${position},
 			locator1 = "CustomerPortalSite#CARD_INSTANCE",
-			title = 1);
+			title = ${instanceSize});
 
 		AssertElementPresent(
-			date = "03/31/2021 - 03/30/2022",
-			locator1 = "CustomerPortalSite#CARD_DATE",
-			status = "Active");
+			key_date = ${date},
+			key_status = ${status},
+			locator1 = "CustomerPortalSite#CARD_DATE");
 	}
 
 	macro viewConfirmationModal {
-		var key_text = ${text};
+		var key_text = ${modalText};
 
 		AssertElementPresent(locator1 = "CustomerPortalSite#MODAL_INFO");
 	}

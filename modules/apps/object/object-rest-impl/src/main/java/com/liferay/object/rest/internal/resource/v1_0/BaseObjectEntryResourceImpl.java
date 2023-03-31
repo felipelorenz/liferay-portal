@@ -19,9 +19,9 @@ import com.liferay.object.rest.resource.v1_0.ObjectEntryResource;
 import com.liferay.petra.function.UnsafeBiConsumer;
 import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.function.UnsafeFunction;
-import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.GroupedModel;
+import com.liferay.portal.kernel.model.Resource;
 import com.liferay.portal.kernel.model.ResourceAction;
 import com.liferay.portal.kernel.model.ResourceConstants;
 import com.liferay.portal.kernel.model.ResourcePermission;
@@ -34,8 +34,8 @@ import com.liferay.portal.kernel.service.ResourceActionLocalService;
 import com.liferay.portal.kernel.service.ResourceLocalServiceUtil;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
-import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.GroupThreadLocal;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.SetUtil;
@@ -50,6 +50,7 @@ import com.liferay.portal.odata.sort.SortParser;
 import com.liferay.portal.odata.sort.SortParserProvider;
 import com.liferay.portal.vulcan.accept.language.AcceptLanguage;
 import com.liferay.portal.vulcan.batch.engine.VulcanBatchEngineTaskItemDelegate;
+import com.liferay.portal.vulcan.batch.engine.resource.VulcanBatchEngineExportTaskResource;
 import com.liferay.portal.vulcan.batch.engine.resource.VulcanBatchEngineImportTaskResource;
 import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
@@ -62,13 +63,10 @@ import com.liferay.portal.vulcan.util.TransformUtil;
 
 import java.io.Serializable;
 
-import java.lang.reflect.Method;
-
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -102,7 +100,19 @@ public abstract class BaseObjectEntryResourceImpl
 			),
 			@io.swagger.v3.oas.annotations.Parameter(
 				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "fields"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
 				name = "flatten"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "nestedFields"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "restrictFields"
 			),
 			@io.swagger.v3.oas.annotations.Parameter(
 				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
@@ -275,6 +285,18 @@ public abstract class BaseObjectEntryResourceImpl
 			@io.swagger.v3.oas.annotations.Parameter(
 				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
 				name = "externalReferenceCode"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "fields"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "nestedFields"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "restrictFields"
 			)
 		}
 	)
@@ -349,6 +371,11 @@ public abstract class BaseObjectEntryResourceImpl
 
 		if (objectEntry.getScopeKey() != null) {
 			existingObjectEntry.setScopeKey(objectEntry.getScopeKey());
+		}
+
+		if (objectEntry.getTaxonomyCategoryIds() != null) {
+			existingObjectEntry.setTaxonomyCategoryIds(
+				objectEntry.getTaxonomyCategoryIds());
 		}
 
 		preparePatch(objectEntry, existingObjectEntry);
@@ -460,6 +487,18 @@ public abstract class BaseObjectEntryResourceImpl
 			@io.swagger.v3.oas.annotations.Parameter(
 				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
 				name = "externalReferenceCode"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "fields"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "nestedFields"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "restrictFields"
 			)
 		}
 	)
@@ -551,6 +590,11 @@ public abstract class BaseObjectEntryResourceImpl
 
 		if (objectEntry.getScopeKey() != null) {
 			existingObjectEntry.setScopeKey(objectEntry.getScopeKey());
+		}
+
+		if (objectEntry.getTaxonomyCategoryIds() != null) {
+			existingObjectEntry.setTaxonomyCategoryIds(
+				objectEntry.getTaxonomyCategoryIds());
 		}
 
 		preparePatch(objectEntry, existingObjectEntry);
@@ -704,6 +748,18 @@ public abstract class BaseObjectEntryResourceImpl
 			@io.swagger.v3.oas.annotations.Parameter(
 				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
 				name = "objectEntryId"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "fields"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "nestedFields"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "restrictFields"
 			)
 		}
 	)
@@ -777,6 +833,11 @@ public abstract class BaseObjectEntryResourceImpl
 
 		if (objectEntry.getScopeKey() != null) {
 			existingObjectEntry.setScopeKey(objectEntry.getScopeKey());
+		}
+
+		if (objectEntry.getTaxonomyCategoryIds() != null) {
+			existingObjectEntry.setTaxonomyCategoryIds(
+				objectEntry.getTaxonomyCategoryIds());
 		}
 
 		preparePatch(objectEntry, existingObjectEntry);
@@ -889,6 +950,18 @@ public abstract class BaseObjectEntryResourceImpl
 			),
 			@io.swagger.v3.oas.annotations.Parameter(
 				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "fields"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "nestedFields"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "restrictFields"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
 				name = "roleNames"
 			)
 		}
@@ -998,7 +1071,19 @@ public abstract class BaseObjectEntryResourceImpl
 			),
 			@io.swagger.v3.oas.annotations.Parameter(
 				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "fields"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
 				name = "flatten"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "nestedFields"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "restrictFields"
 			),
 			@io.swagger.v3.oas.annotations.Parameter(
 				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
@@ -1279,6 +1364,117 @@ public abstract class BaseObjectEntryResourceImpl
 				resourceName, null));
 	}
 
+	private Collection<Permission> _getPermissions(
+			long companyId, List<ResourceAction> resourceActions,
+			long resourceId, String resourceName, String[] roleNames)
+		throws Exception {
+
+		Map<String, Permission> permissions = new HashMap<>();
+
+		int count = resourcePermissionLocalService.getResourcePermissionsCount(
+			companyId, resourceName, ResourceConstants.SCOPE_INDIVIDUAL,
+			String.valueOf(resourceId));
+
+		if (count == 0) {
+			ResourceLocalServiceUtil.addResources(
+				companyId, resourceId, 0, resourceName,
+				String.valueOf(resourceId), false, true, true);
+		}
+
+		List<String> actionIds = transform(
+			resourceActions, resourceAction -> resourceAction.getActionId());
+
+		Set<ResourcePermission> resourcePermissions = new HashSet<>();
+
+		resourcePermissions.addAll(
+			resourcePermissionLocalService.getResourcePermissions(
+				companyId, resourceName, ResourceConstants.SCOPE_COMPANY,
+				String.valueOf(companyId)));
+		resourcePermissions.addAll(
+			resourcePermissionLocalService.getResourcePermissions(
+				companyId, resourceName, ResourceConstants.SCOPE_GROUP,
+				String.valueOf(GroupThreadLocal.getGroupId())));
+		resourcePermissions.addAll(
+			resourcePermissionLocalService.getResourcePermissions(
+				companyId, resourceName, ResourceConstants.SCOPE_GROUP_TEMPLATE,
+				"0"));
+		resourcePermissions.addAll(
+			resourcePermissionLocalService.getResourcePermissions(
+				companyId, resourceName, ResourceConstants.SCOPE_INDIVIDUAL,
+				String.valueOf(resourceId)));
+
+		List<Resource> resources = transform(
+			resourcePermissions,
+			resourcePermission -> ResourceLocalServiceUtil.getResource(
+				resourcePermission.getCompanyId(), resourcePermission.getName(),
+				resourcePermission.getScope(),
+				resourcePermission.getPrimKey()));
+
+		Set<com.liferay.portal.kernel.model.Role> roles = new HashSet<>();
+
+		if (roleNames != null) {
+			for (String roleName : roleNames) {
+				roles.add(roleLocalService.getRole(companyId, roleName));
+			}
+		}
+		else {
+			for (ResourcePermission resourcePermission : resourcePermissions) {
+				com.liferay.portal.kernel.model.Role role =
+					roleLocalService.getRole(resourcePermission.getRoleId());
+
+				roles.add(role);
+			}
+		}
+
+		for (com.liferay.portal.kernel.model.Role role : roles) {
+			Set<String> actionsIdsSet = new HashSet<>();
+
+			for (Resource resource : resources) {
+				actionsIdsSet.addAll(
+					resourcePermissionLocalService.
+						getAvailableResourcePermissionActionIds(
+							resource.getCompanyId(), resource.getName(),
+							ResourceConstants.SCOPE_COMPANY,
+							String.valueOf(resource.getCompanyId()),
+							role.getRoleId(), actionIds));
+				actionsIdsSet.addAll(
+					resourcePermissionLocalService.
+						getAvailableResourcePermissionActionIds(
+							resource.getCompanyId(), resource.getName(),
+							ResourceConstants.SCOPE_GROUP,
+							String.valueOf(GroupThreadLocal.getGroupId()),
+							role.getRoleId(), actionIds));
+				actionsIdsSet.addAll(
+					resourcePermissionLocalService.
+						getAvailableResourcePermissionActionIds(
+							resource.getCompanyId(), resource.getName(),
+							ResourceConstants.SCOPE_GROUP_TEMPLATE, "0",
+							role.getRoleId(), actionIds));
+				actionsIdsSet.addAll(
+					resourcePermissionLocalService.
+						getAvailableResourcePermissionActionIds(
+							resource.getCompanyId(), resource.getName(),
+							resource.getScope(), resource.getPrimKey(),
+							role.getRoleId(), actionIds));
+			}
+
+			if (actionsIdsSet.isEmpty()) {
+				continue;
+			}
+
+			Permission permission = new Permission() {
+				{
+					actionIds = actionsIdsSet.toArray(new String[0]);
+					roleName = role.getName();
+				}
+			};
+
+			permissions.put(role.getName(), permission);
+		}
+
+		return permissions.values();
+	}
+
 	public void setContextAcceptLanguage(AcceptLanguage contextAcceptLanguage) {
 		this.contextAcceptLanguage = contextAcceptLanguage;
 	}
@@ -1353,6 +1549,14 @@ public abstract class BaseObjectEntryResourceImpl
 
 	public void setSortParserProvider(SortParserProvider sortParserProvider) {
 		this.sortParserProvider = sortParserProvider;
+	}
+
+	public void setVulcanBatchEngineExportTaskResource(
+		VulcanBatchEngineExportTaskResource
+			vulcanBatchEngineExportTaskResource) {
+
+		this.vulcanBatchEngineExportTaskResource =
+			vulcanBatchEngineExportTaskResource;
 	}
 
 	public void setVulcanBatchEngineImportTaskResource(
@@ -1539,120 +1743,10 @@ public abstract class BaseObjectEntryResourceImpl
 	protected ResourcePermissionLocalService resourcePermissionLocalService;
 	protected RoleLocalService roleLocalService;
 	protected SortParserProvider sortParserProvider;
+	protected VulcanBatchEngineExportTaskResource
+		vulcanBatchEngineExportTaskResource;
 	protected VulcanBatchEngineImportTaskResource
 		vulcanBatchEngineImportTaskResource;
-
-	private void _checkResources(
-			long companyId, long resourceId, String resourceName)
-		throws PortalException {
-
-		int count = resourcePermissionLocalService.getResourcePermissionsCount(
-			companyId, resourceName, ResourceConstants.SCOPE_INDIVIDUAL,
-			String.valueOf(resourceId));
-
-		if (count == 0) {
-			ResourceLocalServiceUtil.addResources(
-				companyId, resourceId, 0, resourceName,
-				String.valueOf(resourceId), false, true, true);
-		}
-	}
-
-	private Collection<Permission> _getPermissions(
-			long companyId, List<ResourceAction> resourceActions,
-			long resourceId, String resourceName, String[] roleNames)
-		throws Exception {
-
-		_checkResources(companyId, resourceId, resourceName);
-
-		Map<String, Permission> permissions = new LinkedHashMap<>();
-
-		List<ResourcePermission> resourcePermissions = new ArrayList<>();
-
-		try {
-			Method method = ResourcePermissionLocalService.class.getMethod(
-				"getResourcePermissions", String.class);
-
-			resourcePermissions = (List<ResourcePermission>)method.invoke(
-				resourcePermissionLocalService, resourceName);
-		}
-		catch (NoSuchMethodException noSuchMethodException) {
-			resourcePermissions =
-				resourcePermissionLocalService.getResourcePermissions(
-					companyId, resourceName, ResourceConstants.SCOPE_INDIVIDUAL,
-					String.valueOf(resourceId));
-		}
-
-		for (ResourcePermission resourcePermission : resourcePermissions) {
-			if ((resourcePermission.getPrimKeyId() == 0) ||
-				(resourcePermission.getPrimKeyId() == resourceId)) {
-
-				com.liferay.portal.kernel.model.Role role =
-					roleLocalService.getRole(resourcePermission.getRoleId());
-
-				if ((roleNames == null) ||
-					((roleNames != null) &&
-					 ArrayUtil.contains(roleNames, role.getName()))) {
-
-					Permission permission = permissions.get(role.getName());
-
-					if (permission == null) {
-						permission = _toPermission(
-							resourceActions, resourcePermission, role);
-
-						if (permission != null) {
-							permissions.put(role.getName(), permission);
-						}
-					}
-					else {
-						Set<String> actionsIdsSet = new HashSet<>();
-
-						Collections.addAll(
-							actionsIdsSet, permission.getActionIds());
-
-						Permission newPermission = _toPermission(
-							resourceActions, resourcePermission, role);
-
-						Collections.addAll(
-							actionsIdsSet, newPermission.getActionIds());
-
-						permission.setActionIds(
-							actionsIdsSet.toArray(new String[0]));
-					}
-				}
-			}
-		}
-
-		return permissions.values();
-	}
-
-	private Permission _toPermission(
-		List<ResourceAction> resourceActions,
-		ResourcePermission resourcePermission,
-		com.liferay.portal.kernel.model.Role role) {
-
-		Set<String> actionsIdsSet = new HashSet<>();
-
-		long actionIds = resourcePermission.getActionIds();
-
-		for (ResourceAction resourceAction : resourceActions) {
-			long bitwiseValue = resourceAction.getBitwiseValue();
-
-			if ((actionIds & bitwiseValue) == bitwiseValue) {
-				actionsIdsSet.add(resourceAction.getActionId());
-			}
-		}
-
-		if (actionsIdsSet.isEmpty()) {
-			return null;
-		}
-
-		return new Permission() {
-			{
-				actionIds = actionsIdsSet.toArray(new String[0]);
-				roleName = role.getName();
-			}
-		};
-	}
 
 	private static final com.liferay.portal.kernel.log.Log _log =
 		LogFactoryUtil.getLog(BaseObjectEntryResourceImpl.class);

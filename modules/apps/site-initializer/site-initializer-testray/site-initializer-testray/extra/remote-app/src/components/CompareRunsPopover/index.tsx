@@ -17,6 +17,7 @@ import ClayIcon from '@clayui/icon';
 import ClayLayout from '@clayui/layout';
 import classNames from 'classnames';
 import {useEffect, useRef} from 'react';
+import {useNavigate} from 'react-router-dom';
 
 import useRuns from '../../hooks/useRuns';
 import i18n from '../../i18n';
@@ -37,16 +38,13 @@ const CompareRunsPopover: React.FC<CompareRunsPopoverProps> = ({
 	triggedRef,
 	visible,
 }) => {
+	const ref = useRef<HTMLDivElement>(null);
+
 	const {compareRuns, setRunA, setRunB} = useRuns();
 	const disableButtonA = !(compareRuns?.runId || compareRuns?.runA);
 	const disableButtonB = !(compareRuns?.runId || compareRuns?.runB);
 	const validateCompareButtons = !(compareRuns?.runA && compareRuns?.runB);
-
-	useEffect(() => {
-		if (compareRuns?.runA || compareRuns?.runB) {
-			setVisible(true);
-		}
-	}, [compareRuns, setVisible]);
+	const navigate = useNavigate();
 
 	const onAutoFill = (type: 'Build' | 'Run') => {
 		if (!compareRuns.runA || !compareRuns.runB) {
@@ -71,7 +69,6 @@ const CompareRunsPopover: React.FC<CompareRunsPopoverProps> = ({
 				})
 			);
 	};
-	const ref = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		const handleClickOutside = (event: any) => {
@@ -165,6 +162,11 @@ const CompareRunsPopover: React.FC<CompareRunsPopoverProps> = ({
 							<ClayButton
 								disabled={validateCompareButtons}
 								displayType="primary"
+								onClick={() =>
+									navigate(
+										`/compare-runs/${compareRuns.runA}/${compareRuns.runB}/teams`
+									)
+								}
 							>
 								{i18n.sub('compare-x', 'runs')}
 							</ClayButton>

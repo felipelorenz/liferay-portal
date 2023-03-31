@@ -68,10 +68,7 @@ import org.osgi.service.component.annotations.Reference;
  * @author Andrea Sbarra
  * @author Alessio Antonio Rendina
  */
-@Component(
-	property = "dto.class.name=CPSku",
-	service = {DTOConverter.class, SkuDTOConverter.class}
-)
+@Component(property = "dto.class.name=CPSku", service = DTOConverter.class)
 public class SkuDTOConverter implements DTOConverter<CPInstance, Sku> {
 
 	@Override
@@ -84,11 +81,11 @@ public class SkuDTOConverter implements DTOConverter<CPInstance, Sku> {
 		SkuDTOConverterContext cpSkuDTOConverterConvertContext =
 			(SkuDTOConverterContext)dtoConverterContext;
 
-		CPInstance cpInstance = _cpInstanceLocalService.getCPInstance(
-			(Long)cpSkuDTOConverterConvertContext.getId());
-
 		CommerceContext commerceContext =
 			cpSkuDTOConverterConvertContext.getCommerceContext();
+
+		CPInstance cpInstance = _cpInstanceLocalService.getCPInstance(
+			(Long)cpSkuDTOConverterConvertContext.getId());
 
 		JSONArray keyValuesJSONArray = _jsonHelper.toJSONArray(
 			_cpDefinitionOptionRelLocalService.
@@ -103,6 +100,11 @@ public class SkuDTOConverter implements DTOConverter<CPInstance, Sku> {
 
 		DDMOption[] ddmOptions = _getDDMOptions(cpDefinitionOptionRelsMap);
 
+		CPInstance replacementCPInstance =
+			_cpInstanceLocalService.fetchCProductInstance(
+				cpInstance.getReplacementCProductId(),
+				cpInstance.getReplacementCPInstanceUuid());
+
 		return new Sku() {
 			{
 				availability = _getAvailability(
@@ -113,6 +115,8 @@ public class SkuDTOConverter implements DTOConverter<CPInstance, Sku> {
 					cpSkuDTOConverterConvertContext.getLocale());
 				DDMOptions = ddmOptions;
 				depth = cpInstance.getDepth();
+				discontinued = cpInstance.isDiscontinued();
+				discontinuedDate = cpInstance.getDiscontinuedDate();
 				displayDate = cpInstance.getDisplayDate();
 				expirationDate = cpInstance.getExpirationDate();
 				gtin = cpInstance.getGtin();
@@ -149,6 +153,23 @@ public class SkuDTOConverter implements DTOConverter<CPInstance, Sku> {
 
 						return commercePriceConfiguration.
 							displayDiscountLevels();
+					});
+				setReplacementSkuExternalReferenceCode(
+					() -> {
+						if (replacementCPInstance != null) {
+							return replacementCPInstance.
+								getExternalReferenceCode();
+						}
+
+						return null;
+					});
+				setReplacementSkuId(
+					() -> {
+						if (replacementCPInstance != null) {
+							return replacementCPInstance.getCPInstanceId();
+						}
+
+						return null;
 					});
 			}
 		};

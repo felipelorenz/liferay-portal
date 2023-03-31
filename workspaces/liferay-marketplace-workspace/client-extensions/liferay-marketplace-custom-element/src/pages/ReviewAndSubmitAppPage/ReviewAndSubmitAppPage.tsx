@@ -1,10 +1,12 @@
 import {useEffect, useState} from 'react';
 
+import brightnessEmptyIcon from '../../assets/icons/brightness-empty.svg';
 import documentationIcon from '../../assets/icons/documentation-icon.svg';
 import emptyImage from '../../assets/icons/emptyImage.svg';
 import globeIcon from '../../assets/icons/globe-icon.svg';
 import guideIcon from '../../assets/icons/guide-icon.svg';
 import phoneIcon from '../../assets/icons/phone-icon.svg';
+import scheduleIcon from '../../assets/icons/schedule-icon.svg';
 import usageTermsIcon from '../../assets/icons/usage-terms-icon.svg';
 import {Checkbox} from '../../components/Checkbox/Checkbox';
 import {Header} from '../../components/Header/Header';
@@ -16,9 +18,10 @@ import {
 	getProduct,
 	getProductSKU,
 	getProductSpecifications,
+	getProductSubscriptionConfiguration,
 } from '../../utils/api';
 import {CardSection} from './CardSection';
-import {initialReviewAndSubmitAppPageItems} from './ReviewAndSubmitAppPageUtil';
+import {ReviewAndSubmitAppPageUtilProps} from './ReviewAndSubmitAppPageUtil';
 
 import './ReviewAndSubmitAppPage.scss';
 
@@ -52,10 +55,11 @@ export function ReviewAndSubmitAppPage({
 	const [notes, setNotes] = useState('');
 	const [appLicense, setAppLicense] = useState('');
 
-	// const [price, setPrice] = useState('');
-
 	const [cardInfos, setCardInfos] = useState<
 		{icon: string; link: string; title: string}[]
+	>([]);
+	const [reviewAndSubmitAppPageItems, setReviewAndSubmitAppPageItems] = useState<
+		ReviewAndSubmitAppPageUtilProps[]
 	>([]);
 
 	const buildZIPTitles = buildZIPFiles?.map(
@@ -68,16 +72,84 @@ export function ReviewAndSubmitAppPage({
 				appERC,
 			});
 
+			const productCategories = {
+				section: "Categories",
+				tags: productResponse.categories
+					.filter((category : any) => {
+						return category.vocabulary === 'marketplace-solution-category';
+					})
+					.map((category : any) => {
+						return category.name;
+					}),
+			};
+
+			const productTags = {
+				section: "Tags",
+				tags: productResponse.categories
+					.filter((tag : any) => {
+						return tag.vocabulary === 'marketplace-solution-tags';
+					})
+					.map((tag : any) => {
+						return tag.name;
+					}),
+			};
+			
 			const skuResponse = await getProductSKU({
 				appProductId,
 			});
 
-			// setPrice(skuResponse.items[0]?.price);
+			dispatch({
+				payload: {
+					value: skuResponse.items[0]?.price === 0 ? "Free" : "Paid",
+				},
+				type: TYPES.UPDATE_APP_PRICE_MODEL,
+			});
+
+			const pricing = {
+				icon: brightnessEmptyIcon,
+				section: 'Pricing',
+				title: priceModel,
+			};
+
+			dispatch({
+				payload: {
+					value: skuResponse.items[0]?.price,
+				},
+				type: TYPES.UPDATE_APP_LICENSE_PRICE,
+			});
+
+			const productSubscriptionConfigurationResponse = await getProductSubscriptionConfiguration({
+				appERC,
+			});
+
+			const licensing = {
+				description: productSubscriptionConfigurationResponse.subscriptionType ? 'License must be renewed annually.' : 'License never expires.',
+				icon: scheduleIcon,
+				section: 'Licensing',
+				title: productSubscriptionConfigurationResponse.subscriptionType ? 'Non-Perpetual License' : 'Perpetual License',
+			};
+
+			const storefront = {
+				section: 'Storefront',
+			};
+
+			const versioning = {
+				description: notes,
+				section: 'Version',
+				title: 'Release Notes',
+				version: version,
+			};
+
+			const supportHelp = {
+				section: 'Support & Help',
+			};
+
+			setReviewAndSubmitAppPageItems([productCategories, productTags, pricing, licensing, storefront, versioning, supportHelp]);
 
 			const productSpecificationsResponse =
 				await getProductSpecifications({
 					appProductId,
-				});
+				})
 
 			// const productImages = await getProductImages({ appProductId });
 
@@ -222,14 +294,14 @@ export function ReviewAndSubmitAppPage({
 							sectionName="Description"
 						/>
 
-						{initialReviewAndSubmitAppPageItems.map(
+						{reviewAndSubmitAppPageItems.map(
 							(item, index) => {
 								const cardTitle = () => {
 									if (item.section === 'Pricing') {
 										return priceModel;
 									}
 									else if (item.section === 'Licensing') {
-										return appLicense;
+										return item.title;
 									}
 									else if (item.section === 'Version') {
 										return item.title;
@@ -261,7 +333,7 @@ export function ReviewAndSubmitAppPage({
 
 								return (
 									<CardSection
-										build={item.section === 'Build'}
+										build={false}
 										buildZIPTitles={buildZIPTitles}
 										cardDescription={cardDescription()}
 										cardInfos={cardInfos}

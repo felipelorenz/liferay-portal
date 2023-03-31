@@ -68,6 +68,10 @@ definition {
 						"key":"submitted",
 						"name":"Submitted"
 					},
+					"currency":{
+						"key":"USD",
+						"name":"US Dollar"
+					},
 					"activityDescription":{
 						"activityPromotion":"",
 						"ad":"",
@@ -126,7 +130,7 @@ definition {
 					"name":"${activityName}",
 					"startDate":"${startDate}",
 					"tactic":{
-						"key":"prmtact004prmtct008",
+						"key":"prmtact002prmtct006prmtact003prmtct009prmtact004prmtct008",
 						"name":"Other"
 					},
 					"totalCostOfExpense":${budgetValue},
@@ -171,6 +175,38 @@ definition {
 		echo(${response});
 	}
 
+	macro addCurrency {
+		Variables.assertDefined(parameterList = ${currency});
+
+		var accountId = JSONAccountEntryAPI._getAccountEntryId(accountEntryName = ${accountEntryName});
+		var portalURL = JSONCompany.getPortalURL();
+
+		var curl = '''
+			${portalURL}/o/c/companyextenders \
+				-u test@liferay.com:test \
+				-H 'accept: application/json' \
+				-H 'Content-Type: application/json' \
+				-d '{
+					"accountExternalReferenceCodeSF":"",
+					"claimPercent":"",
+					"country":{
+						"key":"${country}"
+					},
+					"currency":{
+						"key":"${currency}"
+					},
+					"partnerLevel":{
+						"key":""
+					},
+					"r_accToCoExts_accountEntryId":"${accountId}"
+				}'
+		''';
+
+		var response = JSONCurlUtil.post(${curl});
+
+		echo(${response});
+	}
+
 	macro addMDF {
 		Variables.assertDefined(parameterList = ${campaignName});
 
@@ -202,6 +238,10 @@ definition {
 					"country":{
 						"key":"global",
 						"name":"Global"
+					},
+					"currency":{
+						"key":"USD",
+						"name":"US Dollar"
 					},
 					"emailAddress":"${userEmailAddress}",
 					"liferayBusinessSalesGoals":"${goalsOptions}",

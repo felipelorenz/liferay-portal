@@ -1306,7 +1306,7 @@ public class ObjectEntryLocalServiceImpl
 				}
 			}
 
-			if (Objects.equals("documentsAndMedia", fileSource)) {
+			if (Objects.equals(fileSource, "documentsAndMedia")) {
 				return;
 			}
 
@@ -2482,9 +2482,14 @@ public class ObjectEntryLocalServiceImpl
 
 				ddmExpression.setVariables(columns);
 
-				Expression<?> expression = ddmExpression.getDSLExpression();
+				try {
+					Expression<?> expression = ddmExpression.getDSLExpression();
 
-				selectExpressions.add(expression.as(objectField.getName()));
+					selectExpressions.add(expression.as(objectField.getName()));
+				}
+				catch (Exception exception) {
+					_log.error(exception);
+				}
 			}
 		}
 

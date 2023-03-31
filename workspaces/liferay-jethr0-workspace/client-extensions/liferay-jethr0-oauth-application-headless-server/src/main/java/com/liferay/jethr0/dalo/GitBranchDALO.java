@@ -16,12 +16,10 @@ package com.liferay.jethr0.dalo;
 
 import com.liferay.jethr0.gitbranch.GitBranch;
 import com.liferay.jethr0.gitbranch.GitBranchFactory;
-import com.liferay.jethr0.project.Project;
 
 import java.net.URL;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.json.JSONObject;
@@ -85,7 +83,7 @@ public class GitBranchDALO extends BaseDALO {
 				responseJSONObject);
 
 			gitBranch.addProjects(
-				_projectGitBranchDALO.retrieveProjects(gitBranch));
+				_projectsToGitBranchesDALO.retrieveProjects(gitBranch));
 
 			gitBranches.add(gitBranch);
 		}
@@ -94,23 +92,7 @@ public class GitBranchDALO extends BaseDALO {
 	}
 
 	public GitBranch updateGitBranch(GitBranch gitBranch) {
-		List<Project> retrievedProjects =
-			_projectGitBranchDALO.retrieveProjects(gitBranch);
-
-		for (Project project : gitBranch.getProjects()) {
-			if (retrievedProjects.contains(project)) {
-				retrievedProjects.removeAll(Collections.singletonList(project));
-
-				continue;
-			}
-
-			_projectGitBranchDALO.createRelationship(project, gitBranch);
-		}
-
-		for (Project retrievedProject : retrievedProjects) {
-			_projectGitBranchDALO.deleteRelationship(
-				retrievedProject, gitBranch);
-		}
+		_projectsToGitBranchesDALO.updateRelationships(gitBranch);
 
 		JSONObject responseJSONObject = update(gitBranch.getJSONObject());
 
@@ -135,6 +117,6 @@ public class GitBranchDALO extends BaseDALO {
 	private ProjectDALO _projectDALO;
 
 	@Autowired
-	private ProjectGitBranchDALO _projectGitBranchDALO;
+	private ProjectsToGitBranchesDALO _projectsToGitBranchesDALO;
 
 }

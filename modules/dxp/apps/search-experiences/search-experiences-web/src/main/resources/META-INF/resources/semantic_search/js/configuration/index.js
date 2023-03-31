@@ -9,11 +9,12 @@
  * distribution rights of the Software.
  */
 
+import ClayAlert from '@clayui/alert';
 import ClayButton from '@clayui/button';
 import ClayForm, {ClayCheckbox} from '@clayui/form';
 import {useFormik} from 'formik';
 import {fetch} from 'frontend-js-web';
-import React, {useState} from 'react';
+import React, {useMemo, useState} from 'react';
 
 import {LearnMessageWithoutContext} from '../../../sxp_blueprint_admin/js/shared/LearnMessage';
 import sub from '../../../sxp_blueprint_admin/js/utils/language/sub';
@@ -29,6 +30,7 @@ const DEFAULT_TEXT_EMBEDDING_PROVIDER_CONFIGURATIONS = {
 		maxCharacterCount: 500,
 		model: '',
 		modelTimeout: 25,
+		textTruncationStrategy: 'beginning',
 	},
 	embeddingVectorDimensions: 768,
 	languageIds: ['en_US'],
@@ -40,6 +42,31 @@ const DEFAULT_TEXT_EMBEDDING_PROVIDER_CONFIGURATIONS = {
 	],
 	providerName: TEXT_EMBEDDING_PROVIDER_TYPES.HUGGING_FACE_INFERENCE_API,
 };
+
+/**
+ * Determines if two values are unequal. If one of the items is
+ * an integer, both are parsed to integers before comparison. If the
+ * items are arrays, their order is not considered.
+ *
+ * @param {Array|integer|string} item1
+ * @param {Array|integer|string} item2
+ * @returns {boolean}
+ */
+function isNotEqual(item1, item2) {
+	if (Number.isInteger(item1) || Number.isInteger(item2)) {
+		return parseInt(item1, 10) !== parseInt(item2, 10);
+	}
+
+	if (Array.isArray(item1) && Array.isArray(item2)) {
+		return (
+			item1.length !== item2.length ||
+			item1.some((str) => !item2.includes(str)) ||
+			item2.some((str) => !item1.includes(str))
+		);
+	}
+
+	return item1 !== item2;
+}
 
 function parseJSONString(jsonString) {
 	if (typeof jsonString === 'undefined' || jsonString === '') {
@@ -177,9 +204,21 @@ export default function ({
 	namespace = '',
 	redirectURL,
 }) {
+	const resolvedInitialTextEmbeddingProviderConfigurationJSONs = useMemo(
+		() =>
+			resolveInitialTextEmbeddingProviderConfigurationJSONs(
+				initialTextEmbeddingProviderConfigurationJSONs,
+				availableTextEmbeddingProviders
+			),
+		[
+			initialTextEmbeddingProviderConfigurationJSONs,
+			availableTextEmbeddingProviders,
+		]
+	);
+
 	const [showSubmitWarningModal, setShowSubmitWarningModal] = useState(false);
 
-	const _handleFormikSubmit = async (values) => {
+	const _handleFormikSubmit = async (values, actions) => {
 		const {
 			attributes = {},
 			languageIds,
@@ -243,8 +282,14 @@ export default function ({
 				method: 'POST',
 			}
 		)
-			.then((response) => response.json())
+			.then((response) => {
+				actions.setSubmitting(false);
+
+				return response.json();
+			})
 			.catch((error) => {
+				actions.setSubmitting(false);
+
 				setShowSubmitWarningModal(true);
 
 				if (process.env.NODE_ENV === 'development') {
@@ -470,10 +515,7 @@ export default function ({
 	const formik = useFormik({
 		initialValues: {
 			textEmbeddingCacheTimeout: initialTextEmbeddingCacheTimeout,
-			textEmbeddingProviderConfigurationJSONs: resolveInitialTextEmbeddingProviderConfigurationJSONs(
-				initialTextEmbeddingProviderConfigurationJSONs,
-				availableTextEmbeddingProviders
-			),
+			textEmbeddingProviderConfigurationJSONs: resolvedInitialTextEmbeddingProviderConfigurationJSONs,
 			textEmbeddingsEnabled: initialTextEmbeddingsEnabled,
 		},
 		onSubmit: _handleFormikSubmit,
@@ -494,7 +536,12 @@ export default function ({
 	};
 
 	const _handleSubmit = () => {
-		formik.handleSubmit();
+		if (document[formName].checkValidity()) {
+			formik.handleSubmit();
+		}
+		else {
+			document[formName].reportValidity();
+		}
 	};
 
 	const _handleSubmitWarningModalClose = () => {
@@ -506,6 +553,45 @@ export default function ({
 
 		submitForm(document[formName]);
 	};
+
+	const _isProviderConfigurationDirty = () => {
+		return formik.values.textEmbeddingProviderConfigurationJSONs?.some(
+			(config, index) => {
+				return (
+					[
+						'embeddingVectorDimensions',
+						'providerName',
+						'modelClassNames',
+					].some((property) => {
+						return isNotEqual(
+							resolvedInitialTextEmbeddingProviderConfigurationJSONs[
+								index
+							][property],
+							config[property]
+						);
+					}) ||
+					[
+						'accessToken',
+						'basicAuthPassword',
+						'basicAuthUsername',
+						'hostAddress',
+						'model',
+						'modelTimeout',
+					].some((property) => {
+						return isNotEqual(
+							resolvedInitialTextEmbeddingProviderConfigurationJSONs[
+								index
+							].attributes[property],
+							config.attributes[property]
+						);
+					})
+				);
+			}
+		);
+	};
+
+	const _isTextEmbeddingsEnabledDirty = () =>
+		formik.values.textEmbeddingsEnabled !== initialTextEmbeddingsEnabled;
 
 	const _renderEmbeddingProviderConfigurationInputs = (index) => {
 		return (
@@ -1203,11 +1289,18 @@ export default function ({
 					.join('|')}
 			/>
 
+			{formik.values.textEmbeddingsEnabled &&
+				(_isTextEmbeddingsEnabledDirty() ||
+					_isProviderConfigurationDirty()) && (
+					<ClayAlert displayType="info">
+						{Liferay.Language.get('reindex-required-alert')}
+					</ClayAlert>
+				)}
+
 			<ClayButton.Group spaced>
 				<ClayButton
 					disabled={formik.isSubmitting}
 					onClick={_handleSubmit}
-					type="submit"
 				>
 					{formik.isSubmitting && (
 						<span className="inline-item inline-item-before">

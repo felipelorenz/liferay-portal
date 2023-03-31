@@ -79,7 +79,21 @@ definition {
 	}
 
 	macro answerQuestion {
-		CKEditor.addContent(content = ${contentField});
+		Click(
+			key_text = "Add Answer",
+			locator1 = "Button#ANY");
+
+		SelectFrame.selectFrameNoLoading(locator1 = "CKEditor#BODY_FIELD_IFRAME");
+
+		Type(
+			locator1 = "CKEditor#BODY",
+			value1 = ${contentField});
+
+		SelectFrame(value1 = "relative-top");
+
+		ScrollWebElementIntoView(
+			key_text = "Post Answer",
+			locator1 = "Button#ANY");
 
 		Click(
 			key_text = "Post Answer",
@@ -700,11 +714,9 @@ definition {
 	}
 
 	macro subscribeTopic {
-		AssertClick(
-			locator1 = "Button#SUBSCRIBE",
-			value1 = "Subscribe");
+		AssertElementPresent(locator1 = "Questions#QUESTIONS_BELL_BUTTON");
 
-		AssertElementPresent(locator1 = "Questions#QUESTIONS_SUBSCRIBED_BUTTON");
+		Click(locator1 = "Questions#QUESTIONS_BELL_BUTTON");
 	}
 
 	macro tearDown {

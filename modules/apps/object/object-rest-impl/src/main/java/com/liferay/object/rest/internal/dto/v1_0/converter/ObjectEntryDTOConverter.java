@@ -15,6 +15,7 @@
 package com.liferay.object.rest.internal.dto.v1_0.converter;
 
 import com.liferay.asset.kernel.model.AssetTag;
+import com.liferay.asset.kernel.service.AssetCategoryLocalService;
 import com.liferay.asset.kernel.service.AssetTagLocalService;
 import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.service.DLAppService;
@@ -34,8 +35,10 @@ import com.liferay.object.rest.dto.v1_0.FileEntry;
 import com.liferay.object.rest.dto.v1_0.ListEntry;
 import com.liferay.object.rest.dto.v1_0.ObjectEntry;
 import com.liferay.object.rest.dto.v1_0.Status;
+import com.liferay.object.rest.dto.v1_0.TaxonomyCategoryBrief;
 import com.liferay.object.rest.dto.v1_0.util.CreatorUtil;
 import com.liferay.object.rest.dto.v1_0.util.LinkUtil;
+import com.liferay.object.rest.internal.dto.v1_0.util.TaxonomyCategoryBriefUtil;
 import com.liferay.object.rest.internal.util.DTOConverterUtil;
 import com.liferay.object.scope.ObjectScopeProvider;
 import com.liferay.object.scope.ObjectScopeProviderRegistry;
@@ -192,9 +195,7 @@ public class ObjectEntryDTOConverter
 					StringUtil.replaceLast(objectFieldName, "Id", ""), value);
 			}
 
-			if (FeatureFlagManagerUtil.isEnabled("LPS-161364") &&
-				nestedField.equals(objectRelationship.getName())) {
-
+			if (nestedField.equals(objectRelationship.getName())) {
 				map.put(nestedField, value);
 			}
 		}
@@ -214,9 +215,7 @@ public class ObjectEntryDTOConverter
 		String relatedObjectEntryERC = GetterUtil.getString(
 			values.get(objectRelationshipERCObjectFieldName));
 
-		if (FeatureFlagManagerUtil.isEnabled("LPS-161364") &&
-			(map.get(objectRelationship.getName()) == null)) {
-
+		if (map.get(objectRelationship.getName()) == null) {
 			map.put(
 				objectRelationship.getName() + "ERC", relatedObjectEntryERC);
 		}
@@ -392,6 +391,17 @@ public class ObjectEntryDTOConverter
 								objectEntry.getStatus()));
 					}
 				};
+
+				if (FeatureFlagManagerUtil.isEnabled("LPS-176651")) {
+					taxonomyCategoryBriefs = TransformUtil.transformToArray(
+						_assetCategoryLocalService.getCategories(
+							objectDefinition.getClassName(),
+							objectEntry.getObjectEntryId()),
+						assetCategory ->
+							TaxonomyCategoryBriefUtil.toTaxonomyCategoryBrief(
+								assetCategory, dtoConverterContext),
+						TaxonomyCategoryBrief.class);
+				}
 			}
 		};
 	}
@@ -619,6 +629,9 @@ public class ObjectEntryDTOConverter
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		ObjectEntryDTOConverter.class);
+
+	@Reference
+	private AssetCategoryLocalService _assetCategoryLocalService;
 
 	@Reference
 	private AssetTagLocalService _assetTagLocalService;

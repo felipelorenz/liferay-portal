@@ -133,7 +133,6 @@ public class PoshiRunnerPlugin implements Plugin<Project> {
 			_addTaskDownloadWebDriverBrowserBinary(
 				project, poshiRunnerExtension);
 
-		final Test runPoshiTask = _addTaskRunPoshi(project);
 		final JavaExec validatePoshiTask = _addTaskValidatePoshi(project);
 		final JavaExec writePoshiPropertiesTask = _addTaskWritePoshiProperties(
 			project);
@@ -143,6 +142,9 @@ public class PoshiRunnerPlugin implements Plugin<Project> {
 
 				@Override
 				public void execute(Project project) {
+					Test runPoshiTask = _addTaskRunPoshi(
+						poshiRunnerExtension, project);
+
 					Properties poshiProperties = _getPoshiProperties(
 						poshiRunnerExtension);
 
@@ -374,7 +376,9 @@ public class PoshiRunnerPlugin implements Plugin<Project> {
 	}
 
 	@SuppressWarnings("rawtypes")
-	private Test _addTaskRunPoshi(Project project) {
+	private Test _addTaskRunPoshi(
+		PoshiRunnerExtension poshiRunnerExtension, Project project) {
+
 		final Test test = GradleUtil.addTask(
 			project, RUN_POSHI_TASK_NAME, Test.class);
 
@@ -384,7 +388,15 @@ public class PoshiRunnerPlugin implements Plugin<Project> {
 			DOWNLOAD_WEB_DRIVER_BROWSER_BINARY_TASK_NAME,
 			EXPAND_POSHI_RUNNER_TASK_NAME);
 
-		test.include("com/liferay/poshi/runner/PoshiRunner.class");
+		String testRunType = _getTestRunType(poshiRunnerExtension);
+
+		if (testRunType.equals("parallel")) {
+			test.include("com/liferay/poshi/runner/ParallelPoshiRunner.class");
+		}
+		else {
+			test.include("com/liferay/poshi/runner/PoshiRunner.class");
+		}
+
 		test.setClasspath(_getPoshiRunnerClasspath(project));
 		test.setDefaultCharacterEncoding(StandardCharsets.UTF_8.toString());
 		test.setDescription("Execute tests using Poshi Runner.");
@@ -960,6 +972,17 @@ public class PoshiRunnerPlugin implements Plugin<Project> {
 		return project.files(
 			poshiRunnerConfiguration, poshiRunnerResourcesConfiguration,
 			sikuliConfiguration);
+	}
+
+	private String _getTestRunType(PoshiRunnerExtension poshiRunnerExtension) {
+		String testRunType = _getPoshiPropertyValue(
+			"test.run.type", _getPoshiProperties(poshiRunnerExtension));
+
+		if (testRunType != null) {
+			return testRunType;
+		}
+
+		return poshiRunnerExtension.getTestRunType();
 	}
 
 	private File _getWebDriverBrowserBinaryFile(

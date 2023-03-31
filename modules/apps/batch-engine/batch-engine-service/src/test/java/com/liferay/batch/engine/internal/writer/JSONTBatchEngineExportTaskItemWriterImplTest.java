@@ -74,12 +74,21 @@ public class JSONTBatchEngineExportTaskItemWriterImplTest
 
 		StringBundler sb = new StringBundler();
 
-		sb.append("{\"actions\":\n{\"createBatch\": {\"href\": ");
-		sb.append("\"/o/headless-batch-engine/v1.0/import-task/");
-		sb.append(batchEngineUnitConfiguration.getClassName());
-		sb.append("\", \"method\": \"POST\"}},");
+		sb.append("{\"actions\":\n{\"createBatch\": {\"href\": \"");
+
+		String endpoint =
+			"/o/headless-batch-engine/v1.0/import-task/" +
+				batchEngineUnitConfiguration.getClassName();
+
+		sb.append(endpoint);
+
+		sb.append("\", \"method\": \"POST\"}, \"deleteBatch\": {\"href\": \"");
+		sb.append(endpoint);
 		sb.append(
-			"\"configuration\": {\"callbackURL\": null, \"className\": \"");
+			"\", \"method\": \"DELETE\"}, \"updateBatch\": {\"href\": \"");
+		sb.append(endpoint);
+		sb.append("\", \"method\": \"PUT\"}},\n\"configuration\":\n");
+		sb.append("{\"callbackURL\": null, \"className\": \"");
 		sb.append(batchEngineUnitConfiguration.getClassName());
 		sb.append("\",\n\"companyId\": ");
 		sb.append(batchEngineUnitConfiguration.getCompanyId());

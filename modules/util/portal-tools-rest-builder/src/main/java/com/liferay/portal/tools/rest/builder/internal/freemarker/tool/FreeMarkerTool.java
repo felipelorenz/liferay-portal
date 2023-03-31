@@ -15,6 +15,7 @@
 package com.liferay.portal.tools.rest.builder.internal.freemarker.tool;
 
 import com.liferay.petra.string.StringBundler;
+import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.util.DateUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ListUtil;
@@ -42,6 +43,7 @@ import com.liferay.portal.tools.rest.builder.internal.yaml.openapi.PathItem;
 import com.liferay.portal.tools.rest.builder.internal.yaml.openapi.RequestBody;
 import com.liferay.portal.tools.rest.builder.internal.yaml.openapi.Schema;
 import com.liferay.portal.vulcan.graphql.util.GraphQLNamingUtil;
+import com.liferay.portal.vulcan.pagination.Pagination;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -68,25 +70,6 @@ public class FreeMarkerTool {
 		return _freeMarkerTool;
 	}
 
-	public boolean containsAggregationFunction(
-		List<JavaMethodSignature> javaMethodSignatures) {
-
-		for (JavaMethodSignature javaMethodSignature : javaMethodSignatures) {
-			for (JavaMethodParameter javaMethodParameter :
-					javaMethodSignature.getJavaMethodParameters()) {
-
-				if (StringUtil.equals(
-						javaMethodParameter.getParameterType(),
-						"com.liferay.portal.vulcan.aggregation.Aggregation")) {
-
-					return true;
-				}
-			}
-		}
-
-		return false;
-	}
-
 	public boolean containsJavaMethodSignature(
 		List<JavaMethodSignature> javaMethodSignatures, String text) {
 
@@ -96,6 +79,25 @@ public class FreeMarkerTool {
 
 			if (javaMethodSignatureMethodName.contains(text)) {
 				return true;
+			}
+		}
+
+		return false;
+	}
+
+	public boolean containsParameterType(
+		List<JavaMethodSignature> javaMethodSignatures, String parameterType) {
+
+		for (JavaMethodSignature javaMethodSignature : javaMethodSignatures) {
+			for (JavaMethodParameter javaMethodParameter :
+					javaMethodSignature.getJavaMethodParameters()) {
+
+				if (StringUtil.equals(
+						javaMethodParameter.getParameterType(),
+						parameterType)) {
+
+					return true;
+				}
 			}
 		}
 
@@ -186,7 +188,10 @@ public class FreeMarkerTool {
 				}
 			}
 
-			if (!exists) {
+			if (!exists &&
+				!isQueryParameter(
+					javaMethodParameter, javaMethodSignature.getOperation())) {
+
 				javaMethodParameters.add(javaMethodParameter);
 			}
 		}
@@ -649,7 +654,7 @@ public class FreeMarkerTool {
 		for (JavaMethodSignature javaMethodSignature : javaMethodSignatures) {
 			Operation operation = javaMethodSignature.getOperation();
 
-			if (!Objects.equals("post", getHTTPMethod(operation))) {
+			if (!Objects.equals(getHTTPMethod(operation), "post")) {
 				continue;
 			}
 
@@ -1012,7 +1017,21 @@ public class FreeMarkerTool {
 	public boolean isQueryParameter(
 		JavaMethodParameter javaMethodParameter, Operation operation) {
 
-		return isParameter(javaMethodParameter, operation, "query");
+		if (isParameter(javaMethodParameter, operation, "query") ||
+			(Objects.equals(
+				javaMethodParameter.getParameterName(), "pagination") &&
+			 Objects.equals(
+				 javaMethodParameter.getParameterType(),
+				 Pagination.class.getName())) ||
+			(Objects.equals(javaMethodParameter.getParameterName(), "sorts") &&
+			 Objects.equals(
+				 javaMethodParameter.getParameterType(),
+				 Sort[].class.getName()))) {
+
+			return true;
+		}
+
+		return false;
 	}
 
 	public boolean isReturnTypeRelatedSchema(
@@ -1027,6 +1046,14 @@ public class FreeMarkerTool {
 			String string = returnTypeParts[returnTypeParts.length - 1];
 
 			return relatedSchemaNames.contains(string);
+		}
+
+		return false;
+	}
+
+	public boolean isVersionCompatible(ConfigYAML configYAML, int version) {
+		if (configYAML.getCompatibilityVersion() >= version) {
+			return true;
 		}
 
 		return false;

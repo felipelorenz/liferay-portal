@@ -83,6 +83,7 @@ import com.liferay.portal.kernel.dao.orm.Property;
 import com.liferay.portal.kernel.dao.orm.PropertyFactoryUtil;
 import com.liferay.portal.kernel.dependency.manager.DependencyManagerSyncUtil;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
@@ -212,8 +213,7 @@ public class ObjectDefinitionLocalServiceImpl
 
 		_addSystemObjectFields(
 			ObjectEntryTable.INSTANCE.getTableName(), objectDefinition,
-			ObjectEntryTable.INSTANCE.objectEntryId.getName(),
-			objectDefinition.isSystem(), userId);
+			ObjectEntryTable.INSTANCE.objectEntryId.getName(), userId);
 
 		return _updateTitleObjectFieldId(objectDefinition, null);
 	}
@@ -480,6 +480,38 @@ public class ObjectDefinitionLocalServiceImpl
 	}
 
 	@Override
+	public ObjectDefinition enableAccountEntryRestricted(
+			ObjectRelationship objectRelationship)
+		throws PortalException {
+
+		ObjectDefinition objectDefinition1 = getObjectDefinition(
+			objectRelationship.getObjectDefinitionId1());
+
+		if (!Objects.equals(objectDefinition1.getShortName(), "AccountEntry")) {
+			throw new ObjectDefinitionAccountEntryRestrictedException(
+				"Custom object definitions can only be restricted by account " +
+					"entry");
+		}
+
+		ObjectDefinition objectDefinition2 = getObjectDefinition(
+			objectRelationship.getObjectDefinitionId2());
+
+		if (objectDefinition2.isAccountEntryRestricted()) {
+			return objectDefinition2;
+		}
+
+		ObjectField objectField = _objectFieldLocalService.getObjectField(
+			objectRelationship.getObjectFieldId2());
+
+		objectDefinition2.setAccountEntryRestrictedObjectFieldId(
+			objectField.getObjectFieldId());
+
+		objectDefinition2.setAccountEntryRestricted(true);
+
+		return objectDefinitionPersistence.update(objectDefinition2);
+	}
+
+	@Override
 	public ObjectDefinition fetchObjectDefinition(long companyId, String name) {
 		return objectDefinitionPersistence.fetchByC_N(companyId, name);
 	}
@@ -672,7 +704,7 @@ public class ObjectDefinitionLocalServiceImpl
 
 	@Override
 	public void undeployObjectDefinition(ObjectDefinition objectDefinition) {
-		if (objectDefinition.isSystem()) {
+		if (objectDefinition.isUnmodifiableSystemObject()) {
 			return;
 		}
 
@@ -720,7 +752,7 @@ public class ObjectDefinitionLocalServiceImpl
 		ObjectDefinition objectDefinition =
 			objectDefinitionPersistence.fetchByPrimaryKey(objectDefinitionId);
 
-		if (objectDefinition.isSystem()) {
+		if (objectDefinition.isUnmodifiableSystemObject()) {
 			throw new ObjectDefinitionStatusException(
 				"Object definition " + objectDefinition);
 		}
@@ -844,7 +876,8 @@ public class ObjectDefinitionLocalServiceImpl
 		storageType = Validator.isNotNull(storageType) ? storageType :
 			ObjectDefinitionConstants.STORAGE_TYPE_DEFAULT;
 
-		_validateEnableComments(enableComments, storageType, system);
+		_validateEnableComments(
+			enableComments, modifiable, storageType, system);
 
 		_validateLabel(labelMap);
 		_validateName(0, user.getCompanyId(), modifiable, name, system);
@@ -899,11 +932,13 @@ public class ObjectDefinitionLocalServiceImpl
 		}
 
 		_addSystemObjectFields(
-			dbTableName, objectDefinition, pkObjectFieldName, system, userId);
+			dbTableName, objectDefinition, pkObjectFieldName, userId);
 
 		if (objectFields != null) {
 			for (ObjectField objectField : objectFields) {
-				if (system || objectField.isSystem()) {
+				if (objectDefinition.isUnmodifiableSystemObject() ||
+					objectField.isSystem()) {
+
 					_objectFieldLocalService.addOrUpdateSystemObjectField(
 						userId, objectDefinition.getObjectDefinitionId(),
 						objectField.getBusinessType(),
@@ -935,7 +970,7 @@ public class ObjectDefinitionLocalServiceImpl
 		objectDefinition = _updateTitleObjectFieldId(
 			objectDefinition, titleObjectFieldName);
 
-		if (_isUnmodifiableSystemObject(modifiable, system)) {
+		if (objectDefinition.isUnmodifiableSystemObject()) {
 			_createTable(
 				objectDefinition.getExtensionDBTableName(), objectDefinition);
 		}
@@ -945,7 +980,7 @@ public class ObjectDefinitionLocalServiceImpl
 
 	private void _addSystemObjectFields(
 			String dbTableName, ObjectDefinition objectDefinition,
-			String pkObjectFieldName, boolean system, long userId)
+			String pkObjectFieldName, long userId)
 		throws PortalException {
 
 		_objectFieldLocalService.addSystemObjectField(
@@ -979,9 +1014,7 @@ public class ObjectDefinitionLocalServiceImpl
 
 		String dbColumnName = ObjectEntryTable.INSTANCE.objectEntryId.getName();
 
-		if (_isUnmodifiableSystemObject(
-				objectDefinition.isModifiable(), system)) {
-
+		if (objectDefinition.isUnmodifiableSystemObject()) {
 			dbColumnName = pkObjectFieldName;
 		}
 
@@ -1161,11 +1194,15 @@ public class ObjectDefinitionLocalServiceImpl
 	private boolean _isUnmodifiableSystemObject(
 		boolean modifiable, boolean system) {
 
-		if (!modifiable && system) {
-			return true;
+		if (FeatureFlagManagerUtil.isEnabled("LPS-167253")) {
+			if (!modifiable && system) {
+				return true;
+			}
+
+			return false;
 		}
 
-		return false;
+		return system;
 	}
 
 	private ObjectDefinition _publishObjectDefinition(
@@ -1248,16 +1285,17 @@ public class ObjectDefinitionLocalServiceImpl
 		_validateObjectFieldId(objectDefinition, titleObjectFieldId);
 		_validateActive(objectDefinition, active);
 		_validateEnableCategorization(
-			enableCategorization, objectDefinition.getStorageType(),
-			objectDefinition.isSystem());
+			enableCategorization, objectDefinition.isModifiable(),
+			objectDefinition.getStorageType(), objectDefinition.isSystem());
 		_validateEnableComments(
-			enableComments, objectDefinition.getStorageType(),
-			objectDefinition.isSystem());
+			enableComments, objectDefinition.isModifiable(),
+			objectDefinition.getStorageType(), objectDefinition.isSystem());
 		_validateEnableObjectEntryHistory(
 			objectDefinition.isApproved(),
 			objectDefinition.isEnableObjectEntryHistory() !=
 				enableObjectEntryHistory,
-			objectDefinition.getStorageType(), objectDefinition.isSystem());
+			objectDefinition.isModifiable(), objectDefinition.getStorageType(),
+			objectDefinition.isSystem());
 		_validateLabel(labelMap);
 		_validatePluralLabel(pluralLabelMap);
 
@@ -1454,10 +1492,13 @@ public class ObjectDefinitionLocalServiceImpl
 	}
 
 	private void _validateEnableCategorization(
-			boolean enableCategorization, String storageType, boolean system)
+			boolean enableCategorization, boolean modifiable,
+			String storageType, boolean system)
 		throws PortalException {
 
-		if (enableCategorization && system) {
+		if (enableCategorization &&
+			_isUnmodifiableSystemObject(modifiable, system)) {
+
 			throw new ObjectDefinitionEnableCategorizationException(
 				"Enable categorization is not allowed for system object " +
 					"definitions");
@@ -1474,10 +1515,11 @@ public class ObjectDefinitionLocalServiceImpl
 	}
 
 	private void _validateEnableComments(
-			boolean enableComments, String storageType, boolean system)
+			boolean enableComments, boolean modifiable, String storageType,
+			boolean system)
 		throws PortalException {
 
-		if (enableComments && system) {
+		if (enableComments && _isUnmodifiableSystemObject(modifiable, system)) {
 			throw new ObjectDefinitionEnableCommentsException(
 				"Enable comments is not allowed for system object definitions");
 		}
@@ -1494,14 +1536,14 @@ public class ObjectDefinitionLocalServiceImpl
 
 	private void _validateEnableObjectEntryHistory(
 			boolean approved, boolean enableObjectEntryHistoryChanged,
-			String storageType, boolean system)
+			boolean modifiable, String storageType, boolean system)
 		throws PortalException {
 
 		if (!enableObjectEntryHistoryChanged) {
 			return;
 		}
 
-		if (system) {
+		if (_isUnmodifiableSystemObject(modifiable, system)) {
 			throw new ObjectDefinitionEnableObjectEntryHistoryException(
 				"Enable object entry history is not allowed for system " +
 					"object definitions");

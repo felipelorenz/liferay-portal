@@ -23,15 +23,15 @@ import isDeepEqual from '~/util/object';
 
 const testrayStorage = TestrayStorage.getInstance().getStorage('persisted');
 
-export type Sort = {
-	direction: SortDirection;
-	key: string;
-};
-
 export type Entry = {
 	label: string;
 	name: string;
 	value: string;
+};
+
+export type Sort = {
+	direction: SortDirection;
+	key: string;
 };
 
 type ListViewFilter = {

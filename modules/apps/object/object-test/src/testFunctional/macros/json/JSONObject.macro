@@ -198,6 +198,35 @@ definition {
 					}'
 			''';
 		}
+		else if (${fieldBusinessType} == "Formula") {
+			var curl = '''
+				${portalURL}/o/object-admin/v1.0/object-definitions/${objectId}/object-fields \
+					-H 'Content-Type: application/json' \
+					-u ${userEmailAddress}:${userPassword} \
+					-d '{
+						"DBType": "${fieldType}",
+						"businessType": "${fieldBusinessType}",
+						"indexed": ${indexed},
+						"indexedAsKeyword": ${indexedAsKeyword},
+						"label": {
+							"en_US": "${fieldLabelName}"
+						},
+						"listTypeDefinitionId": ${picklistId},
+						"name": "${fieldName}",
+						"objectFieldSettings": [
+							{
+								"name": "output",
+								"value": "${outputOption}"
+							},
+							{
+								"name": "script",
+								"value": "${formulaScript}"
+							}
+						],
+						"required": ${isRequired}
+					}'
+			''';
+		}
 		else {
 			var curl = '''
 				${portalURL}/o/object-admin/v1.0/object-definitions/${objectId}/object-fields \
@@ -321,7 +350,9 @@ definition {
 				}'
 		''';
 
-		JSONCurlUtil.post(${curl});
+		var objectEntryId = JSONCurlUtil.post(${curl}, "$.id");
+
+		return ${objectEntryId};
 	}
 
 	@summary = "This calls the JSON WS API to add a single object field entry"
@@ -499,7 +530,8 @@ definition {
 			objectName = ${objectName},
 			token = ${token},
 			userEmailAddress = ${userEmailAddress},
-			userPassword = ${userPassword});
+			userPassword = ${userPassword},
+			virtualHost = ${virtualHost});
 
 		if (!(isSet(userEmailAddress))) {
 			var userEmailAddress = "test@liferay.com";
@@ -725,7 +757,16 @@ definition {
 	}
 
 	macro getObjectId {
-		var portalURL = JSONCompany.getPortalURL();
+		if (isSet(virtualHost)) {
+			if (!(isSet(port))) {
+				var port = 8080;
+			}
+
+			var portalURL = "http://${virtualHost}:${port}";
+		}
+		else {
+			var portalURL = JSONCompany.getPortalURL();
+		}
 
 		if (!(isSet(userEmailAddress))) {
 			var userEmailAddress = "test@liferay.com";
@@ -773,6 +814,29 @@ definition {
 		var relationshipIdList = JSONCurlUtil.get(${curl}, "$.items..id");
 
 		return ${relationshipIdList};
+	}
+
+	macro getObjectSearchEntry {
+		var portalURL = JSONCompany.getPortalURL();
+
+		if (!(isSet(userEmailAddress))) {
+			var userEmailAddress = "test@liferay.com";
+		}
+
+		if (!(isSet(userPassword))) {
+			var userPassword = "test";
+		}
+
+		var objectName = StringUtil.toLowerCase(${objectName});
+
+		var curl = '''
+			${portalURL}/o/c/${objectName}s/?search=${searchString} \
+				-u ${userEmailAddress}:${userPassword}
+		''';
+
+		var searchEntryId = JSONCurlUtil.get(${curl}, "$.items[*].id");
+
+		return ${searchEntryId};
 	}
 
 	macro getObjectSortedEntry {

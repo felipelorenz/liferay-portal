@@ -19,6 +19,7 @@ import com.liferay.object.constants.ObjectDefinitionConstants;
 import com.liferay.object.constants.ObjectFieldConstants;
 import com.liferay.object.constants.ObjectRelationshipConstants;
 import com.liferay.object.exception.NoSuchObjectFieldException;
+import com.liferay.object.exception.ObjectDefinitionAccountEntryRestrictedException;
 import com.liferay.object.exception.ObjectDefinitionEnableObjectEntryHistoryException;
 import com.liferay.object.exception.ObjectDefinitionLabelException;
 import com.liferay.object.exception.ObjectDefinitionNameException;
@@ -1080,6 +1081,74 @@ public class ObjectDefinitionLocalServiceTest {
 				ObjectDefinition.class.getName(),
 				ResourceConstants.SCOPE_INDIVIDUAL,
 				String.valueOf(objectDefinition.getObjectDefinitionId())));
+	}
+
+	@Test
+	public void testEnableAccountEntryRestricted() throws Exception {
+
+		// Enabling account restriction between AccountEntry
+		// and a custom object definition
+
+		ObjectDefinition objectDefinition1 =
+			_objectDefinitionLocalService.fetchSystemObjectDefinition(
+				"AccountEntry");
+
+		User user = TestPropsValues.getUser();
+
+		ObjectDefinition objectDefinition2 =
+			_objectDefinitionLocalService.addObjectDefinition(
+				RandomTestUtil.randomString(), user.getUserId());
+
+		ObjectRelationship objectRelationship =
+			_objectRelationshipLocalService.addObjectRelationship(
+				TestPropsValues.getUserId(),
+				objectDefinition1.getObjectDefinitionId(),
+				objectDefinition2.getObjectDefinitionId(), 0,
+				ObjectRelationshipConstants.DELETION_TYPE_PREVENT,
+				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
+				StringUtil.randomId(),
+				ObjectRelationshipConstants.TYPE_ONE_TO_MANY);
+
+		objectDefinition2 =
+			_objectDefinitionLocalService.enableAccountEntryRestricted(
+				objectRelationship);
+
+		Assert.assertTrue(objectDefinition2.isAccountEntryRestricted());
+		Assert.assertFalse(objectDefinition2.isSystem());
+
+		// Enable account restriction between two custom object definitions
+
+		ObjectDefinition objectDefinition3 =
+			_objectDefinitionLocalService.addObjectDefinition(
+				RandomTestUtil.randomString(), user.getUserId());
+
+		objectRelationship =
+			_objectRelationshipLocalService.addObjectRelationship(
+				TestPropsValues.getUserId(),
+				objectDefinition2.getObjectDefinitionId(),
+				objectDefinition3.getObjectDefinitionId(), 0,
+				ObjectRelationshipConstants.DELETION_TYPE_PREVENT,
+				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
+				StringUtil.randomId(),
+				ObjectRelationshipConstants.TYPE_ONE_TO_MANY);
+
+		try {
+			_objectDefinitionLocalService.enableAccountEntryRestricted(
+				objectRelationship);
+
+			Assert.fail();
+		}
+		catch (ObjectDefinitionAccountEntryRestrictedException
+					objectDefinitionAccountEntryRestrictedException) {
+
+			Assert.assertEquals(
+				"Custom object definitions can only be restricted by account " +
+					"entry",
+				objectDefinitionAccountEntryRestrictedException.getMessage());
+
+			_objectDefinitionLocalService.deleteObjectDefinition(
+				objectDefinition3);
+		}
 	}
 
 	@Test

@@ -152,8 +152,8 @@
 			"type": "Date"
 		},
 		{
-			"DBType": "String",
-			"businessType": "Text",
+			"DBType": "BigDecimal",
+			"businessType": "PrecisionDecimal",
 			"indexed": true,
 			"indexedAsKeyword": false,
 			"label": {
@@ -161,11 +161,11 @@
 			},
 			"name": "totalCostOfExpense",
 			"required": false,
-			"type": "String"
+			"type": "BigDecimal"
 		},
 		{
-			"DBType": "String",
-			"businessType": "Text",
+			"DBType": "BigDecimal",
+			"businessType": "PrecisionDecimal",
 			"indexed": true,
 			"indexedAsKeyword": false,
 			"label": {
@@ -173,7 +173,7 @@
 			},
 			"name": "totalMDFRequestAmount",
 			"required": false,
-			"type": "String"
+			"type": "BigDecimal"
 		},
 		{
 			"DBType": "String",
@@ -219,6 +219,12 @@
 									},
 									{
 										"key": "canceled"
+									},
+									{
+										"key": "pendingMarketingReview"
+									},
+									{
+										"key": "marketingDirectorReview"
 									}
 								]
 							},
@@ -270,6 +276,9 @@
 									},
 									{
 										"key": "moreInfoRequested"
+									},
+									{
+										"key": "pendingMarketingReview"
 									},
 									{
 										"key": "canceled"

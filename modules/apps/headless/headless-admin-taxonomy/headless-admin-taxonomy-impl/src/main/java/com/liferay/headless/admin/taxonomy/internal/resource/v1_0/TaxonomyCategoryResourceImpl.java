@@ -64,17 +64,13 @@ import com.liferay.portlet.asset.service.permission.AssetCategoriesPermission;
 
 import java.sql.Timestamp;
 
-import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.MultivaluedMap;
@@ -217,8 +213,9 @@ public class TaxonomyCategoryResourceImpl
 
 	@Override
 	public Page<TaxonomyCategory> getTaxonomyVocabularyTaxonomyCategoriesPage(
-			Long taxonomyVocabularyId, String search, Aggregation aggregation,
-			Filter filter, Pagination pagination, Sort[] sorts)
+			Long taxonomyVocabularyId, Boolean flatten, String search,
+			Aggregation aggregation, Filter filter, Pagination pagination,
+			Sort[] sorts)
 		throws Exception {
 
 		AssetVocabulary assetVocabulary = _assetVocabularyService.getVocabulary(
@@ -256,12 +253,16 @@ public class TaxonomyCategoryResourceImpl
 				BooleanFilter booleanFilter =
 					booleanQuery.getPreBooleanFilter();
 
-				booleanFilter.add(
-					new TermFilter(
-						Field.ASSET_PARENT_CATEGORY_ID,
-						String.valueOf(
-							AssetCategoryConstants.DEFAULT_PARENT_CATEGORY_ID)),
-					BooleanClauseOccur.MUST);
+				if (!GetterUtil.getBoolean(flatten)) {
+					booleanFilter.add(
+						new TermFilter(
+							Field.ASSET_PARENT_CATEGORY_ID,
+							String.valueOf(
+								AssetCategoryConstants.
+									DEFAULT_PARENT_CATEGORY_ID)),
+						BooleanClauseOccur.MUST);
+				}
+
 				booleanFilter.add(
 					new TermFilter(
 						Field.ASSET_VOCABULARY_ID,
@@ -576,35 +577,37 @@ public class TaxonomyCategoryResourceImpl
 		List<AssetCategoryProperty> assetCategoryProperties,
 		TaxonomyCategoryProperty[] taxonomyCategoryProperties) {
 
-		Stream<TaxonomyCategoryProperty> stream = Arrays.stream(
-			Optional.ofNullable(
-				taxonomyCategoryProperties
-			).orElse(
-				new TaxonomyCategoryProperty[0]
-			));
+		Map<String, String> map = new HashMap<>();
 
-		Map<String, String> map = stream.collect(
-			Collectors.toMap(
-				TaxonomyCategoryProperty::getKey,
-				TaxonomyCategoryProperty::getValue));
+		if (taxonomyCategoryProperties != null) {
+			for (TaxonomyCategoryProperty taxonomyCategoryProperty :
+					taxonomyCategoryProperties) {
+
+				map.put(
+					taxonomyCategoryProperty.getKey(),
+					taxonomyCategoryProperty.getValue());
+			}
+		}
 
 		for (AssetCategoryProperty assetCategoryProperty :
 				assetCategoryProperties) {
 
-			map.putIfAbsent(
+			map.put(
 				assetCategoryProperty.getKey(),
 				assetCategoryProperty.getValue());
 		}
 
-		Set<Map.Entry<String, String>> entries = map.entrySet();
+		String[] strings = new String[map.size()];
 
-		Stream<Map.Entry<String, String>> entriesStream = entries.stream();
+		int index = 0;
 
-		return entriesStream.map(
-			entry -> entry.getKey() + ":" + entry.getValue()
-		).toArray(
-			String[]::new
-		);
+		for (Map.Entry<String, String> entry : map.entrySet()) {
+			strings[index] = entry.getKey() + ":" + entry.getValue();
+
+			index++;
+		}
+
+		return strings;
 	}
 
 	private AssetCategory _toAssetCategory(Object[] assetCategory) {

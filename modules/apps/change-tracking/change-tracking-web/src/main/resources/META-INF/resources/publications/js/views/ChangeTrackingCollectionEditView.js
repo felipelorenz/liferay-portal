@@ -41,6 +41,7 @@ export default function ChangeTrackingCollectionEditView({
 	const [descriptionField, setDescriptionField] = useState(
 		publicationDescription
 	);
+	const [publishTimeField, setPublishTimeField] = useState(null);
 	const [saveButtonDisabled, setSaveButtonDisabled] = useState(
 		revertingPublication
 	);
@@ -56,6 +57,7 @@ export default function ChangeTrackingCollectionEditView({
 			[`${namespace}ctCollectionId`]: ctCollectionId,
 			[`${namespace}name`]: nameField,
 			[`${namespace}description`]: descriptionField,
+			[`${namespace}publishTime`]: publishTimeField,
 		});
 
 		fetch(actionUrl, {
@@ -276,7 +278,12 @@ export default function ChangeTrackingCollectionEditView({
 												className="field"
 												id="publishTimeNow"
 												name="publishTime"
-												onChange={() => {
+												onChange={(event) => {
+													if (event.target.checked) {
+														setPublishTimeField(
+															event.target.value
+														);
+													}
 													setSaveButtonDisabled(
 														false
 													);
@@ -314,7 +321,12 @@ export default function ChangeTrackingCollectionEditView({
 												className="field"
 												id="publishTimeLater"
 												name="publishTime"
-												onChange={() => {
+												onChange={(event) => {
+													if (event.target.checked) {
+														setPublishTimeField(
+															event.target.value
+														);
+													}
 													setSaveButtonDisabled(
 														false
 													);
@@ -354,14 +366,15 @@ export default function ChangeTrackingCollectionEditView({
 						<ClayButton
 							disabled={
 								saveButtonDisabled ||
-								nameField.length > nameFieldMaxLength ||
-								nameField.length < 1 ||
-								descriptionField.length >
-									descriptionFieldMaxLength
+								(nameField &&
+									(nameField.length > nameFieldMaxLength ||
+										nameField.length < 1)) ||
+								(descriptionField &&
+									descriptionField.length >
+										descriptionFieldMaxLength)
 							}
 							displayType="primary"
 							id="saveButton"
-							onClick={() => handleSubmit()}
 							type="submit"
 						>
 							{saveButtonLabel}
@@ -369,7 +382,9 @@ export default function ChangeTrackingCollectionEditView({
 
 						<ClayButton
 							displayType="secondary"
-							onClick={() => {
+							onClick={(event) => {
+								event.preventDefault();
+
 								resetForm();
 								navigate(redirect);
 							}}

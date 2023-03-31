@@ -50,7 +50,7 @@ definition {
 	@e2etest
 	@priority = 5
 	test CanAddArticleViaCenterPaneButton {
-		property custom.properties = "feature.flag.LPS-156421=true";
+		property portal.acceptance = "true";
 
 		KBArticle.openPageTreePanel(section = "Folders and Articles");
 
@@ -117,6 +117,8 @@ definition {
 	@description = "This test ensures that users can add an article with a custom friendly URL via the new configuration pane."
 	@priority = 5
 	test CanAddArticleWithCustomFriendlyURL {
+		property portal.acceptance = "true";
+
 		KBAdmin.openKBAdmin(siteURLKey = "guest");
 
 		KBArticle.addCP(
@@ -222,8 +224,6 @@ definition {
 	@description = "This test ensures that a user can add a child article for a kb entry from the navigation pane."
 	@priority = 5
 	test CanAddChildArticleFromNavigationPane {
-		property custom.properties = "feature.flag.LPS-156421=true";
-
 		JSONKnowledgeBase.addkBArticle(
 			groupName = "Guest",
 			kbArticleContent = "Knowledge Base Article Content",
@@ -291,8 +291,6 @@ definition {
 	@description = "This test ensures that a user can delete the kb entry from the navigation pane."
 	@priority = 5
 	test CanDeleteArticleFromNavigationPane {
-		property custom.properties = "feature.flag.LPS-156421=true";
-
 		JSONKnowledgeBase.addkBArticle(
 			groupName = "Guest",
 			kbArticleContent = "Knowledge Base Article Content",
@@ -310,16 +308,56 @@ definition {
 
 		KBArticle.openPageTreePanel(section = "Folders and Articles");
 
-		KBArticle.viewDefaultCP(
-			defaultHome = "true",
-			featureFlag = "true");
+		KBArticle.viewDefaultCP();
+	}
+
+	@description = "This test ensures that users can delete article in the table view."
+	@priority = 5
+	test CanDeleteArticleInTableView {
+		property custom.properties = "feature.flag.LPS-169675=true";
+
+		JSONKnowledgeBase.addkBArticle(
+			groupName = "Guest",
+			kbArticleContent = "Knowledge Base Article Content",
+			kbArticleTitle = "Knowledge Base Article Title");
+
+		KBAdmin.openKBAdmin(siteURLKey = "guest");
+
+		LexiconEntry.changeDisplayStyle(displayStyle = "table");
+
+		LexiconTable.delete(tableEntry = "Knowledge Base Article Title");
+
+		KBAdmin.openKBAdmin(siteURLKey = "guest");
+
+		KBArticle.viewDefaultCP();
+	}
+
+	@description = "This test ensures that users can edit article in the table view."
+	@priority = 5
+	test CanEditArticleInTableView {
+		property custom.properties = "feature.flag.LPS-169675=true";
+
+		JSONKnowledgeBase.addkBArticle(
+			groupName = "Guest",
+			kbArticleContent = "Knowledge Base Article Content",
+			kbArticleTitle = "Knowledge Base Article Title");
+
+		KBAdmin.openKBAdmin(siteURLKey = "guest");
+
+		LexiconEntry.changeDisplayStyle(displayStyle = "table");
+
+		KBArticle.editCP(
+			kbArticleTitle = "Knowledge Base Article Title",
+			kbArticleTitleEdit = "Knowledge Base Article Title Edit");
+
+		KBAdmin.openKBAdmin(siteURLKey = "guest");
+
+		LexiconEntry.viewEntryName(rowEntry = "Knowledge Base Article Title Edit");
 	}
 
 	@description = "This test ensures that a user can edit the kb entry permissions from the navigation pane."
 	@priority = 5
 	test CanEditArticlePermissionsFromNavigationPane {
-		property custom.properties = "feature.flag.LPS-156421=true";
-
 		JSONKnowledgeBase.addkBArticle(
 			groupName = "Guest",
 			kbArticleContent = "Knowledge Base Article Content",
@@ -356,8 +394,6 @@ definition {
 	@description = "This test checks that a user can edit from an article."
 	@priority = 4
 	test CanEditArticleViaToolbar {
-		property custom.properties = "feature.flag.LPS-166643=true";
-
 		JSONKnowledgeBase.addkBArticle(
 			groupName = "Guest",
 			kbArticleContent = "Knowledge Base Article Content",
@@ -383,7 +419,7 @@ definition {
 	@description = "This test ensures that a user can edit the kb entry from the navigation pane."
 	@priority = 5
 	test CanEditEntryFromNavigationPane {
-		property custom.properties = "feature.flag.LPS-156421=true";
+		property portal.acceptance = "true";
 
 		JSONKnowledgeBase.addkBArticle(
 			groupName = "Guest",
@@ -412,12 +448,70 @@ definition {
 	@priority = 5
 	test CanExpireAnArticle {
 		property custom.properties = "company.default.time.zone=America/Los_Angeles${line.separator}feature.flag.LPS-165476=true";
+		property portal.acceptance = "true";
 		property test.name.skip.portal.instance = "KBArticle#CanExpireAnArticle";
+
+		JSONLayout.addPublicLayout(
+			groupName = "Guest",
+			layoutName = "Knowledge Base Display Page");
+
+		JSONLayout.addWidgetToPublicLayout(
+			column = 2,
+			groupName = "Guest",
+			layoutName = "Knowledge Base Display Page",
+			widgetName = "Knowledge Base Display");
+
+		JSONLayout.addPublicLayout(
+			groupName = "Guest",
+			layoutName = "Asset Publisher Page");
+
+		JSONLayout.addWidgetToPublicLayout(
+			column = 2,
+			groupName = "Guest",
+			layoutName = "Asset Publisher Page",
+			widgetName = "Asset Publisher");
 
 		JSONKnowledgeBase.addkBArticle(
 			groupName = "Guest",
 			kbArticleContent = "Knowledge Base Article Content",
 			kbArticleTitle = "Knowledge Base Article Title");
+
+		JSONUser.addUser(
+			userEmailAddress = "userea@liferay.com",
+			userFirstName = "userfn",
+			userLastName = "userln",
+			userScreenName = "usersn");
+
+		JSONUser.setFirstPassword(
+			agreeToTermsAndAnswerReminderQuery = "true",
+			requireReset = "false",
+			userEmailAddress = "userea@liferay.com");
+
+		JSONRole.assignRoleToUser(
+			roleTitle = "Administrator",
+			userEmailAddress = "userea@liferay.com");
+
+		User.logoutAndLoginPG(
+			userLoginEmailAddress = "userea@liferay.com",
+			userLoginFullName = "userfn userln");
+
+		KBAdmin.openKBAdmin(siteURLKey = "guest");
+
+		KBArticle.subscribeCP(kbArticleTitle = "Knowledge Base Article Title");
+
+		Navigator.gotoPage(pageName = "Knowledge Base Display Page");
+
+		KBDisplayWidget.viewViaKBDisplayPG(
+			kbArticleContent = "Knowledge Base Article Content",
+			kbArticleTitle = "Knowledge Base Article Title");
+
+		Navigator.gotoPage(pageName = "Asset Publisher Page");
+
+		AssetPublisherPortlet.viewAssetPG(assetTitle = "Knowledge Base Article Title");
+
+		User.logoutAndLoginPG(
+			userLoginEmailAddress = "test@liferay.com",
+			userLoginFullName = "test test");
 
 		KBAdmin.openKBAdmin(siteURLKey = "guest");
 
@@ -433,12 +527,34 @@ definition {
 		LexiconEntry.viewNoEntryMenuItem(
 			menuItem = "Expire",
 			rowEntry = "Knowledge Base Article Title");
+
+		User.logoutAndLoginPG(
+			userLoginEmailAddress = "userea@liferay.com",
+			userLoginFullName = "userfn userln");
+
+		Notifications.gotoNotifications();
+
+		AssertTextEquals(
+			locator1 = "Notifications#NOTIFICATIONS_TITLE",
+			value1 = "A knowledge base article has expired.");
+
+		Navigator.gotoPage(pageName = "Knowledge Base Display Page");
+
+		Portlet.viewPG(
+			portletBody = "Please configure this portlet to make it visible to all users.",
+			portletName = "Knowledge Base Display");
+
+		Navigator.gotoPage(pageName = "Asset Publisher Page");
+
+		AssertTextNotPresent(
+			locator1 = "AP#ASSET_ABSTRACT_TITLE",
+			value1 = "Knowledge Base Article Title");
 	}
 
 	@description = "This test ensures that a user can move the kb entry from the navigation pane."
 	@priority = 5
 	test CanMoveArticleFromNavigationPane {
-		property custom.properties = "feature.flag.LPS-156421=true";
+		property portal.acceptance = "true";
 
 		JSONKnowledgeBase.addkBFolder(
 			groupName = "Guest",
@@ -816,6 +932,7 @@ definition {
 	@priority = 5
 	test CanReviewArticleWhenReviewDateIsReached {
 		property custom.properties = "company.default.time.zone=America/Los_Angeles${line.separator}feature.flag.LPS-165476=true";
+		property portal.acceptance = "true";
 		property test.name.skip.portal.instance = "kbArticle#CanReviewArticleWhenReviewDateIsReached";
 
 		KBArticle.updateCheckInterval(fieldValue = 1);
@@ -955,8 +1072,6 @@ definition {
 	@description = "This test ensures that a user can subscribe to a kb article from the navigation pane."
 	@priority = 5
 	test CanSubscribeToArticleFromNavigationPane {
-		property custom.properties = "feature.flag.LPS-156421=true";
-
 		JSONKnowledgeBase.addkBArticle(
 			groupName = "Guest",
 			kbArticleContent = "Knowledge Base Article Content",
@@ -1256,8 +1371,6 @@ definition {
 	@description = "This test checks that all the correct actions appear after selecting an article."
 	@priority = 5
 	test CorrectActionsAppearInToolbarAfterSelectingArticle {
-		property custom.properties = "feature.flag.LPS-166643=true";
-
 		JSONKnowledgeBase.addkBArticle(
 			groupName = "Guest",
 			kbArticleContent = "Knowledge Base Article Content",

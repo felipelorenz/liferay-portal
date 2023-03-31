@@ -20,6 +20,7 @@ import MDFRequestDTO from '../../common/interfaces/dto/mdfRequestDTO';
 import MDFRequest from '../../common/interfaces/mdfRequest';
 import {Liferay} from '../../common/services/liferay';
 import useGetMDFRequestById from '../../common/services/liferay/object/mdf-requests/useGetMDFRequestById';
+import useGetMyUserAccount from '../../common/services/liferay/user-account/useGetMyUserAccount';
 import {Status} from '../../common/utils/constants/status';
 import {getMDFRequestFromDTO} from '../../common/utils/dto/mdf-request/getMDFRequestFromDTO';
 import isObjectEmpty from '../../common/utils/isObjectEmpty';
@@ -39,11 +40,15 @@ const initialFormValues: MDFRequest = {
 	country: {},
 	currency: {},
 	liferayBusinessSalesGoals: [],
+	maxDateActivity: '',
 	mdfRequestStatus: Status.DRAFT,
+	minDateActivity: '',
 	overallCampaignDescription: '',
 	overallCampaignName: '',
 	targetAudienceRoles: [],
 	targetMarkets: [],
+	totalCostOfExpense: 0,
+	totalMDFRequestAmount: 0,
 };
 
 type StepComponent = {
@@ -61,6 +66,7 @@ const MDFRequestForm = () => {
 	);
 
 	const {data, isValidating} = useGetMDFRequestById(mdfRequestId);
+	const {data: myUserAccountData} = useGetMyUserAccount();
 
 	const onCancel = () =>
 		Liferay.Util.navigate(
@@ -102,7 +108,6 @@ const MDFRequestForm = () => {
 		[StepType.ACTIVITIES]: (
 			<PRMFormik.Array
 				component={Activities}
-				isEdit={mdfRequestId !== undefined}
 				name="activities"
 				onCancel={onCancel}
 				onContinue={onContinue}
@@ -132,7 +137,7 @@ const MDFRequestForm = () => {
 		),
 	};
 
-	if ((isValidating || !data) && mdfRequestId) {
+	if (((isValidating || !data) && mdfRequestId) || !myUserAccountData) {
 		return <ClayLoadingIndicator />;
 	}
 
@@ -144,7 +149,13 @@ const MDFRequestForm = () => {
 					: initialFormValues
 			}
 			onSubmit={(values, formikHelpers) =>
-				submitForm(values, formikHelpers, siteURL, Status.PENDING)
+				submitForm(
+					values,
+					formikHelpers,
+					siteURL,
+					Status.PENDING,
+					myUserAccountData.roleBriefs
+				)
 			}
 		>
 			{StepFormComponent[step]}

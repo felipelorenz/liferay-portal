@@ -1,8 +1,10 @@
 @component-name = "portal-frontend-infrastructure"
 definition {
 
+	property custom.properties = "minified.enabled=true";
 	property portal.release = "true";
 	property portal.upstream = "true";
+	property test.assert.warning.exceptions = "true";
 	property testray.main.component.name = "User Interface";
 
 	setUp {
@@ -22,11 +24,6 @@ definition {
 	@description = "Check for errors in the minified browser console"
 	@priority = 3
 	test SmokeMinifiedEnabled {
-		task ("Given: Minified property set to true") {
-			property custom.properties = "minified.enabled=true";
-			property test.assert.warning.exceptions = "true";
-		}
-
 		task ("When: Restart portal") {
 			Portlet.shutdownServer();
 
@@ -38,7 +35,7 @@ definition {
 		}
 
 		task ("Then: No liferay log or js console log errors") {
-			User.viewLoggedInPG();
+			AssertJavaScriptErrors();
 		}
 
 		task ("And Then: Smoke test passes") {
@@ -49,9 +46,26 @@ definition {
 	@description = "Check for errors in the browser console on the jQuery page"
 	@priority = 3
 	test VerifyErroWhenJQueryEnabled {
+		property test.name.skip.portal.instance = "Minified#VerifyErroWhenJQueryEnabled";
 
-		// TODO LPS-155271 VerifyErroWhenJQueryEnabled pending implementation JQuery enabled
+		task ("Given Navigate through the menus and select System Settings") {
+			SystemSettings.openSystemSettingsAdmin();
+		}
 
+		task ("When Activate JQuery and update/submit") {
+			SystemSettings.gotoConfiguration(
+				configurationCategory = "Third Party",
+				configurationName = "JQuery",
+				configurationScope = "System Scope");
+
+			FormFields.enableCheckbox(fieldName = "Enable JQuery");
+
+			SystemSettings.saveConfiguration();
+		}
+
+		task ("Then No errors in js console or liferay console") {
+			AssertJavaScriptErrors();
+		}
 	}
 
 }

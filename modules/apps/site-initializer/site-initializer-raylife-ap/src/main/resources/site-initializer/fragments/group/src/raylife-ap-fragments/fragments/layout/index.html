@@ -38,9 +38,14 @@
 
 		<div class="d-flex flex-column footer-bar pb-4 px-2">
 			<div class="mb-3 notification-container px-2">
-			<img alt="notification" class="notification-icon" src="[resources:notification_icon.svg]" />
+				[#assign requestEntries =
+				(restClient.get("/headless-user-notification/v1.0/my-user-notifications").totalCount)!/]
 
-			<img alt="indicator" class="indicator-icon position-relative" src="[resources:notification_indicator_icon.svg]" />
+				<span class="badge badge-danger panel-notifications-count">
+				<span class="badge-item badge-item-expand">${requestEntries}</span>
+				</span>
+
+			<img alt="notification" class="notification-icon" src="[resources:notification_icon.svg]" />
 			</div>
 
 			<div class="align-items-center avatar-container d-flex flex-row">
@@ -53,14 +58,18 @@
 		</div>
 	</div>
 
-	<div class="bg-white d-flex flex-column loaded notification-panel sticky-top" id="panel-sidebar">
+	<div class="bg-white d-flex flex-column loaded notification-panel notification-sidebar sticky-top" id="panel-sidebar">
 		<div class="sidebar-header">
 			<div class="autofit-row sidebar-section">
 				<div class="autofit-col autofit-col-expand">
-					<h4 class="component-title">
+					<h4 class="component-title d-flex justify-content-between">
 						<span class="text-truncate-inline">
 							Notifications
 						</span>
+
+					<svg class="lexicon-icon lexicon-icon-cog text-neutral-5" role="presentation">
+						<use xlink:href="http://localhost:8080/o/dialect-theme/images/clay/icons.svg#cog" />
+						</svg>
 					</h4>
 				</div>
 			</div>

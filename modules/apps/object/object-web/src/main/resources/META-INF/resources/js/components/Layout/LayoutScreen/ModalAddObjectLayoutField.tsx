@@ -27,6 +27,7 @@ import {
 import classNames from 'classnames';
 import React, {useMemo, useState} from 'react';
 
+import {defaultLanguageId} from '../../../utils/constants';
 import {TYPES, useLayoutContext} from '../objectLayoutContext';
 import {TObjectField} from '../types';
 
@@ -42,8 +43,6 @@ type TInitialValues = {
 interface IBoxBtnColumnsProps {
 	setValues: (values: Partial<TInitialValues>) => void;
 }
-
-const defaultLanguageId = Liferay.ThemeDisplay.getDefaultLanguageId();
 
 function BoxBtnColumns({setValues}: IBoxBtnColumnsProps) {
 	const [activeIndex, setActiveIndex] = useState<number>(0);
@@ -174,15 +173,17 @@ export default function ModalAddObjectLayoutField({
 										: Liferay.Language.get('optional')}
 								</ClayLabel>
 
-								{(readOnlyField.value === 'true' ||
-									readOnlyField.value === 'conditional') && (
-									<ClayLabel
-										className="label-inside-custom-select"
-										displayType="secondary"
-									>
-										{Liferay.Language.get('read-only')}
-									</ClayLabel>
-								)}
+								{Liferay.FeatureFlags['LPS-159913'] &&
+									(readOnlyField.value === 'true' ||
+										readOnlyField.value ===
+											'conditional') && (
+										<ClayLabel
+											className="label-inside-custom-select"
+											displayType="secondary"
+										>
+											{Liferay.Language.get('read-only')}
+										</ClayLabel>
+									)}
 							</>
 						}
 						creationLanguageId={
@@ -200,9 +201,11 @@ export default function ModalAddObjectLayoutField({
 								(fieldSetting) =>
 									fieldSetting.name === 'readOnly'
 							);
+
 							if (readOnlySetting) {
 								setReadOnlyField(readOnlySetting);
 							}
+
 							setSelectedObjectField(item);
 							setValues({objectFieldName: item.name});
 						}}
@@ -228,18 +231,24 @@ export default function ModalAddObjectLayoutField({
 											: Liferay.Language.get('optional')}
 									</ClayLabel>
 
-									{objectFieldSettings?.find(
-										(fieldSetting: ObjectFieldSetting) =>
-											fieldSetting.value === 'true' ||
-											fieldSetting.value === 'conditional'
-									) && (
-										<ClayLabel
-											className="label-inside-custom-select"
-											displayType="secondary"
-										>
-											{Liferay.Language.get('read-only')}
-										</ClayLabel>
-									)}
+									{Liferay.FeatureFlags['LPS-159913'] &&
+										objectFieldSettings?.find(
+											(
+												fieldSetting: ObjectFieldSetting
+											) =>
+												fieldSetting.value === 'true' ||
+												fieldSetting.value ===
+													'conditional'
+										) && (
+											<ClayLabel
+												className="label-inside-custom-select"
+												displayType="secondary"
+											>
+												{Liferay.Language.get(
+													'read-only'
+												)}
+											</ClayLabel>
+										)}
 								</div>
 							</div>
 						)}

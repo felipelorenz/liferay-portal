@@ -9,7 +9,7 @@ task jarManifest
 dependencies {
 	compileInclude group: "com.fasterxml", name: "classmate", version: "1.4.0"
 	compileInclude group: "com.fasterxml.jackson.dataformat", name: "jackson-dataformat-xml", version: "2.9.8"
-	compileInclude group: "com.fasterxml.jackson.dataformat", name: "jackson-dataformat-yaml", version: "2.14.2"
+	compileInclude group: "com.fasterxml.jackson.dataformat", name: "jackson-dataformat-yaml", version: "2.9.8"
 	compileInclude group: "com.fasterxml.jackson.datatype", name: "jackson-datatype-jdk8", version: "2.9.8"
 	compileInclude group: "com.fasterxml.jackson.jaxrs", name: "jackson-jaxrs-xml-provider", version: "2.9.8"
 	compileInclude group: "com.fasterxml.jackson.module", name: "jackson-module-jaxb-annotations", version: "2.9.8"
@@ -30,7 +30,7 @@ dependencies {
 	compileInclude group: "org.javassist", name: "javassist", version: "3.23.1-GA"
 	compileInclude group: "org.reactivestreams", name: "reactive-streams", version: "1.0.2"
 	compileInclude group: "org.reflections", name: "reflections", version: "0.9.11"
-	compileInclude group: "org.yaml", name: "snakeyaml", version: "2.0"
+	compileInclude group: "org.yaml", name: "snakeyaml", version: "1.32"
 
 	compileOnly group: "biz.aQute.bnd", name: "biz.aQute.bndlib", version: "4.2.0"
 	compileOnly group: "com.fasterxml.jackson.core", name: "jackson-annotations", version: "2.13.4"

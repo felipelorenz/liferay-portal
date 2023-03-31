@@ -14,26 +14,21 @@
 
 package com.liferay.headless.delivery.internal.resource.v1_0;
 
+import com.liferay.headless.delivery.dto.v1_0.DefaultValue;
 import com.liferay.headless.delivery.dto.v1_0.KnowledgeBaseAttachment;
 import com.liferay.headless.delivery.resource.v1_0.KnowledgeBaseAttachmentResource;
 import com.liferay.petra.function.UnsafeBiConsumer;
 import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.function.UnsafeFunction;
-import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.GroupedModel;
-import com.liferay.portal.kernel.model.ResourceAction;
-import com.liferay.portal.kernel.model.ResourceConstants;
-import com.liferay.portal.kernel.model.ResourcePermission;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.filter.Filter;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.ResourceActionLocalService;
-import com.liferay.portal.kernel.service.ResourceLocalServiceUtil;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
-import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.Validator;
@@ -46,24 +41,19 @@ import com.liferay.portal.odata.sort.SortParser;
 import com.liferay.portal.odata.sort.SortParserProvider;
 import com.liferay.portal.vulcan.accept.language.AcceptLanguage;
 import com.liferay.portal.vulcan.batch.engine.VulcanBatchEngineTaskItemDelegate;
+import com.liferay.portal.vulcan.batch.engine.resource.VulcanBatchEngineExportTaskResource;
 import com.liferay.portal.vulcan.batch.engine.resource.VulcanBatchEngineImportTaskResource;
 import com.liferay.portal.vulcan.multipart.MultipartBody;
 import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
-import com.liferay.portal.vulcan.permission.Permission;
 import com.liferay.portal.vulcan.resource.EntityModelResource;
 import com.liferay.portal.vulcan.util.ActionUtil;
 import com.liferay.portal.vulcan.util.TransformUtil;
 
 import java.io.Serializable;
 
-import java.lang.reflect.Method;
-
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -140,6 +130,82 @@ public abstract class BaseKnowledgeBaseAttachmentResourceImpl
 		throws Exception {
 
 		return Page.of(Collections.emptyList());
+	}
+
+	/**
+	 * Invoke this method with the command line:
+	 *
+	 * curl -X 'POST' 'http://localhost:8080/o/headless-delivery/v1.0/knowledge-base-articles/{knowledgeBaseArticleId}/knowledge-base-attachments/export-batch'  -u 'test@liferay.com:test'
+	 */
+	@io.swagger.v3.oas.annotations.Parameters(
+		value = {
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "knowledgeBaseArticleId"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "callbackURL"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "contentType"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "fieldNames"
+			)
+		}
+	)
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {
+			@io.swagger.v3.oas.annotations.tags.Tag(
+				name = "KnowledgeBaseAttachment"
+			)
+		}
+	)
+	@javax.ws.rs.Consumes("application/json")
+	@javax.ws.rs.Path(
+		"/knowledge-base-articles/{knowledgeBaseArticleId}/knowledge-base-attachments/export-batch"
+	)
+	@javax.ws.rs.POST
+	@javax.ws.rs.Produces("application/json")
+	@Override
+	public Response
+			postKnowledgeBaseArticleKnowledgeBaseAttachmentsPageExportBatch(
+				@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+				@javax.validation.constraints.NotNull
+				@javax.ws.rs.PathParam("knowledgeBaseArticleId")
+				Long knowledgeBaseArticleId,
+				@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+				@javax.ws.rs.QueryParam("callbackURL")
+				String callbackURL,
+				@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+				@javax.ws.rs.DefaultValue("JSON")
+				@javax.ws.rs.QueryParam("contentType")
+				String contentType,
+				@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+				@javax.ws.rs.QueryParam("fieldNames")
+				String fieldNames)
+		throws Exception {
+
+		vulcanBatchEngineExportTaskResource.setContextAcceptLanguage(
+			contextAcceptLanguage);
+		vulcanBatchEngineExportTaskResource.setContextCompany(contextCompany);
+		vulcanBatchEngineExportTaskResource.setContextHttpServletRequest(
+			contextHttpServletRequest);
+		vulcanBatchEngineExportTaskResource.setContextUriInfo(contextUriInfo);
+		vulcanBatchEngineExportTaskResource.setContextUser(contextUser);
+		vulcanBatchEngineExportTaskResource.setGroupLocalService(
+			groupLocalService);
+
+		Response.ResponseBuilder responseBuilder = Response.accepted();
+
+		return responseBuilder.entity(
+			vulcanBatchEngineExportTaskResource.postExportTask(
+				KnowledgeBaseAttachment.class.getName(), callbackURL,
+				contentType, fieldNames)
+		).build();
 	}
 
 	/**
@@ -376,6 +442,196 @@ public abstract class BaseKnowledgeBaseAttachmentResourceImpl
 		return new KnowledgeBaseAttachment();
 	}
 
+	/**
+	 * Invoke this method with the command line:
+	 *
+	 * curl -X 'GET' 'http://localhost:8080/o/headless-delivery/v1.0/sites/{siteId}/knowledge-base-articles/by-external-reference-code/{knowledgeBaseArticleExternalReferenceCode}/knowledge-base-attachments/by-external-reference-code/{externalReferenceCode}'  -u 'test@liferay.com:test'
+	 */
+	@io.swagger.v3.oas.annotations.Operation(
+		description = "Retrieves the knowledge base article attachment by external reference code."
+	)
+	@io.swagger.v3.oas.annotations.Parameters(
+		value = {
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "siteId"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "knowledgeBaseArticleExternalReferenceCode"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "externalReferenceCode"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "fields"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "nestedFields"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.QUERY,
+				name = "restrictFields"
+			)
+		}
+	)
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {
+			@io.swagger.v3.oas.annotations.tags.Tag(
+				name = "KnowledgeBaseAttachment"
+			)
+		}
+	)
+	@javax.ws.rs.GET
+	@javax.ws.rs.Path(
+		"/sites/{siteId}/knowledge-base-articles/by-external-reference-code/{knowledgeBaseArticleExternalReferenceCode}/knowledge-base-attachments/by-external-reference-code/{externalReferenceCode}"
+	)
+	@javax.ws.rs.Produces({"application/json", "application/xml"})
+	@Override
+	public KnowledgeBaseAttachment
+			getSiteKnowledgeBaseArticleByExternalReferenceCodeKnowledgeBaseArticleExternalReferenceCodeKnowledgeBaseAttachmentByExternalReferenceCode(
+				@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+				@javax.validation.constraints.NotNull
+				@javax.ws.rs.PathParam("siteId")
+				Long siteId,
+				@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+				@javax.validation.constraints.NotNull
+				@javax.ws.rs.PathParam(
+					"knowledgeBaseArticleExternalReferenceCode"
+				)
+				String knowledgeBaseArticleExternalReferenceCode,
+				@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+				@javax.validation.constraints.NotNull
+				@javax.ws.rs.PathParam("externalReferenceCode")
+				String externalReferenceCode)
+		throws Exception {
+
+		return new KnowledgeBaseAttachment();
+	}
+
+	/**
+	 * Invoke this method with the command line:
+	 *
+	 * curl -X 'POST' 'http://localhost:8080/o/headless-delivery/v1.0/sites/{siteId}/knowledge-base-articles/by-external-reference-code/{knowledgeBaseArticleExternalReferenceCode}/knowledge-base-attachments/by-external-reference-code/{externalReferenceCode}'  -u 'test@liferay.com:test'
+	 */
+	@io.swagger.v3.oas.annotations.Operation(
+		description = "Creates the knowledge base article attachment by external reference code with the information sent in the request body. The request body must be `multipart/form-data` with two parts, the file's bytes (`file`), and an optional JSON string (`knowledgeBaseAttachment`) with the metadata."
+	)
+	@io.swagger.v3.oas.annotations.Parameters(
+		value = {
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "siteId"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "knowledgeBaseArticleExternalReferenceCode"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "externalReferenceCode"
+			)
+		}
+	)
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {
+			@io.swagger.v3.oas.annotations.tags.Tag(
+				name = "KnowledgeBaseAttachment"
+			)
+		}
+	)
+	@javax.ws.rs.Consumes("multipart/form-data")
+	@javax.ws.rs.Path(
+		"/sites/{siteId}/knowledge-base-articles/by-external-reference-code/{knowledgeBaseArticleExternalReferenceCode}/knowledge-base-attachments/by-external-reference-code/{externalReferenceCode}"
+	)
+	@javax.ws.rs.POST
+	@javax.ws.rs.Produces({"application/json", "application/xml"})
+	@Override
+	public KnowledgeBaseAttachment
+			postSiteKnowledgeBaseArticleByExternalReferenceCodeKnowledgeBaseArticleExternalReferenceCodeKnowledgeBaseAttachmentByExternalReferenceCode(
+				@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+				@javax.validation.constraints.NotNull
+				@javax.ws.rs.PathParam("siteId")
+				Long siteId,
+				@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+				@javax.validation.constraints.NotNull
+				@javax.ws.rs.PathParam(
+					"knowledgeBaseArticleExternalReferenceCode"
+				)
+				String knowledgeBaseArticleExternalReferenceCode,
+				@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+				@javax.validation.constraints.NotNull
+				@javax.ws.rs.PathParam("externalReferenceCode")
+				String externalReferenceCode,
+				MultipartBody multipartBody)
+		throws Exception {
+
+		return new KnowledgeBaseAttachment();
+	}
+
+	/**
+	 * Invoke this method with the command line:
+	 *
+	 * curl -X 'PUT' 'http://localhost:8080/o/headless-delivery/v1.0/sites/{siteId}/knowledge-base-articles/by-external-reference-code/{knowledgeBaseArticleExternalReferenceCode}/knowledge-base-attachments/by-external-reference-code/{externalReferenceCode}'  -u 'test@liferay.com:test'
+	 */
+	@io.swagger.v3.oas.annotations.Operation(
+		description = "Replaces the knowledge base article attachment by external reference code with the information sent in the request body. Any missing fields are deleted, unless they are required. The request body must be `multipart/form-data` with two parts, the file's bytes (`file`), and an optional JSON string (`knowledgeBaseAttachment`) with the metadata."
+	)
+	@io.swagger.v3.oas.annotations.Parameters(
+		value = {
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "siteId"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "knowledgeBaseArticleExternalReferenceCode"
+			),
+			@io.swagger.v3.oas.annotations.Parameter(
+				in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH,
+				name = "externalReferenceCode"
+			)
+		}
+	)
+	@io.swagger.v3.oas.annotations.tags.Tags(
+		value = {
+			@io.swagger.v3.oas.annotations.tags.Tag(
+				name = "KnowledgeBaseAttachment"
+			)
+		}
+	)
+	@javax.ws.rs.Consumes("multipart/form-data")
+	@javax.ws.rs.Path(
+		"/sites/{siteId}/knowledge-base-articles/by-external-reference-code/{knowledgeBaseArticleExternalReferenceCode}/knowledge-base-attachments/by-external-reference-code/{externalReferenceCode}"
+	)
+	@javax.ws.rs.Produces({"application/json", "application/xml"})
+	@javax.ws.rs.PUT
+	@Override
+	public KnowledgeBaseAttachment
+			putSiteKnowledgeBaseArticleByExternalReferenceCodeKnowledgeBaseArticleExternalReferenceCodeKnowledgeBaseAttachmentByExternalReferenceCode(
+				@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+				@javax.validation.constraints.NotNull
+				@javax.ws.rs.PathParam("siteId")
+				Long siteId,
+				@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+				@javax.validation.constraints.NotNull
+				@javax.ws.rs.PathParam(
+					"knowledgeBaseArticleExternalReferenceCode"
+				)
+				String knowledgeBaseArticleExternalReferenceCode,
+				@io.swagger.v3.oas.annotations.Parameter(hidden = true)
+				@javax.validation.constraints.NotNull
+				@javax.ws.rs.PathParam("externalReferenceCode")
+				String externalReferenceCode,
+				MultipartBody multipartBody)
+		throws Exception {
+
+		return new KnowledgeBaseAttachment();
+	}
+
 	@Override
 	@SuppressWarnings("PMD.UnusedLocalVariable")
 	public void create(
@@ -592,6 +848,14 @@ public abstract class BaseKnowledgeBaseAttachmentResourceImpl
 		this.sortParserProvider = sortParserProvider;
 	}
 
+	public void setVulcanBatchEngineExportTaskResource(
+		VulcanBatchEngineExportTaskResource
+			vulcanBatchEngineExportTaskResource) {
+
+		this.vulcanBatchEngineExportTaskResource =
+			vulcanBatchEngineExportTaskResource;
+	}
+
 	public void setVulcanBatchEngineImportTaskResource(
 		VulcanBatchEngineImportTaskResource
 			vulcanBatchEngineImportTaskResource) {
@@ -773,120 +1037,10 @@ public abstract class BaseKnowledgeBaseAttachmentResourceImpl
 	protected ResourcePermissionLocalService resourcePermissionLocalService;
 	protected RoleLocalService roleLocalService;
 	protected SortParserProvider sortParserProvider;
+	protected VulcanBatchEngineExportTaskResource
+		vulcanBatchEngineExportTaskResource;
 	protected VulcanBatchEngineImportTaskResource
 		vulcanBatchEngineImportTaskResource;
-
-	private void _checkResources(
-			long companyId, long resourceId, String resourceName)
-		throws PortalException {
-
-		int count = resourcePermissionLocalService.getResourcePermissionsCount(
-			companyId, resourceName, ResourceConstants.SCOPE_INDIVIDUAL,
-			String.valueOf(resourceId));
-
-		if (count == 0) {
-			ResourceLocalServiceUtil.addResources(
-				companyId, resourceId, 0, resourceName,
-				String.valueOf(resourceId), false, true, true);
-		}
-	}
-
-	private Collection<Permission> _getPermissions(
-			long companyId, List<ResourceAction> resourceActions,
-			long resourceId, String resourceName, String[] roleNames)
-		throws Exception {
-
-		_checkResources(companyId, resourceId, resourceName);
-
-		Map<String, Permission> permissions = new LinkedHashMap<>();
-
-		List<ResourcePermission> resourcePermissions = new ArrayList<>();
-
-		try {
-			Method method = ResourcePermissionLocalService.class.getMethod(
-				"getResourcePermissions", String.class);
-
-			resourcePermissions = (List<ResourcePermission>)method.invoke(
-				resourcePermissionLocalService, resourceName);
-		}
-		catch (NoSuchMethodException noSuchMethodException) {
-			resourcePermissions =
-				resourcePermissionLocalService.getResourcePermissions(
-					companyId, resourceName, ResourceConstants.SCOPE_INDIVIDUAL,
-					String.valueOf(resourceId));
-		}
-
-		for (ResourcePermission resourcePermission : resourcePermissions) {
-			if ((resourcePermission.getPrimKeyId() == 0) ||
-				(resourcePermission.getPrimKeyId() == resourceId)) {
-
-				com.liferay.portal.kernel.model.Role role =
-					roleLocalService.getRole(resourcePermission.getRoleId());
-
-				if ((roleNames == null) ||
-					((roleNames != null) &&
-					 ArrayUtil.contains(roleNames, role.getName()))) {
-
-					Permission permission = permissions.get(role.getName());
-
-					if (permission == null) {
-						permission = _toPermission(
-							resourceActions, resourcePermission, role);
-
-						if (permission != null) {
-							permissions.put(role.getName(), permission);
-						}
-					}
-					else {
-						Set<String> actionsIdsSet = new HashSet<>();
-
-						Collections.addAll(
-							actionsIdsSet, permission.getActionIds());
-
-						Permission newPermission = _toPermission(
-							resourceActions, resourcePermission, role);
-
-						Collections.addAll(
-							actionsIdsSet, newPermission.getActionIds());
-
-						permission.setActionIds(
-							actionsIdsSet.toArray(new String[0]));
-					}
-				}
-			}
-		}
-
-		return permissions.values();
-	}
-
-	private Permission _toPermission(
-		List<ResourceAction> resourceActions,
-		ResourcePermission resourcePermission,
-		com.liferay.portal.kernel.model.Role role) {
-
-		Set<String> actionsIdsSet = new HashSet<>();
-
-		long actionIds = resourcePermission.getActionIds();
-
-		for (ResourceAction resourceAction : resourceActions) {
-			long bitwiseValue = resourceAction.getBitwiseValue();
-
-			if ((actionIds & bitwiseValue) == bitwiseValue) {
-				actionsIdsSet.add(resourceAction.getActionId());
-			}
-		}
-
-		if (actionsIdsSet.isEmpty()) {
-			return null;
-		}
-
-		return new Permission() {
-			{
-				actionIds = actionsIdsSet.toArray(new String[0]);
-				roleName = role.getName();
-			}
-		};
-	}
 
 	private static final com.liferay.portal.kernel.log.Log _log =
 		LogFactoryUtil.getLog(BaseKnowledgeBaseAttachmentResourceImpl.class);
