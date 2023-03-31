@@ -125,29 +125,9 @@ public class SXPBlueprintUpgradeProcess extends UpgradeProcess {
 			return;
 		}
 
-		Field[] fields = fieldSet.getFields();
+		JSONArray jsonArray = JSONFactoryUtil.createJSONArray(fieldSet.getFields());
 
-		for (int i = 0; i < fieldsJSONArray.length(); i++) {
-			JSONObject fieldJSONObject = fieldsJSONArray.getJSONObject(i);
-
-			if (fieldJSONObject.has("helpText")) {
-				String upgradedHelpText = _getFieldHelpText(
-					fields, fieldJSONObject.getString("name"));
-
-				if (!Validator.isBlank(upgradedHelpText)) {
-					fieldJSONObject.put("helpText", upgradedHelpText);
-				}
-			}
-
-			if (fieldJSONObject.has("label")) {
-				String upgradedHelpText = _getFieldLabel(
-					fields, fieldJSONObject.getString("label"));
-
-				if (!Validator.isBlank(upgradedHelpText)) {
-					fieldJSONObject.put("label", upgradedHelpText);
-				}
-			}
-		}
+		fieldSetJSONObject.put("fields", jsonArray);
 	}
 
 	private void _upgradeElementInstanceJSONObject(
