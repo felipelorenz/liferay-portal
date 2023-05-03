@@ -163,7 +163,7 @@ function SearchBarConfigurationSuggestions({
 			onInputSetsAdd({
 				attributes: {
 					characterThreshold: '0',
-					count: '5',
+					minCount: '5',
 					matchDisplayLanguageId: true,
 				},
 				contributorName,
