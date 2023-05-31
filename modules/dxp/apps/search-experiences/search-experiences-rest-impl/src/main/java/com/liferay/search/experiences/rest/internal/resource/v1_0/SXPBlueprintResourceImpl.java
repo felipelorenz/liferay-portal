@@ -16,7 +16,6 @@ package com.liferay.search.experiences.rest.internal.resource.v1_0;
 
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.search.Field;
@@ -72,18 +71,6 @@ public class SXPBlueprintResourceImpl extends BaseSXPBlueprintResourceImpl {
 	@Override
 	public void deleteSXPBlueprint(Long sxpBlueprintId) throws Exception {
 		_sxpBlueprintService.deleteSXPBlueprint(sxpBlueprintId);
-	}
-
-	@Override
-	public SXPBlueprint getSXPBlueprintByExternalReferenceCode(String externalReferenceCode)
-		throws Exception {
-		return _sxpBlueprintDTOConverter.toDTO(
-			new DefaultDTOConverterContext(
-				contextAcceptLanguage.isAcceptAllLanguages(), new HashMap<>(),
-				_dtoConverterRegistry, contextHttpServletRequest,
-				externalReferenceCode, contextAcceptLanguage.getPreferredLocale(),
-				contextUriInfo, contextUser),
-			_sxpBlueprintService.getSXPBlueprintByExternalReferenceCode(contextCompany.getCompanyId(), externalReferenceCode));
 	}
 
 	@Override
@@ -299,6 +286,21 @@ public class SXPBlueprintResourceImpl extends BaseSXPBlueprintResourceImpl {
 	@Override
 	public SXPBlueprint postSXPBlueprintValidate(String json) throws Exception {
 		return SXPBlueprintUtil.toSXPBlueprint(json);
+	}
+
+	public SXPBlueprint putSXPBlueprintByExternalReferenceCode(
+			String externalReferenceCode, SXPBlueprint sxpBlueprint)
+		throws Exception {
+
+		com.liferay.search.experiences.model.SXPBlueprint
+			serviceBuilderSxpBlueprint =
+				_sxpBlueprintService.getSXPBlueprintByExternalReferenceCode(
+					contextCompany.getCompanyId(), externalReferenceCode);
+
+		sxpBlueprint.setExternalReferenceCode(externalReferenceCode);
+
+		return patchSXPBlueprint(
+			serviceBuilderSxpBlueprint.getSXPBlueprintId(), sxpBlueprint);
 	}
 
 	private String _getConfigurationJSON(SXPBlueprint sxpBlueprint) {
