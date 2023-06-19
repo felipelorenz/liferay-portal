@@ -95,6 +95,25 @@ public class SXPElementResourceImpl extends BaseSXPElementResourceImpl {
 	}
 
 	@Override
+	public SXPElement getSXPElementByExternalReferenceCode(
+			String externalReferenceCode)
+		throws Exception {
+
+		com.liferay.search.experiences.model.SXPElement sxpElement =
+			_sxpElementService.getSXPElementByExternalReferenceCode(
+				contextCompany.getCompanyId(), externalReferenceCode);
+
+		return _sxpElementDTOConverter.toDTO(
+			new DefaultDTOConverterContext(
+				contextAcceptLanguage.isAcceptAllLanguages(), new HashMap<>(),
+				_dtoConverterRegistry, contextHttpServletRequest,
+				sxpElement.getSXPElementId(),
+				contextAcceptLanguage.getPreferredLocale(), contextUriInfo,
+				contextUser),
+			sxpElement);
+	}
+
+	@Override
 	public Response getSXPElementExport(Long sxpElementId) throws Exception {
 		com.liferay.search.experiences.model.SXPElement sxpElement =
 			_sxpElementService.getSXPElement(sxpElementId);
@@ -296,6 +315,25 @@ public class SXPElementResourceImpl extends BaseSXPElementResourceImpl {
 	@Override
 	public SXPElement postSXPElementValidate(String json) throws Exception {
 		return SXPElementUtil.toSXPElement(json);
+	}
+
+	public SXPElement putSXPElementByExternalReferenceCode(
+			String externalReferenceCode, SXPElement sxpElement)
+		throws Exception {
+
+		com.liferay.search.experiences.model.SXPElement
+			serviceBuilderSxpElement =
+				_sxpElementService.fetchSXPElementByExternalReferenceCode(
+					contextCompany.getCompanyId(), externalReferenceCode);
+
+		sxpElement.setExternalReferenceCode(externalReferenceCode);
+
+		if (serviceBuilderSxpElement != null) {
+			return patchSXPElement(
+				serviceBuilderSxpElement.getSXPElementId(), sxpElement);
+		}
+
+		return postSXPElement(sxpElement);
 	}
 
 	private String _getElementDefinitionJSON(SXPElement sxpElement) {
