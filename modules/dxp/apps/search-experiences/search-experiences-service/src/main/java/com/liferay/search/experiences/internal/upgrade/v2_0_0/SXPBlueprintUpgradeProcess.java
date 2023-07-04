@@ -126,8 +126,8 @@ public class SXPBlueprintUpgradeProcess extends UpgradeProcess {
 			ResultSet resultSet = preparedStatement1.executeQuery()) {
 
 			while (resultSet.next()) {
-				String portletPreferencesIdQuoted = StringUtil.quote(
-					resultSet.getString("portletPreferencesId"));
+				String portletPreferencesId = resultSet.getString(
+					"portletPreferencesId");
 
 				try (PreparedStatement preparedStatement2 =
 						connection.prepareStatement(
@@ -136,10 +136,10 @@ public class SXPBlueprintUpgradeProcess extends UpgradeProcess {
 								"PortletPreferenceValue where ",
 								"portletPreferencesId = ?"))) {
 
-					preparedStatement2.setString(1, portletPreferencesIdQuoted);
+					preparedStatement2.setString(1, portletPreferencesId);
 
 					_upgradeSearchBarPortlet(
-						portletPreferencesIdQuoted,
+						portletPreferencesId,
 						preparedStatement2.executeQuery());
 				}
 			}
