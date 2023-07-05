@@ -59,7 +59,7 @@ public class SXPBlueprintUpgradeProcess extends UpgradeProcess {
 	}
 
 	private void _upgradeLargeValue(
-			String largeValue, String portletPreferencesIdQuoted,
+			String largeValue, long portletPreferencesId,
 			ResultSet resultSet)
 		throws Exception {
 
@@ -82,17 +82,17 @@ public class SXPBlueprintUpgradeProcess extends UpgradeProcess {
 				"update PortletPreferenceValue set largeValue = ? where " +
 					"portletPreferencesId = ? and name = ?")) {
 
-			preparedStatement.setString(1, StringUtil.quote(newLargeValue));
-			preparedStatement.setString(2, portletPreferencesIdQuoted);
+			preparedStatement.setString(1, newLargeValue);
+			preparedStatement.setLong(2, portletPreferencesId);
 			preparedStatement.setString(
-				3, StringUtil.quote("suggestionsContributorConfigurations"));
+				3, "suggestionsContributorConfigurations");
 
 			preparedStatement.executeUpdate();
 		}
 	}
 
 	private void _upgradeSearchBarPortlet(
-			String portletPreferenceIdQuoted, ResultSet resultSet)
+			long portletPreferenceId, ResultSet resultSet)
 		throws Exception {
 
 		while (resultSet.next()) {
@@ -110,7 +110,7 @@ public class SXPBlueprintUpgradeProcess extends UpgradeProcess {
 						1, _getSXPBlueprintId(largeValue));
 
 					_upgradeLargeValue(
-						largeValue, portletPreferenceIdQuoted,
+						largeValue, portletPreferenceId,
 						preparedStatement.executeQuery());
 				}
 			}
@@ -126,7 +126,7 @@ public class SXPBlueprintUpgradeProcess extends UpgradeProcess {
 			ResultSet resultSet = preparedStatement1.executeQuery()) {
 
 			while (resultSet.next()) {
-				String portletPreferencesId = resultSet.getString(
+				long portletPreferencesId = resultSet.getLong(
 					"portletPreferencesId");
 
 				try (PreparedStatement preparedStatement2 =
@@ -136,7 +136,7 @@ public class SXPBlueprintUpgradeProcess extends UpgradeProcess {
 								"PortletPreferenceValue where ",
 								"portletPreferencesId = ?"))) {
 
-					preparedStatement2.setString(1, portletPreferencesId);
+					preparedStatement2.setLong(1, portletPreferencesId);
 
 					_upgradeSearchBarPortlet(
 						portletPreferencesId,
