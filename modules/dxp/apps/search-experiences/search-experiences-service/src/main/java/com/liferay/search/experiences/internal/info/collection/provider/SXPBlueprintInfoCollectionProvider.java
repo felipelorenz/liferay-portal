@@ -209,12 +209,19 @@ public class SXPBlueprintInfoCollectionProvider
 		Map<String, String[]> configuration =
 			collectionQuery.getConfiguration();
 
+		String[] scopes = configuration.get("scope");
+
+		long[] groupIds = new long[scopes.length];
+
+		for (String scope : scopes) {
+			groupIds = ArrayUtil.append(groupIds, GetterUtil.getLong(scope));
+		}
+
 		return _searchRequestBuilderFactory.builder(
 		).companyId(
 			serviceContext.getCompanyId()
 		).groupIds(
-			ListUtil.toLongArray(
-				Arrays.asList(configuration.get("scope")), GetterUtil::getLong)
+			groupIds
 		).from(
 			pagination.getStart()
 		).emptySearchEnabled(
@@ -257,12 +264,6 @@ public class SXPBlueprintInfoCollectionProvider
 				searchContext.setAttribute(
 					"search.experiences.ip.address",
 					serviceContext.getRemoteAddr());
-
-				ThemeDisplay themeDisplay = serviceContext.getThemeDisplay();
-
-				searchContext.setAttribute(
-					"search.experiences.scope.group.id",
-					themeDisplay.getScopeGroupId());
 
 				KeywordsInfoFilter keywordsInfoFilter =
 					collectionQuery.getInfoFilter(KeywordsInfoFilter.class);
