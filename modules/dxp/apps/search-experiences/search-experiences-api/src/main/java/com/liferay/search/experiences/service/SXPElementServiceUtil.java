@@ -80,6 +80,14 @@ public class SXPElementServiceUtil {
 			externalReferenceCode, companyId);
 	}
 
+	public static SXPElement updateReadOnlySXPElement(
+			String externalReferenceCode, long sxpElementId)
+		throws PortalException {
+
+		return getService().updateReadOnlySXPElement(
+			externalReferenceCode, sxpElementId);
+	}
+
 	public static SXPElement updateSXPElement(
 			long sxpElementId, Map<java.util.Locale, String> descriptionMap,
 			String elementDefinitionJSON, String schemaVersion, boolean hidden,
