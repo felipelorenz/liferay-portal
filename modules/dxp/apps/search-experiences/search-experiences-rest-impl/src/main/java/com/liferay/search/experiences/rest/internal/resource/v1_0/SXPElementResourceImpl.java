@@ -283,6 +283,18 @@ public class SXPElementResourceImpl extends BaseSXPElementResourceImpl {
 	public SXPElement putSXPElement(Long sxpElementId, SXPElement sxpElement)
 		throws Exception {
 
+		if (sxpElement.getReadOnly()) {
+			return _sxpElementDTOConverter.toDTO(
+				new DefaultDTOConverterContext(
+					contextAcceptLanguage.isAcceptAllLanguages(),
+					new HashMap<>(), _dtoConverterRegistry,
+					contextHttpServletRequest, sxpElement.getId(),
+					contextAcceptLanguage.getPreferredLocale(), contextUriInfo,
+					contextUser),
+				_sxpElementService.updateReadOnlySXPElement(
+					sxpElement.getExternalReferenceCode(), sxpElementId));
+		}
+
 		return _sxpElementDTOConverter.toDTO(
 			new DefaultDTOConverterContext(
 				contextAcceptLanguage.isAcceptAllLanguages(), new HashMap<>(),
