@@ -18,6 +18,7 @@ import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.systemevent.SystemEvent;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
+import com.liferay.search.experiences.exception.NoSuchSXPElementException;
 import com.liferay.search.experiences.exception.SXPElementTitleException;
 import com.liferay.search.experiences.model.SXPElement;
 import com.liferay.search.experiences.service.base.SXPElementLocalServiceBaseImpl;
@@ -164,6 +165,19 @@ public class SXPElementLocalServiceImpl extends SXPElementLocalServiceBaseImpl {
 				GetterUtil.getFloat(sxpElement.getVersion(), 0.9F) + 0.1));
 
 		return updateSXPElement(sxpElement);
+	}
+
+	@Indexable(type = IndexableType.REINDEX)
+	@Override
+	public SXPElement updateReadOnlySXPElement(String externalReferenceCode, long sxpElementId)
+		throws PortalException {
+
+		SXPElement sxpElement = sxpElementPersistence.findByPrimaryKey(
+			sxpElementId);
+
+		sxpElement.setExternalReferenceCode(externalReferenceCode);
+
+		return sxpElementPersistence.update(sxpElement);
 	}
 
 	private void _validate(
