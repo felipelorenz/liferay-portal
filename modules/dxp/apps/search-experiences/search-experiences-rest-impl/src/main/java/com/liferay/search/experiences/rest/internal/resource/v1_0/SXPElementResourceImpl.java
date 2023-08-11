@@ -26,8 +26,6 @@ import com.liferay.portal.vulcan.dto.converter.DefaultDTOConverterContext;
 import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
 import com.liferay.portal.vulcan.util.LocalizedMapUtil;
-import com.liferay.search.experiences.constants.SXPActionKeys;
-import com.liferay.search.experiences.constants.SXPConstants;
 import com.liferay.search.experiences.rest.dto.v1_0.ElementDefinition;
 import com.liferay.search.experiences.rest.dto.v1_0.FieldSet;
 import com.liferay.search.experiences.rest.dto.v1_0.SXPElement;
@@ -187,12 +185,6 @@ public class SXPElementResourceImpl extends BaseSXPElementResourceImpl {
 
 				sxpElement.setActions(
 					HashMapBuilder.put(
-						"create",
-						() -> addAction(
-							SXPActionKeys.ADD_SXP_ELEMENT, "postSXPElement",
-							SXPConstants.RESOURCE_NAME,
-							contextCompany.getCompanyId())
-					).put(
 						"delete",
 						() -> {
 							if (sxpElement.getReadOnly()) {
@@ -210,37 +202,19 @@ public class SXPElementResourceImpl extends BaseSXPElementResourceImpl {
 							sxpElementId)
 					).put(
 						"update",
-						() -> addAction(
-							ActionKeys.UPDATE, "patchSXPElement",
-							permissionName, sxpElementId)
+						() -> {
+							if (sxpElement.getReadOnly()) {
+								return null;
+							}
+
+							return addAction(
+								ActionKeys.UPDATE, "putSXPElement",
+								permissionName, sxpElementId);
+						}
 					).build());
 
 				return sxpElement;
 			});
-	}
-
-	@Override
-	public SXPElement patchSXPElement(Long sxpElementId, SXPElement sxpElement)
-		throws Exception {
-
-		return _sxpElementDTOConverter.toDTO(
-			new DefaultDTOConverterContext(
-				contextAcceptLanguage.isAcceptAllLanguages(), new HashMap<>(),
-				_dtoConverterRegistry, contextHttpServletRequest,
-				sxpElement.getId(), contextAcceptLanguage.getPreferredLocale(),
-				contextUriInfo, contextUser),
-			_sxpElementService.updateSXPElement(
-				sxpElementId,
-				LocalizedMapUtil.getLocalizedMap(
-					contextAcceptLanguage.getPreferredLocale(),
-					sxpElement.getDescription(),
-					sxpElement.getDescription_i18n()),
-				_getElementDefinitionJSON(sxpElement), _getSchemaVersion(),
-				GetterUtil.getBoolean(sxpElement.getHidden()),
-				LocalizedMapUtil.getLocalizedMap(
-					contextAcceptLanguage.getPreferredLocale(),
-					sxpElement.getTitle(), sxpElement.getTitle_i18n()),
-				ServiceContextFactory.getInstance(contextHttpServletRequest)));
 	}
 
 	@Override
@@ -306,6 +280,42 @@ public class SXPElementResourceImpl extends BaseSXPElementResourceImpl {
 	}
 
 	@Override
+	public SXPElement putSXPElement(Long sxpElementId, SXPElement sxpElement)
+		throws Exception {
+
+		if (sxpElement.getReadOnly()) {
+			return _sxpElementDTOConverter.toDTO(
+				new DefaultDTOConverterContext(
+					contextAcceptLanguage.isAcceptAllLanguages(),
+					new HashMap<>(), _dtoConverterRegistry,
+					contextHttpServletRequest, sxpElement.getId(),
+					contextAcceptLanguage.getPreferredLocale(), contextUriInfo,
+					contextUser),
+				_sxpElementService.updateReadOnlySXPElement(
+					sxpElement.getExternalReferenceCode(), sxpElementId));
+		}
+
+		return _sxpElementDTOConverter.toDTO(
+			new DefaultDTOConverterContext(
+				contextAcceptLanguage.isAcceptAllLanguages(), new HashMap<>(),
+				_dtoConverterRegistry, contextHttpServletRequest,
+				sxpElement.getId(), contextAcceptLanguage.getPreferredLocale(),
+				contextUriInfo, contextUser),
+			_sxpElementService.updateSXPElement(
+				sxpElementId,
+				LocalizedMapUtil.getLocalizedMap(
+					contextAcceptLanguage.getPreferredLocale(),
+					sxpElement.getDescription(),
+					sxpElement.getDescription_i18n()),
+				_getElementDefinitionJSON(sxpElement), _getSchemaVersion(),
+				GetterUtil.getBoolean(sxpElement.getHidden()),
+				LocalizedMapUtil.getLocalizedMap(
+					contextAcceptLanguage.getPreferredLocale(),
+					sxpElement.getTitle(), sxpElement.getTitle_i18n()),
+				ServiceContextFactory.getInstance(contextHttpServletRequest)));
+	}
+
+	@Override
 	public SXPElement putSXPElementByExternalReferenceCode(
 			String externalReferenceCode, SXPElement sxpElement)
 		throws Exception {
@@ -318,7 +328,7 @@ public class SXPElementResourceImpl extends BaseSXPElementResourceImpl {
 		sxpElement.setExternalReferenceCode(externalReferenceCode);
 
 		if (serviceBuilderSxpElement != null) {
-			return patchSXPElement(
+			return putSXPElement(
 				serviceBuilderSxpElement.getSXPElementId(), sxpElement);
 		}
 

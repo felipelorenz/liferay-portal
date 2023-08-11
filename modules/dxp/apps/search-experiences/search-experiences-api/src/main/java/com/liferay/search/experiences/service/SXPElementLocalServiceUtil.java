@@ -349,6 +349,14 @@ public class SXPElementLocalServiceUtil {
 		return getService().getSXPElementsCount();
 	}
 
+	public static SXPElement updateReadOnlySXPElement(
+			String externalReferenceCode, long sxpElementId)
+		throws PortalException {
+
+		return getService().updateReadOnlySXPElement(
+			externalReferenceCode, sxpElementId);
+	}
+
 	public static SXPElement updateStatus(
 			long userId, long sxpElementId, int status)
 		throws PortalException {

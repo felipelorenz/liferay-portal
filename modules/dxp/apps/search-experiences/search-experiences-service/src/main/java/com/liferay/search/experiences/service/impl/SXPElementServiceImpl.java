@@ -8,12 +8,14 @@ package com.liferay.search.experiences.service.impl;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.aop.AopService;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.security.auth.PrincipalException;
 import com.liferay.portal.kernel.security.permission.ActionKeys;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.security.permission.resource.PortletResourcePermission;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.search.experiences.constants.SXPActionKeys;
 import com.liferay.search.experiences.constants.SXPConstants;
+import com.liferay.search.experiences.exception.NoSuchSXPElementException;
 import com.liferay.search.experiences.exception.SXPElementReadOnlyException;
 import com.liferay.search.experiences.model.SXPElement;
 import com.liferay.search.experiences.service.base.SXPElementServiceBaseImpl;
@@ -140,6 +142,17 @@ public class SXPElementServiceImpl extends SXPElementServiceBaseImpl {
 		return sxpElementLocalService.updateSXPElement(
 			getUserId(), sxpElementId, descriptionMap, elementDefinitionJSON,
 			hidden, schemaVersion, titleMap, serviceContext);
+	}
+
+	@Override
+	public SXPElement updateReadOnlySXPElement(
+		String externalReferenceCode, long sxpElementId)
+		throws PortalException {
+
+		_sxpElementModelResourcePermission.check(
+			getPermissionChecker(), sxpElementId, ActionKeys.UPDATE);
+
+		return sxpElementLocalService.updateReadOnlySXPElement(externalReferenceCode, sxpElementId);
 	}
 
 	@Reference(target = "(resource.name=" + SXPConstants.RESOURCE_NAME + ")")

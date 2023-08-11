@@ -397,6 +397,16 @@ public class SXPElementLocalServiceWrapper
 	}
 
 	@Override
+	public com.liferay.search.experiences.model.SXPElement
+			updateReadOnlySXPElement(
+				String externalReferenceCode, long sxpElementId)
+		throws com.liferay.portal.kernel.exception.PortalException {
+
+		return _sxpElementLocalService.updateReadOnlySXPElement(
+			externalReferenceCode, sxpElementId);
+	}
+
+	@Override
 	public com.liferay.search.experiences.model.SXPElement updateStatus(
 			long userId, long sxpElementId, int status)
 		throws com.liferay.portal.kernel.exception.PortalException {
