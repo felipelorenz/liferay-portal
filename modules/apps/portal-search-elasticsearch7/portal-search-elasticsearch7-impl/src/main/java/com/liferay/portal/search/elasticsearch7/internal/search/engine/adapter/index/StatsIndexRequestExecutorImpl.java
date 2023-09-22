@@ -55,6 +55,7 @@ public class StatsIndexRequestExecutorImpl
 				"indices");
 
 			Map<String, Long> indexSizes = new HashMap<>();
+			long sizeOfLargestIndex = 0;
 
 			for (String indexName : statsIndexRequest.getIndexNames()) {
 				JSONObject indexJSONObject = indicesJSONObject.getJSONObject(
@@ -66,11 +67,16 @@ public class StatsIndexRequestExecutorImpl
 				JSONObject storeJSONObject = totalJSONObject.getJSONObject(
 					"store");
 
-				indexSizes.put(
-					indexName, storeJSONObject.getLong("size_in_bytes"));
+				long indexSize = storeJSONObject.getLong("size_in_bytes");
+
+				if (indexSize > sizeOfLargestIndex) {
+					sizeOfLargestIndex = indexSize;
+				}
+
+				indexSizes.put(indexName, indexSize);
 			}
 
-			return new StatsIndexResponse(indexSizes);
+			return new StatsIndexResponse(indexSizes, sizeOfLargestIndex);
 		}
 		catch (Exception exception) {
 			throw new SystemException(exception);
