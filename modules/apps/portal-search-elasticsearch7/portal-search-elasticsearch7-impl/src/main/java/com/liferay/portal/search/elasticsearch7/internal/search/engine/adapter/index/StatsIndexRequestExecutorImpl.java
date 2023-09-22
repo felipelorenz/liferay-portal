@@ -54,10 +54,15 @@ public class StatsIndexRequestExecutorImpl
 			JSONObject indicesJSONObject = responseJSONObject.getJSONObject(
 				"indices");
 
+			String[] indexNames = indicesJSONObject.keySet(
+			).toArray(
+				new String[0]
+			);
+
 			Map<String, Long> indexSizes = new HashMap<>();
 			long sizeOfLargestIndex = 0;
 
-			for (String indexName : statsIndexRequest.getIndexNames()) {
+			for (String indexName : indexNames) {
 				JSONObject indexJSONObject = indicesJSONObject.getJSONObject(
 					indexName);
 
