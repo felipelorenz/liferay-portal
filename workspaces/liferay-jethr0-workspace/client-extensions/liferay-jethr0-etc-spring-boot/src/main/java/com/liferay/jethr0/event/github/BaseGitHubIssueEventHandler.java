@@ -42,10 +42,64 @@ import org.json.JSONObject;
 public abstract class BaseGitHubIssueEventHandler
 	extends BaseGitHubEventHandler {
 
+	public boolean isReceiverLiferayGitHubUser() throws InvalidJSONException {
+		GitHubPullRequest gitHubPullRequest = getGitHubPullRequest();
+
+		if (gitHubPullRequest == null) {
+			return false;
+		}
+
+		GitHubUser receiverGitHubUser =
+			gitHubPullRequest.getReceiverGitHubUser();
+
+		if (!receiverGitHubUser.isLiferayUser()) {
+			return false;
+		}
+
+		return true;
+	}
+
+	public boolean isSenderLiferayGitHubUser() throws InvalidJSONException {
+		GitHubPullRequest gitHubPullRequest = getGitHubPullRequest();
+
+		if (gitHubPullRequest == null) {
+			return false;
+		}
+
+		GitHubUser senderGitHubUser = gitHubPullRequest.getSenderGitHubUser();
+
+		if (!senderGitHubUser.isLiferayUser()) {
+			return false;
+		}
+
+		return true;
+	}
+
 	protected BaseGitHubIssueEventHandler(
 		EventHandlerContext eventHandlerContext, JSONObject messageJSONObject) {
 
 		super(eventHandlerContext, messageJSONObject);
+	}
+
+	protected boolean checkLiferayGitHubUser() throws InvalidJSONException {
+		if (isReceiverLiferayGitHubUser() && isSenderLiferayGitHubUser()) {
+			return false;
+		}
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append("You cannot perform that action because you are not a ");
+		sb.append("member of the Liferay organization. Please make sure that ");
+		sb.append("you have been added and that your organization membership ");
+		sb.append("is set as public. See https://help.github.com/articles");
+		sb.append("/publicizing-or-hiding-organization-membership for more ");
+		sb.append("information.");
+
+		GitHubPullRequest gitHubPullRequest = getGitHubPullRequest();
+
+		gitHubPullRequest.comment(sb.toString());
+
+		return true;
 	}
 
 	protected void closeGitHubPullRequest(String body)
@@ -62,9 +116,9 @@ public abstract class BaseGitHubIssueEventHandler
 		GitHubIssue gitHubIssue = getGitHubIssue();
 
 		if (gitHubIssue != null) {
-			gitHubClient.createGitHubComment(gitHubIssue, body);
+			gitHubIssue.createGitHubComment(body);
 
-			gitHubClient.closeGitHubIssue(gitHubIssue);
+			gitHubIssue.close();
 
 			return;
 		}
@@ -72,9 +126,9 @@ public abstract class BaseGitHubIssueEventHandler
 		GitHubPullRequest gitHubPullRequest = getGitHubPullRequest();
 
 		if (gitHubPullRequest != null) {
-			gitHubClient.createGitHubComment(gitHubPullRequest, body);
+			gitHubPullRequest.comment(body);
 
-			gitHubClient.closeGitHubPullRequest(gitHubPullRequest);
+			gitHubPullRequest.close();
 		}
 	}
 
@@ -226,7 +280,9 @@ public abstract class BaseGitHubIssueEventHandler
 				"Missing \"comment\" from message JSON");
 		}
 
-		return new GitHubComment(commentJSONObject);
+		GitHubFactory gitHubFactory = getGitHubFactory();
+
+		return gitHubFactory.newGitHubComment(commentJSONObject);
 	}
 
 	protected GitHubIssue getGitHubIssue() throws InvalidJSONException {
@@ -239,7 +295,9 @@ public abstract class BaseGitHubIssueEventHandler
 				"Missing \"issue\" from message JSON");
 		}
 
-		return new GitHubIssue(issueJSONObject);
+		GitHubFactory gitHubFactory = getGitHubFactory();
+
+		return gitHubFactory.newGitHubIssue(issueJSONObject);
 	}
 
 	protected GitHubPullRequest getGitHubPullRequest()
@@ -251,9 +309,7 @@ public abstract class BaseGitHubIssueEventHandler
 
 		GitHubIssue gitHubIssue = getGitHubIssue();
 
-		GitHubClient gitHubClient = getGitHubClient();
-
-		_gitHubPullRequest = gitHubClient.getGitHubPullRequest(gitHubIssue);
+		_gitHubPullRequest = gitHubIssue.getGitHubPullRequest();
 
 		return _gitHubPullRequest;
 	}

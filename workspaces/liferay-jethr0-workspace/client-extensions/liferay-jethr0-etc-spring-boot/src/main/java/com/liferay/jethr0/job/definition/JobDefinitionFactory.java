@@ -26,7 +26,22 @@ public class JobDefinitionFactory {
 	}
 
 	public static JobDefinition newJobDefinition(JobEntity.Type type) {
-		if (type == JobEntity.Type.PORTAL_PULL_REQUEST) {
+		if (type == JobEntity.Type.GENERATE_CI_SYSTEM_HISTORY_REPORT) {
+			return new GenerateCISystemHistoryReportJobDefinition(type);
+		}
+		else if (type == JobEntity.Type.GENERATE_CI_SYSTEM_STATUS_REPORT) {
+			return new GenerateCISystemStatusReportJobDefinition(type);
+		}
+		else if (type == JobEntity.Type.GENERATE_REPORTS) {
+			return new GenerateReportsJobDefinition(type);
+		}
+		else if (type == JobEntity.Type.GENERATE_TEST_DURATION_METRICS) {
+			return new GenerateTestDurationMetricsJobDefinition(type);
+		}
+		else if (type == JobEntity.Type.GENERATE_TESTRAY_CSV) {
+			return new GenerateTestrayCSVJobDefinition(type);
+		}
+		else if (type == JobEntity.Type.PORTAL_PULL_REQUEST) {
 			return new PortalPullRequestJobDefinition(type);
 		}
 		else if (type == JobEntity.Type.PORTAL_PULL_REQUEST_SF) {
@@ -50,6 +65,21 @@ public class JobDefinitionFactory {
 		else if (type == JobEntity.Type.POSHI_RELEASE) {
 			return new PoshiReleaseJobDefinition(type);
 		}
+		else if (type == JobEntity.Type.MAINTENANCE_DAILY) {
+			return new MaintenanceDailyJobDefinition(type);
+		}
+		else if (type == JobEntity.Type.MAINTENANCE_MATRIX_JOBS) {
+			return new MaintenanceMatrixJobsJobDefinition(type);
+		}
+		else if (type == JobEntity.Type.MAINTENANCE_STALE_ARTIFACTS) {
+			return new MaintenanceStaleArtifactsJobDefinition(type);
+		}
+		else if (type == JobEntity.Type.MAINTENANCE_WEEKLY) {
+			return new MaintenanceWeeklyJobDefinition(type);
+		}
+		else if (type == JobEntity.Type.MAINTENANCE_WEEKLY_NODE) {
+			return new MaintenanceWeeklyNodeJobDefinition(type);
+		}
 		else if (type == JobEntity.Type.QA_WEBSITES_DAILY) {
 			return new DailyQAWebsitesJobDefinition(type);
 		}
@@ -58,6 +88,12 @@ public class JobDefinitionFactory {
 		}
 		else if (type == JobEntity.Type.QA_WEBSITES_WEEKLY) {
 			return new WeeklyQAWebsitesJobDefinition(type);
+		}
+		else if (type == JobEntity.Type.VERIFICATION) {
+			return new VerificationJobDefinition(type);
+		}
+		else if (type == JobEntity.Type.VERIFICATION_NODE) {
+			return new VerificationNodeJobDefinition(type);
 		}
 
 		return new DefaultJobDefinition(type);

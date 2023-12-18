@@ -24,19 +24,50 @@ public class JobEntityFactory extends BaseEntityFactory<JobEntity> {
 		JobEntity.Type jobEntityType = JobEntity.Type.getByKey(
 			typeJSONObject.getString("key"));
 
-		if (jobEntityType == JobEntity.Type.PORTAL_APP_RELEASE) {
+		if (jobEntityType == JobEntity.Type.GENERATE_CI_SYSTEM_HISTORY_REPORT) {
+			return new HistoryGenerateCISystemReportJobEntity(jsonObject);
+		}
+		else if (jobEntityType ==
+					JobEntity.Type.GENERATE_CI_SYSTEM_STATUS_REPORT) {
+
+			return new StatusGenerateCISystemReportJobEntity(jsonObject);
+		}
+		else if (jobEntityType == JobEntity.Type.GENERATE_REPORTS) {
+			return new GenerateReportsJobEntity(jsonObject);
+		}
+		else if (jobEntityType ==
+					JobEntity.Type.GENERATE_TEST_DURATION_METRICS) {
+
+			return new GenerateTestDurationMetricsJobEntity(jsonObject);
+		}
+		else if (jobEntityType == JobEntity.Type.GENERATE_TESTRAY_CSV) {
+			return new GenerateTestrayCSVJobEntity(jsonObject);
+		}
+		else if (jobEntityType == JobEntity.Type.MAINTENANCE_DAILY) {
+			return new MaintenanceDailyJobEntity(jsonObject);
+		}
+		else if (jobEntityType == JobEntity.Type.MAINTENANCE_MATRIX_JOBS) {
+			return new MaintenanceMatrixJobsJobEntity(jsonObject);
+		}
+		else if (jobEntityType == JobEntity.Type.MAINTENANCE_STALE_ARTIFACTS) {
+			return new MaintenanceStaleArtifactsJobEntity(jsonObject);
+		}
+		else if (jobEntityType == JobEntity.Type.MAINTENANCE_WEEKLY) {
+			return new MaintenanceWeeklyJobEntity(jsonObject);
+		}
+		else if (jobEntityType == JobEntity.Type.MAINTENANCE_WEEKLY_NODE) {
+			return new MaintenanceWeeklyNodeJobEntity(jsonObject);
+		}
+		else if (jobEntityType == JobEntity.Type.PORTAL_APP_RELEASE) {
 			return new PortalAppReleaseJobEntity(jsonObject);
 		}
-
-		if (jobEntityType == JobEntity.Type.PORTAL_FIXPACK_RELEASE) {
+		else if (jobEntityType == JobEntity.Type.PORTAL_FIXPACK_RELEASE) {
 			return new PortalFixpackReleaseJobEntity(jsonObject);
 		}
-
-		if (jobEntityType == JobEntity.Type.PORTAL_HOTFIX_RELEASE) {
+		else if (jobEntityType == JobEntity.Type.PORTAL_HOTFIX_RELEASE) {
 			return new PortalHotfixReleaseJobEntity(jsonObject);
 		}
-
-		if (jobEntityType == JobEntity.Type.PORTAL_PULL_REQUEST) {
+		else if (jobEntityType == JobEntity.Type.PORTAL_PULL_REQUEST) {
 			return new DefaultPortalPullRequestJobEntity(jsonObject);
 		}
 		else if (jobEntityType == JobEntity.Type.PORTAL_PULL_REQUEST_SF) {
@@ -62,6 +93,12 @@ public class JobEntityFactory extends BaseEntityFactory<JobEntity> {
 		}
 		else if (jobEntityType == JobEntity.Type.QA_WEBSITES_WEEKLY) {
 			return new WeeklyQAWebsitesJobEntity(jsonObject);
+		}
+		else if (jobEntityType == JobEntity.Type.VERIFICATION) {
+			return new VerificationJobEntity(jsonObject);
+		}
+		else if (jobEntityType == JobEntity.Type.VERIFICATION_NODE) {
+			return new VerificationNodeJobEntity(jsonObject);
 		}
 
 		return new DefaultJobEntity(jsonObject);

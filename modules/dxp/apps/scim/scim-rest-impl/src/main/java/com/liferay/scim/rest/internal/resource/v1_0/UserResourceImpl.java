@@ -52,19 +52,19 @@ public class UserResourceImpl extends BaseUserResourceImpl {
 	}
 
 	@Override
-	public Object getV2User(Integer count, Integer startIndex)
+	public Object getV2UserById(String id) throws Exception {
+		return _buildResponse(
+			_userResourceManager.get(id, _userManager, null, null));
+	}
+
+	@Override
+	public Object getV2Users(Integer count, Integer startIndex)
 		throws Exception {
 
 		return _buildResponse(
 			_userResourceManager.listWithGET(
 				_userManager, null, startIndex, count, null, null, null, null,
 				null));
-	}
-
-	@Override
-	public Object getV2UserById(String id) throws Exception {
-		return _buildResponse(
-			_userResourceManager.get(id, _userManager, null, null));
 	}
 
 	@Override

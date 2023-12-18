@@ -45,6 +45,7 @@ import com.liferay.object.field.builder.PrecisionDecimalObjectFieldBuilder;
 import com.liferay.object.field.builder.RichTextObjectFieldBuilder;
 import com.liferay.object.field.builder.TextObjectFieldBuilder;
 import com.liferay.object.field.setting.util.ObjectFieldSettingUtil;
+import com.liferay.object.field.util.ObjectFieldUtil;
 import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.model.ObjectField;
 import com.liferay.object.model.ObjectFieldSetting;
@@ -241,6 +242,7 @@ public class DefaultObjectEntryManagerImplTest
 				"pt_BR", "pt_BR localizedTextObjectFieldValue1"
 			).build()
 		).build();
+
 		_objectDefinition1 = _createObjectDefinition(
 			Arrays.asList(
 				new TextObjectFieldBuilder(
@@ -250,6 +252,18 @@ public class DefaultObjectEntryManagerImplTest
 				).name(
 					"textObjectFieldName"
 				).build()));
+
+		ObjectFieldUtil.addCustomObjectField(
+			new TextObjectFieldBuilder(
+			).userId(
+				adminUser.getUserId()
+			).labelMap(
+				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString())
+			).name(
+				"textObjectFieldNameExtension"
+			).objectDefinitionId(
+				_objectDefinition1.getObjectDefinitionId()
+			).build());
 
 		_objectDefinition2 = _createObjectDefinition(
 			Arrays.asList(
@@ -1703,6 +1717,8 @@ public class DefaultObjectEntryManagerImplTest
 					{
 						properties = HashMapBuilder.<String, Object>put(
 							"textObjectFieldName", "Able"
+						).put(
+							"textObjectFieldNameExtension", "Baker"
 						).build();
 					}
 				},
@@ -2046,6 +2062,47 @@ public class DefaultObjectEntryManagerImplTest
 				"sort", "textObjectFieldName:desc"
 			).build(),
 			childObjectEntry2, childObjectEntry1);
+
+		// Search
+
+		testGetObjectEntries(
+			HashMapBuilder.put(
+				"search", String.valueOf(parentObjectEntry1.getId())
+			).build(),
+			childObjectEntry1);
+
+		ObjectField objectField = objectFieldLocalService.fetchObjectField(
+			_objectDefinition1.getObjectDefinitionId(), "textObjectFieldName");
+
+		_objectDefinition1.setTitleObjectFieldId(
+			objectField.getObjectFieldId());
+
+		_objectDefinition1 =
+			objectDefinitionLocalService.updateObjectDefinition(
+				_objectDefinition1);
+
+		testGetObjectEntries(
+			HashMapBuilder.put(
+				"search", "Able"
+			).build(),
+			childObjectEntry1);
+
+		objectField = objectFieldLocalService.fetchObjectField(
+			_objectDefinition1.getObjectDefinitionId(),
+			"textObjectFieldNameExtension");
+
+		_objectDefinition1.setTitleObjectFieldId(
+			objectField.getObjectFieldId());
+
+		_objectDefinition1 =
+			objectDefinitionLocalService.updateObjectDefinition(
+				_objectDefinition1);
+
+		testGetObjectEntries(
+			HashMapBuilder.put(
+				"search", "Baker"
+			).build(),
+			childObjectEntry1);
 	}
 
 	@Test

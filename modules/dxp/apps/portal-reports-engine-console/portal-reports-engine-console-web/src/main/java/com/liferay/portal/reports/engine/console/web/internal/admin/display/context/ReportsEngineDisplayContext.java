@@ -8,14 +8,12 @@ package com.liferay.portal.reports.engine.console.web.internal.admin.display.con
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenu;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.CreationMenuBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItem;
-import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemList;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.DropdownItemListBuilder;
 import com.liferay.frontend.taglib.clay.servlet.taglib.util.ViewTypeItemList;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.bean.BeanParamUtil;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
@@ -145,22 +143,6 @@ public class ReportsEngineDisplayContext {
 		}
 
 		return _displayStyle;
-	}
-
-	public DropdownItemList getFilterOptions() {
-		if (FeatureFlagManagerUtil.isEnabled("LPS-144527")) {
-			return null;
-		}
-
-		return DropdownItemListBuilder.addGroup(
-			dropdownGroupItem -> {
-				dropdownGroupItem.setDropdownItems(
-					getOrderItemsDropdownItems());
-				dropdownGroupItem.setLabel(
-					LanguageUtil.get(
-						_reportsEngineRequestHelper.getRequest(), "order-by"));
-			}
-		).build();
 	}
 
 	public String getOrderByType() {

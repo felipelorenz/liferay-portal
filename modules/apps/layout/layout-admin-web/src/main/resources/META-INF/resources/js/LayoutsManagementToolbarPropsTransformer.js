@@ -7,7 +7,9 @@ import {
 	addParams,
 	navigate,
 	openConfirmModal,
+	openModal,
 	openSelectionModal,
+	sub,
 } from 'frontend-js-web';
 
 import openDeleteLayoutModal from './openDeleteLayoutModal';
@@ -48,14 +50,51 @@ export default function propsTransformer({portletNamespace, ...otherProps}) {
 		});
 	};
 
-	const permissions = (itemData) => {
+	const changePermissions = (itemData) => {
 		const keys = Array.from(
 			document.querySelectorAll(
 				`[name=${portletNamespace}rowIds]:checked`
 			)
 		).map(({value}) => value);
 
-		const url = new URL(itemData?.permissionsURL);
+		if (keys.length > itemData.maxItemsToShowInfoMessage) {
+			openModal({
+				bodyHTML: `<p class="text-secondary">
+					${sub(
+						Liferay.Language.get(
+							'you-have-selected-more-than-x-x-info-message'
+						),
+						itemData.maxItemsToShowInfoMessage,
+						Liferay.Language.get('pages')
+					)}
+				</p>`,
+				buttons: [
+					{
+						displayType: 'secondary',
+						label: Liferay.Language.get('cancel'),
+						type: 'cancel',
+					},
+					{
+						displayType: 'info',
+						label: Liferay.Language.get('continue'),
+						onClick: ({processClose}) => {
+							processClose();
+							openChangePermissionsSelectionModal(itemData, keys);
+						},
+						type: 'button',
+					},
+				],
+				status: 'info',
+				title: Liferay.Language.get('bulk-action-performance'),
+			});
+		}
+		else {
+			openChangePermissionsSelectionModal(itemData, keys);
+		}
+	};
+
+	const openChangePermissionsSelectionModal = (itemData, keys) => {
+		const url = new URL(itemData?.changePermissionsURL);
 
 		openSelectionModal({
 			title: Liferay.Language.get('permissions'),
@@ -65,7 +104,7 @@ export default function propsTransformer({portletNamespace, ...otherProps}) {
 						'p_p_id'
 					)}_resourcePrimKey`]: keys.join(','),
 				},
-				itemData?.permissionsURL
+				itemData?.changePermissionsURL
 			),
 		});
 	};
@@ -107,8 +146,8 @@ export default function propsTransformer({portletNamespace, ...otherProps}) {
 			else if (action === 'exportTranslation') {
 				exportTranslation(data);
 			}
-			else if (action === 'permissions') {
-				permissions(data);
+			else if (action === 'changePermissions') {
+				changePermissions(data);
 			}
 		},
 	};
