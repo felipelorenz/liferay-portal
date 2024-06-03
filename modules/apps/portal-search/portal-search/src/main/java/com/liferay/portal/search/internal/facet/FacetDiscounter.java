@@ -70,6 +70,21 @@ public class FacetDiscounter {
 	private void _exclude(Document document) {
 		Field field = document.getField(_facet.getFieldName());
 
+		boolean nested = false;
+
+		if(_facet.getFieldName().contains("nestedFieldArray")){
+
+			Field nestedField = document.getField("nestedFieldArray");
+
+			String[] nestedArray = nestedField.getValues();
+
+			if (nestedArray[1].contains("value_keyword_lowercase")){
+				nested = true;
+				field = nestedField;
+			}
+
+		}
+
 		if (field == null) {
 			return;
 		}
@@ -79,7 +94,7 @@ public class FacetDiscounter {
 		for (TermCollector termCollector : facetCollector.getTermCollectors()) {
 			String term = termCollector.getTerm();
 
-			if (FacetBucketUtil.isFieldInBucket(field, term, _facet)) {
+			if (FacetBucketUtil.isFieldInBucket(field, term, _facet) || nested) {
 				int exclusions = _getExclusions(term);
 
 				_excludedTermsMap.put(term, exclusions + 1);
