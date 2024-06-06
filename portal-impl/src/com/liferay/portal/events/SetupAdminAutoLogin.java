@@ -11,11 +11,14 @@ import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.security.auto.login.AutoLoginException;
 import com.liferay.portal.kernel.security.auto.login.BaseAutoLogin;
+import com.liferay.portal.kernel.util.Constants;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.security.DefaultAdminUtil;
 import com.liferay.portal.util.PropsValues;
+
+import java.util.Objects;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -44,7 +47,10 @@ public class SetupAdminAutoLogin extends BaseAutoLogin {
 			HttpServletResponse httpServletResponse)
 		throws Exception {
 
-		if (Validator.isNotNull(PropsValues.DEFAULT_ADMIN_PASSWORD)) {
+		if (Validator.isNotNull(PropsValues.DEFAULT_ADMIN_PASSWORD) &&
+			!Objects.equals(
+				PropsValues.DEFAULT_ADMIN_PASSWORD, Constants.TEST)) {
+
 			return null;
 		}
 
