@@ -40,6 +40,16 @@
 				"tokenizer": "standard",
 				"type": "custom"
 			},
+			"liferay_analyzer_pt_PT": {
+				"filter": [
+					"lowercase",
+					"portuguese_stop",
+					"liferay_filter_synonym_pt_PT",
+					"portuguese_stemmer"
+				],
+				"tokenizer": "standard",
+				"type": "custom"
+			},
 			"reverse_keyword_lowercase": {
 				"filter": [
 					"lowercase",
@@ -60,6 +70,14 @@
 				"min_gram": 1,
 				"type": "ngram"
 			},
+			"portuguese_stemmer": {
+				"language": "light_portuguese",
+				"type": "stemmer"
+			},
+			"portuguese_stop": {
+				"stopwords": "_portuguese_",
+				"type": "stop"
+			},
 			"english_possessive_stemmer": {
 				"language": "possessive_english",
 				"type": "stemmer"
@@ -79,6 +97,12 @@
 				"type": "synonym_graph"
 			},
 			"liferay_filter_synonym_es": {
+				"lenient": true,
+				"synonyms": [
+				],
+				"type": "synonym_graph"
+			},
+			"liferay_filter_synonym_pt_PT": {
 				"lenient": true,
 				"synonyms": [
 				],
