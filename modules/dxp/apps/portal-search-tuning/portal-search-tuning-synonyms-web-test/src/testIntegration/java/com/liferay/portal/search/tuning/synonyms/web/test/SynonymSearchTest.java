@@ -104,6 +104,7 @@ public class SynonymSearchTest {
 			addSynonymSet("maison,logement");
 			addSynonymSet("glücklich,heiter");
 			addSynonymSet("feliz,alegre");
+			addSynonymSet("feliz,alegre");
 		}
 
 		addJournalArticles();
@@ -124,6 +125,7 @@ public class SynonymSearchTest {
 		doAssertSearch("dxp", Field.TITLE, LocaleUtil.US, 2);
 		doAssertSearch("glücklich", Field.TITLE, LocaleUtil.GERMANY, 2);
 		doAssertSearch("feliz", Field.TITLE, LocaleUtil.BRAZIL, 2);
+		doAssertSearch("feliz", Field.TITLE, LocaleUtil.PORTUGAL, 2);
 	}
 
 	@Test
@@ -166,6 +168,8 @@ public class SynonymSearchTest {
 			).put(
 				LocaleUtil.HUNGARY, "hatékony"
 			).put(
+				LocaleUtil.PORTUGAL, "feliz"
+			).put(
 				LocaleUtil.SPAIN, "efectivo"
 			).put(
 				LocaleUtil.US, "dxp"
@@ -179,6 +183,8 @@ public class SynonymSearchTest {
 				LocaleUtil.GERMANY, "heiter"
 			).put(
 				LocaleUtil.HUNGARY, "produktív"
+			).put(
+				LocaleUtil.PORTUGAL, "alegre"
 			).put(
 				LocaleUtil.SPAIN, "productivo"
 			).put(
@@ -264,7 +270,7 @@ public class SynonymSearchTest {
 			new String[] {
 				"liferay_filter_synonym_de", "liferay_filter_synonym_en",
 				"liferay_filter_synonym_es", "liferay_filter_synonym_pt_BR",
-				"custom-synonym-filter-fr"
+				"liferay_filter_synonym_pt_PT", "custom-synonym-filter-fr"
 			}
 		).build();
 	}
