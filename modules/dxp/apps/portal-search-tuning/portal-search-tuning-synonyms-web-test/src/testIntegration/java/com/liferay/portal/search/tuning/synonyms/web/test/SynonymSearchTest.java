@@ -106,6 +106,7 @@ public class SynonymSearchTest {
 			addSynonymSet("feliz,alegre");
 			addSynonymSet("feliz,alegre");
 			addSynonymSet("Contento,Soddisfatto");
+			addSynonymSet("effectief,productief");
 		}
 
 		addJournalArticles();
@@ -128,6 +129,7 @@ public class SynonymSearchTest {
 		doAssertSearch("feliz", Field.TITLE, LocaleUtil.BRAZIL, 2);
 		doAssertSearch("feliz", Field.TITLE, LocaleUtil.PORTUGAL, 2);
 		doAssertSearch("Contento", Field.TITLE, LocaleUtil.ITALY, 2);
+		doAssertSearch("effectief", Field.TITLE, LocaleUtil.NETHERLANDS, 2);
 	}
 
 	@Test
@@ -172,6 +174,8 @@ public class SynonymSearchTest {
 			).put(
 				LocaleUtil.ITALY, "Contento"
 			).put(
+				LocaleUtil.NETHERLANDS, "effectief"
+			).put(
 				LocaleUtil.PORTUGAL, "feliz"
 			).put(
 				LocaleUtil.SPAIN, "efectivo"
@@ -189,6 +193,8 @@ public class SynonymSearchTest {
 				LocaleUtil.HUNGARY, "produktív"
 			).put(
 				LocaleUtil.ITALY, "Soddisfatto"
+			).put(
+				LocaleUtil.NETHERLANDS, "productief"
 			).put(
 				LocaleUtil.PORTUGAL, "alegre"
 			).put(
@@ -276,8 +282,8 @@ public class SynonymSearchTest {
 			new String[] {
 				"liferay_filter_synonym_de", "liferay_filter_synonym_en",
 				"liferay_filter_synonym_es", "liferay_filter_synonym_it",
-				"liferay_filter_synonym_pt_BR", "liferay_filter_synonym_pt_PT",
-				"custom-synonym-filter-fr"
+				"liferay_filter_synonym_nl", "liferay_filter_synonym_pt_BR",
+				"liferay_filter_synonym_pt_PT", "custom-synonym-filter-fr"
 			}
 		).build();
 	}
