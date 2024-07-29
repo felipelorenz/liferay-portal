@@ -41,6 +41,16 @@
 				"tokenizer": "standard",
 				"type": "custom"
 			},
+			"liferay_analyzer_fi": {
+				"filter": [
+					"lowercase",
+					"finnish_stop",
+					"liferay_filter_synonym_fi",
+					"finnish_stemmer"
+				],
+				"tokenizer": "standard",
+				"type": "custom"
+			},
 			"liferay_analyzer_en": {
 				"filter": [
 					"english_possessive_stemmer",
@@ -203,6 +213,14 @@
 				"stopwords": "_italian_",
 				"type": "stop"
 			},
+			"finnish_stemmer": {
+				"language": "finnish",
+				"type": "stemmer"
+			},
+			"finnish_stop": {
+				"stopwords": "_finnish_",
+				"type": "stop"
+			},
 			"liferay_filter_synonym_de": {
 				"lenient": true,
 				"synonyms": [
@@ -222,6 +240,12 @@
 				"type": "synonym_graph"
 			},
 			"liferay_filter_synonym_it": {
+				"lenient": true,
+				"synonyms": [
+				],
+				"type": "synonym_graph"
+			},
+			"liferay_filter_synonym_fi": {
 				"lenient": true,
 				"synonyms": [
 				],
