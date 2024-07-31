@@ -10,6 +10,7 @@ import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.test.util.JournalTestUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.test.util.ConfigurationTemporarySwapper;
+import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Company;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.GroupConstants;
@@ -49,11 +50,13 @@ import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import java.io.IOException;
 import java.io.InputStream;
 
+import java.util.Arrays;
 import java.util.Dictionary;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import javax.portlet.ActionRequest;
 
@@ -161,6 +164,17 @@ public class SynonymSearchTest {
 
 		_serviceContext = ServiceContextTestUtil.getServiceContext(
 			_group.getGroupId(), _user.getUserId());
+
+		Set<Locale> currentLanguages = LanguageUtil.getAvailableLocales();
+
+		//List<Locale> allLocales = new ArrayList<>(currentLanguages);
+
+		GroupTestUtil.updateDisplaySettings(
+			_group.getGroupId(),
+			Arrays.asList(LocaleUtil.SPAIN, Locale.US),
+			LocaleUtil.US);
+
+		LanguageUtil.getAvailableLocales();
 
 		addJournalArticle(
 			HashMapBuilder.put(
