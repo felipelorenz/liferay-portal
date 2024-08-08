@@ -251,7 +251,7 @@ public class SynonymSearchTest {
 				"liferay_filter_synonym_fr", "liferay_filter_synonym_hu",
 				"liferay_filter_synonym_it", "liferay_filter_synonym_nl",
 				"liferay_filter_synonym_pt_BR", "liferay_filter_synonym_pt_PT",
-				"liferay_filter_synonym_sv"
+				"liferay_filter_synonym_sv", "liferay_filter_synonym_zh"
 			}
 		).build();
 	}
@@ -330,6 +330,8 @@ public class SynonymSearchTest {
 			_SWEDISH_LOCALE, new String[] {"lycklig", "nöjd"}
 		).put(
 			LocaleUtil.BRAZIL, new String[] {"feliz", "alegre"}
+		).put(
+			LocaleUtil.CHINA, new String[] {"有效的", "富有成效的"}
 		).put(
 			LocaleUtil.FRANCE, new String[] {"maison", "logement"}
 		).put(
