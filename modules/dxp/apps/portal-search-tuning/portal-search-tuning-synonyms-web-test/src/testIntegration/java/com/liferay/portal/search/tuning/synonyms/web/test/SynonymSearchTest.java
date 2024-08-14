@@ -103,7 +103,7 @@ public class SynonymSearchTest {
 		portalPreferences.setValue(
 			"", "locales",
 			"ar_SA,ca_ES,zh_CN,nl_NL,en_US,pt_PT,fi_FI,fr_FR,de_DE,hu_HU," +
-				"it_IT,ja_JP,pt_BR,es_ES,sv_SE");
+				"it_IT,ja_JP,pt_BR,es_ES,sv_SE,el_EL");
 
 		PortalPreferencesLocalServiceUtil.updatePreferences(
 			_companyId, PortletKeys.PREFS_OWNER_TYPE_COMPANY,
@@ -128,8 +128,20 @@ public class SynonymSearchTest {
 	@Test
 	public void testSearchOnLocalesWithDefaultSynonymFilters() {
 		for (Map.Entry<Locale, String[]> entry : _synonymsMap.entrySet()) {
-			_assertSearch(entry.getValue()[0], entry.getKey());
+			Locale locale = entry.getKey();
+
+			if (!locale.equals(_GREEK_LOCALE)) {
+				_assertSearch(entry.getValue()[0], locale, 2);
+			}
 		}
+	}
+
+	@Test
+	public void testSearchOnLocalesWithoutDefaultSynonymFilters() {
+		String[] synonymSet = _synonymsMap.get(_GREEK_LOCALE);
+
+		_assertSearch(synonymSet[0], _GREEK_LOCALE, 1);
+
 	}
 
 	private static void _addJournalArticle(Map<Locale, String> localeStringMap)
@@ -257,7 +269,7 @@ public class SynonymSearchTest {
 		).build();
 	}
 
-	private void _assertSearch(String keyword, Locale locale) {
+	private void _assertSearch(String keyword, Locale locale, int expectedCount) {
 		String localizedFieldName = Field.getLocalizedName(locale, Field.TITLE);
 
 		SearchRequestBuilder searchRequestBuilder =
@@ -279,7 +291,7 @@ public class SynonymSearchTest {
 
 		DocumentsAssert.assertCount(
 			searchResponse.getRequestString(),
-			documents.toArray(new Document[0]), localizedFieldName, 2);
+			documents.toArray(new Document[0]), localizedFieldName, expectedCount);
 	}
 
 	private static final Locale _ARABIC_LOCALE = new Locale("ar", "SA");
@@ -302,15 +314,14 @@ public class SynonymSearchTest {
 
 	private static final Locale _SWEDISH_LOCALE = new Locale("sv", "SE");
 
+	private static final Locale _GREEK_LOCALE = new Locale("el", "EL");
+
 	private static Long _companyId;
 
 	@Inject
 	private static ConfigurationAdmin _configurationAdmin;
 
 	private static Group _group;
-
-	@Inject
-	private static Language _language;
 
 	@Inject(
 		filter = "mvc.command.name=/synonyms/edit_synonym_sets",
@@ -327,6 +338,8 @@ public class SynonymSearchTest {
 			_CATALAN_LOCALE, new String[] {"feliç", "satisfet"}
 		).put(
 			_FINNISH_LOCALE, new String[] {"tehokas", "tuottava"}
+		).put(
+			_GREEK_LOCALE, new String[] {"αποτελεσματικός", "παραγωγικός"}
 		).put(
 			_SWEDISH_LOCALE, new String[] {"lycklig", "nöjd"}
 		).put(
