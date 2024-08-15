@@ -1,0 +1,32 @@
+{
+	"analysis": {
+		"analyzer": {
+			"custom_liferay_analyzer_ru": {
+				"filter": [
+					"lowercase",
+					"russian_stop",
+					"custom-synonym-filter-ru",
+					"russian_stemmer"
+				],
+				"tokenizer": "standard",
+				"type": "custom"
+			}
+		},
+		"filter": {
+			"custom-synonym-filter-ru": {
+				"lenient": true,
+				"synonyms": [
+				],
+				"type": "synonym_graph"
+			},
+			"russian_stemmer": {
+				"language": "russian",
+				"type": "stemmer"
+			},
+			"russian_stop": {
+				"stopwords": "_russian_",
+				"type": "stop"
+			}
+		}
+	}
+}

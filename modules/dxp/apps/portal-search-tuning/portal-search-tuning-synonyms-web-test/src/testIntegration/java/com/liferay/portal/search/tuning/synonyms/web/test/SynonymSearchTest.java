@@ -10,7 +10,6 @@ import com.liferay.journal.model.JournalArticle;
 import com.liferay.journal.test.util.JournalTestUtil;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.configuration.test.util.ConfigurationTemporarySwapper;
-import com.liferay.portal.kernel.language.Language;
 import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.GroupConstants;
@@ -103,7 +102,7 @@ public class SynonymSearchTest {
 		portalPreferences.setValue(
 			"", "locales",
 			"ar_SA,ca_ES,zh_CN,nl_NL,en_US,pt_PT,fi_FI,fr_FR,de_DE,hu_HU," +
-				"it_IT,ja_JP,pt_BR,es_ES,sv_SE,el_EL");
+				"it_IT,ja_JP,pt_BR,es_ES,sv_SE,el_GR,ru_RU");
 
 		PortalPreferencesLocalServiceUtil.updatePreferences(
 			_companyId, PortletKeys.PREFS_OWNER_TYPE_COMPANY,
@@ -130,7 +129,7 @@ public class SynonymSearchTest {
 		for (Map.Entry<Locale, String[]> entry : _synonymsMap.entrySet()) {
 			Locale locale = entry.getKey();
 
-			if (!locale.equals(_GREEK_LOCALE)) {
+			if (!locale.equals(_GREEK_LOCALE) && !locale.equals(_RUSSIAN_LOCALE)) {
 				_assertSearch(entry.getValue()[0], locale, 2);
 			}
 		}
@@ -141,6 +140,14 @@ public class SynonymSearchTest {
 		String[] synonymSet = _synonymsMap.get(_GREEK_LOCALE);
 
 		_assertSearch(synonymSet[0], _GREEK_LOCALE, 1);
+
+	}
+
+	@Test
+	public void testSearchOnLocaleWithCustomSynonymFilter() {
+		String[] synonymSet = _synonymsMap.get(_RUSSIAN_LOCALE);
+
+		_assertSearch(synonymSet[0], _RUSSIAN_LOCALE, 2);
 
 	}
 
@@ -206,6 +213,18 @@ public class SynonymSearchTest {
 		return _CONFIGURATION_PID_ELASTICSEARCH;
 	}
 
+	private static String _loadAdditionalIndexConfigurations() {
+		try {
+			return _getResourceAsString(
+				SynonymSearchTest.class,
+				"dependencies/" + SynonymSearchTest.class.getSimpleName() +
+				"-additionalIndexConfigurations.json");
+		}
+		catch (Exception exception) {
+			throw new RuntimeException(exception);
+		}
+	}
+
 	private static String _loadOverrideTypeMappings() {
 		try {
 			return _getResourceAsString(
@@ -229,7 +248,9 @@ public class SynonymSearchTest {
 		if (properties == null) {
 			properties = new HashMapDictionary<>();
 		}
-
+		properties.put(
+			"additionalIndexConfigurations",
+			_loadAdditionalIndexConfigurations());
 		properties.put("overrideTypeMappings", _loadOverrideTypeMappings());
 
 		return properties;
@@ -264,7 +285,7 @@ public class SynonymSearchTest {
 				"liferay_filter_synonym_it", "liferay_filter_synonym_ja",
 				"liferay_filter_synonym_nl", "liferay_filter_synonym_pt_BR",
 				"liferay_filter_synonym_pt_PT", "liferay_filter_synonym_sv",
-				"liferay_filter_synonym_zh"
+				"liferay_filter_synonym_zh", "custom-synonym-filter-ru"
 			}
 		).build();
 	}
@@ -314,7 +335,9 @@ public class SynonymSearchTest {
 
 	private static final Locale _SWEDISH_LOCALE = new Locale("sv", "SE");
 
-	private static final Locale _GREEK_LOCALE = new Locale("el", "EL");
+	private static final Locale _GREEK_LOCALE = new Locale("el", "GR");
+
+	private static final Locale _RUSSIAN_LOCALE = new Locale("ru", "RU");
 
 	private static Long _companyId;
 
@@ -336,6 +359,8 @@ public class SynonymSearchTest {
 			_ARABIC_LOCALE, new String[] {"فعال", "منتج"}
 		).put(
 			_CATALAN_LOCALE, new String[] {"feliç", "satisfet"}
+		).put(
+			_RUSSIAN_LOCALE, new String[] {"эффективный", "продуктивный"}
 		).put(
 			_FINNISH_LOCALE, new String[] {"tehokas", "tuottava"}
 		).put(
