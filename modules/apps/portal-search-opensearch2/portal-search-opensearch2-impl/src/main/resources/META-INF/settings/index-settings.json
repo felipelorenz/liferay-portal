@@ -126,7 +126,8 @@
 					"liferay_filter_synonym_ja",
 					"kuromoji_stemmer"
 				],
-				"tokenizer": "kuromoji_tokenizer"
+				"tokenizer": "kuromoji_tokenizer",
+				"type": "custom"
 			},
 			"liferay_analyzer_nl": {
 				"filter": [
@@ -175,7 +176,8 @@
 					"cjk_width",
 					"liferay_filter_synonym_zh"
 				],
-				"tokenizer": "smartcn_tokenizer"
+				"tokenizer": "smartcn_tokenizer",
+				"type": "custom"
 			},
 			"reverse_keyword_lowercase": {
 				"filter": [
