@@ -4,8 +4,8 @@ import com.liferay.gradle.util.StringUtil
 task cleanSidecar
 task deploySidecar(type: Copy)
 
-String elasticsearchClientVersion = "7.17.26"
-String luceneVersion = "8.11.3"
+String elasticsearchClientVersion = "7.17.26" //the client should be also updated? or its not related (sidecar in 8 version and client on a previous version can cause problems?)
+String luceneVersion = "8.11.3" //we should update the lucene version? the elasticsearch 8.17.3 use the 9.12.0 of lucene
 String sidecarElasticsearchServerVersion = file('src/main/resources/META-INF/sidecar/sidecar.version').text
 
 String elasticsearchDownloadURL = "https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-${sidecarElasticsearchServerVersion}-no-jdk-linux-x86_64.tar.gz"
