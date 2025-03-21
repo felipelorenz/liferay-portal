@@ -22,7 +22,7 @@ public class ElasticsearchDistribution implements Distribution {
 		return new DistributableImpl(
 			StringBundler.concat(
 				"https://artifacts.elastic.co/downloads/elasticsearch",
-				"/elasticsearch-", VERSION, "-no-jdk-linux-x86_64.tar.gz"),
+				"/elasticsearch-", VERSION, "-linux-x86_64.tar.gz"),
 			_ELASTICSEARCH_CHECKSUM);
 	}
 
@@ -46,8 +46,8 @@ public class ElasticsearchDistribution implements Distribution {
 	}
 
 	private static final String _ELASTICSEARCH_CHECKSUM =
-		"5b32714d5683059c213fbe610de21d1016048e97ee4215ae4104aa6065d409c33d7c" +
-			"e13b5e1443b559ea2167f7ebe8a5b26609ff1e085e4f4995bf46083afa35"; //this is still from 7.17.26 need to change to the 8.17.3 no-jdk that we will create
+		"6aef4fc84ebbfc98e6662418c734ea89cae8e53a8d6c1fbd5352807bc427e040e62b" +
+			"e568b502abdceb7a2f57534eae60e31712d0583d3752fd39b7b8a3632d3b"; //this is still from 7.17.26 need to change to the 8.17.3 no-jdk that we will create
 
 	private static final String _ICU_CHECKSUM =
 		"3e3b8e7318a7a04fcddf38bf837e6fe4e7afd6542d92b9db4d2f8b11cf3b8fd85925" +
