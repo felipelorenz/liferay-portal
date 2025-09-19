@@ -61,19 +61,17 @@ public class BatchEnginePortletDataHandlerRegistrar {
 
 				AtomicBoolean newOpen = new AtomicBoolean();
 
-				ServiceTrackerList<ServiceRegistration<PortletDataHandler>>
-					serviceTrackerList =
-						_serviceTrackerListDCLSingleton.getSingleton(
-							() -> {
-								newOpen.set(true);
+				_serviceTrackerListDCLSingleton.getSingleton(
+					() -> {
+						newOpen.set(true);
 
-								return ServiceTrackerListFactory.open(
-									bundleContext, null,
-									"(export.import.vulcan.batch.engine.task." +
-										"item.delegate=true)",
-									new VulcanBatchEngineTaskItemDelegateServiceTrackerCustomizer(
-										bundleContext));
-							});
+						return ServiceTrackerListFactory.open(
+							bundleContext, null,
+							"(export.import.vulcan.batch.engine.task." +
+								"item.delegate=true)",
+							new VulcanBatchEngineTaskItemDelegateServiceTrackerCustomizer(
+								bundleContext));
+					});
 
 				if (newOpen.get()) {
 					return;
@@ -87,7 +85,7 @@ public class BatchEnginePortletDataHandlerRegistrar {
 				}
 
 				for (ServiceRegistration<PortletDataHandler>
-						serviceRegistration : serviceTrackerList) {
+						serviceRegistration : _serviceRegistrations.values()) {
 
 					Dictionary<String, Object> properties = _toProperties(
 						serviceRegistration.getReference());
@@ -300,6 +298,7 @@ public class BatchEnginePortletDataHandlerRegistrar {
 			if (classNames.length == 0) {
 				serviceRegistration.unregister();
 				_batchEnginePortletDataHandlers.remove(portletId);
+				_serviceRegistrations.remove(portletId);
 			}
 		}
 
