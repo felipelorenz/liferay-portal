@@ -523,7 +523,7 @@ public class Sidecar {
 
 		// Configure paths
 
-		Path dataParentPath = _sidecarWorkPath.resolve("data/elasticsearch7");
+		Path dataParentPath = _sidecarWorkPath.resolve("data/elasticsearch8");
 
 		settingsHelperImpl.put(
 			"path.data", String.valueOf(dataParentPath.resolve("indices")));
