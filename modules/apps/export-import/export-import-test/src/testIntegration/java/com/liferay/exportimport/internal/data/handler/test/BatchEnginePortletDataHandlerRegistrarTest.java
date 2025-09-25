@@ -6,13 +6,17 @@
 package com.liferay.exportimport.internal.data.handler.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
+import com.liferay.exportimport.kernel.lar.PortletDataHandler;
+import com.liferay.exportimport.kernel.lar.PortletDataHandlerBoolean;
+import com.liferay.exportimport.kernel.lar.PortletDataHandlerControl;
+import com.liferay.exportimport.kernel.lar.StagedModelType;
 import com.liferay.exportimport.portlet.data.handler.provider.PortletDataHandlerProvider;
 import com.liferay.exportimport.vulcan.batch.engine.ExportImportVulcanBatchEngineTaskItemDelegate;
 import com.liferay.petra.function.UnsafeBiConsumer;
 import com.liferay.petra.function.UnsafeFunction;
 import com.liferay.petra.lang.SafeCloseable;
+import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.model.Company;
-import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.search.Sort;
 import com.liferay.portal.kernel.search.filter.Filter;
@@ -28,6 +32,7 @@ import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.ClassUtil;
 import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.MapUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.odata.entity.EntityModel;
 import com.liferay.portal.test.rule.FeatureFlag;
 import com.liferay.portal.test.rule.Inject;
@@ -43,16 +48,15 @@ import jakarta.ws.rs.core.UriInfo;
 
 import java.io.Serializable;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Dictionary;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.hamcrest.CoreMatchers;
-
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -61,40 +65,33 @@ import org.junit.runner.RunWith;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.FrameworkUtil;
+import org.osgi.framework.InvalidSyntaxException;
+import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 
 /**
  * @author Alejandro Tardín
  */
-@FeatureFlag("LPD-35914")
 @RunWith(Arquillian.class)
-public class BatchEnginePortletDataHandlerRegistryTest {
+public class BatchEnginePortletDataHandlerRegistrarTest {
 
 	@ClassRule
 	@Rule
 	public static final AggregateTestRule liferayIntegrationTestRule =
 		new LiferayIntegrationTestRule();
 
-	@BeforeClass
-	public static void setUpClass() {
-		FeatureFlagTestUtil.invokeFeatureFlagListeners(
-			CompanyConstants.SYSTEM, true, "LPD-35914");
-	}
-
-	@AfterClass
-	public static void tearDownClass() {
-		FeatureFlagTestUtil.invokeFeatureFlagListeners(
-			CompanyConstants.SYSTEM, false, "LPD-35914");
-	}
-
+	@FeatureFlag("LPD-35914")
 	@Test
-	@TestInfo("LPD-56301")
+	@TestInfo({"LPD-56301", "LPD-65119"})
 	public void test() throws Exception {
 		String portletId = RandomTestUtil.randomString();
 
 		Assert.assertNull(
 			_portletDataHandlerProvider.provide(
 				TestPropsValues.getCompanyId(), portletId));
+
+		String className1 = RandomTestUtil.randomString();
+		String className2 = RandomTestUtil.randomString();
 
 		try (SafeCloseable safeCloseable1 = _registerServiceWithSafeCloseable(
 				Portlet.class,
@@ -104,51 +101,189 @@ public class BatchEnginePortletDataHandlerRegistryTest {
 			SafeCloseable safeCloseable2 = _registerServiceWithSafeCloseable(
 				VulcanBatchEngineTaskItemDelegate.class,
 				new TestExportImportVulcanBatchEngineTaskItemDelegate(
-					portletId),
+					className1, portletId),
 				HashMapDictionaryBuilder.put(
 					"batch.engine.task.item.delegate", "true"
 				).put(
-					"batch.engine.task.item.delegate.class.name",
-					RandomTestUtil.randomString()
+					"batch.engine.task.item.delegate.class.name", className1
 				).put(
-					"batch.engine.task.item.delegate.name",
-					RandomTestUtil.randomString()
+					"export.import.vulcan.batch.engine.task.item.delegate",
+					"true"
 				).build());
 			SafeCloseable safeCloseable3 = _registerServiceWithSafeCloseable(
 				VulcanBatchEngineTaskItemDelegate.class,
-				new TestExportImportVulcanBatchEngineTaskItemDelegate(null),
+				new TestExportImportVulcanBatchEngineTaskItemDelegate(
+					className2, portletId),
 				HashMapDictionaryBuilder.put(
 					"batch.engine.task.item.delegate", "true"
 				).put(
-					"batch.engine.task.item.delegate.class.name",
-					RandomTestUtil.randomString()
+					"batch.engine.task.item.delegate.class.name", className2
 				).put(
-					"batch.engine.task.item.delegate.name",
-					RandomTestUtil.randomString()
+					"export.import.vulcan.batch.engine.task.item.delegate",
+					"true"
 				).build())) {
 
-			Thread.sleep(1000);
+			Assert.assertEquals(
+				0, _getRegisteredPortletDataHandlersCount(portletId));
 
-			Assert.assertThat(
-				ClassUtil.getClassName(
-					_portletDataHandlerProvider.provide(
-						TestPropsValues.getCompanyId(), portletId)),
-				CoreMatchers.containsString("BatchEnginePortletDataHandler"));
+			FeatureFlagTestUtil.invokeFeatureFlagListeners(
+				TestPropsValues.getCompanyId(), true, "LPD-35914");
+
+			try {
+				_waitForPortletDataHandler(
+					TestPropsValues.getCompanyId(), portletId,
+					portletDataHandler ->
+						StringUtil.contains(
+							ClassUtil.getClassName(portletDataHandler),
+							"BatchEnginePortletDataHandler",
+							StringPool.PERIOD) &&
+						Arrays.equals(
+							new String[] {className1, className2},
+							portletDataHandler.getClassNames()) &&
+						_hasPortletDataHandlerControls(
+							new PortletDataHandlerControl[] {
+								new PortletDataHandlerBoolean(
+									portletId, className1, null, true, false,
+									null, className1,
+									StagedModelType.REFERRER_CLASS_NAME_ALL),
+								new PortletDataHandlerBoolean(
+									portletId, className2, null, true, false,
+									null, className2,
+									StagedModelType.REFERRER_CLASS_NAME_ALL)
+							},
+							portletDataHandler.getExportControls()));
+
+				Assert.assertEquals(
+					1, _getRegisteredPortletDataHandlersCount(portletId));
+
+				_waitForPortletDataHandler(
+					RandomTestUtil.randomLong(), portletId,
+					portletDataHandler -> StringUtil.contains(
+						ClassUtil.getClassName(portletDataHandler),
+						"DefaultPortletDataHandler", StringPool.PERIOD));
+
+				safeCloseable2.close();
+
+				_waitForPortletDataHandler(
+					TestPropsValues.getCompanyId(), portletId,
+					portletDataHandler ->
+						StringUtil.contains(
+							ClassUtil.getClassName(portletDataHandler),
+							"BatchEnginePortletDataHandler",
+							StringPool.PERIOD) &&
+						Arrays.equals(
+							new String[] {className2},
+							portletDataHandler.getClassNames()) &&
+						_hasPortletDataHandlerControls(
+							new PortletDataHandlerControl[0],
+							portletDataHandler.getExportControls()));
+
+				safeCloseable3.close();
+
+				_waitForPortletDataHandler(
+					TestPropsValues.getCompanyId(), portletId,
+					portletDataHandler -> StringUtil.contains(
+						ClassUtil.getClassName(portletDataHandler),
+						"DefaultPortletDataHandler", StringPool.PERIOD));
+			}
+			finally {
+				FeatureFlagTestUtil.invokeFeatureFlagListeners(
+					TestPropsValues.getCompanyId(), false, "LPD-35914");
+			}
 		}
+	}
+
+	private int _getRegisteredPortletDataHandlersCount(String portletId)
+		throws InvalidSyntaxException {
+
+		Bundle bundle = FrameworkUtil.getBundle(
+			BatchEnginePortletDataHandlerRegistrarTest.class);
+
+		BundleContext bundleContext = bundle.getBundleContext();
+
+		Collection<ServiceReference<PortletDataHandler>> serviceReferences =
+			bundleContext.getServiceReferences(
+				PortletDataHandler.class,
+				"(jakarta.portlet.name=" + portletId + ")");
+
+		return serviceReferences.size();
+	}
+
+	private boolean _hasPortletDataHandlerControls(
+		PortletDataHandlerControl[] expectedControls,
+		PortletDataHandlerControl[] actualControls) {
+
+		if (expectedControls.length != actualControls.length) {
+			return false;
+		}
+
+		if (actualControls.length == 0) {
+			return true;
+		}
+
+		for (PortletDataHandlerControl expectedControl : expectedControls) {
+			for (PortletDataHandlerControl actualControl : actualControls) {
+				if (Objects.equals(
+						expectedControl.getControlName(),
+						actualControl.getControlName()) &&
+					Objects.equals(
+						expectedControl.getControlLabel(),
+						actualControl.getControlLabel()) &&
+					(expectedControl.isDisabled() ==
+						actualControl.isDisabled())) {
+
+					return true;
+				}
+			}
+		}
+
+		return false;
 	}
 
 	private <S> SafeCloseable _registerServiceWithSafeCloseable(
 		Class<S> clazz, S service, Dictionary<String, ?> properties) {
 
 		Bundle bundle = FrameworkUtil.getBundle(
-			BatchEnginePortletDataHandlerRegistryTest.class);
+			BatchEnginePortletDataHandlerRegistrarTest.class);
 
 		BundleContext bundleContext = bundle.getBundleContext();
 
 		ServiceRegistration<S> serviceRegistration =
 			bundleContext.registerService(clazz, service, properties);
 
-		return serviceRegistration::unregister;
+		AtomicBoolean isUnregistered = new AtomicBoolean(false);
+
+		return () -> {
+			if (isUnregistered.get()) {
+				return;
+			}
+
+			isUnregistered.set(true);
+			serviceRegistration.unregister();
+		};
+	}
+
+	private void _waitForPortletDataHandler(
+			long companyId, String portletId,
+			UnsafeFunction<PortletDataHandler, Boolean, Exception>
+				unsafeFunction)
+		throws Exception {
+
+		long start = System.currentTimeMillis();
+		long timeout = 5000;
+
+		while ((System.currentTimeMillis() - start) < timeout) {
+			PortletDataHandler portletDataHandler =
+				_portletDataHandlerProvider.provide(companyId, portletId);
+
+			if (unsafeFunction.apply(portletDataHandler)) {
+				return;
+			}
+
+			Thread.sleep(50);
+		}
+
+		Assert.assertTrue("Expected portlet data handler not found", false);
 	}
 
 	@Inject
@@ -159,8 +294,9 @@ public class BatchEnginePortletDataHandlerRegistryTest {
 				   VulcanBatchEngineTaskItemDelegate<Object> {
 
 		public TestExportImportVulcanBatchEngineTaskItemDelegate(
-			String portletId) {
+			String itemClassName, String portletId) {
 
+			_itemClassName = itemClassName;
 			_portletId = portletId;
 		}
 
@@ -257,8 +393,7 @@ public class BatchEnginePortletDataHandlerRegistryTest {
 			Collection<Object> items, Map<String, Serializable> parameters) {
 		}
 
-		private static String _itemClassName = RandomTestUtil.randomString();
-
+		private final String _itemClassName;
 		private final String _portletId;
 
 	}

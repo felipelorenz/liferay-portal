@@ -80,6 +80,7 @@ import org.osgi.service.component.annotations.ServiceScope;
  */
 @Component(
 	properties = "OSGI-INF/liferay/rest/v1_0/taxonomy-category.properties",
+	property = "export.import.vulcan.batch.engine.task.item.delegate=true",
 	scope = ServiceScope.PROTOTYPE, service = TaxonomyCategoryResource.class
 )
 public class TaxonomyCategoryResourceImpl
@@ -150,6 +151,11 @@ public class TaxonomyCategoryResourceImpl
 			@Override
 			public String getItemClassName() {
 				return AssetCategory.class.getName();
+			}
+
+			@Override
+			public String getLabel() {
+				return "categories";
 			}
 
 			@Override
