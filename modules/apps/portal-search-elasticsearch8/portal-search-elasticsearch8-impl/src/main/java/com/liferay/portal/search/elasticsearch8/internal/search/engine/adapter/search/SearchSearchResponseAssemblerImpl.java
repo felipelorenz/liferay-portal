@@ -86,9 +86,9 @@ public class SearchSearchResponseAssemblerImpl
 		return new ElasticsearchAggregationResultTranslator(
 			elasticsearchAggregation, _aggregationResults, _geoBuilders,
 			new HitsMetadataTranslator(
-				_searchHitBuilderFactory, _searchHitsBuilderFactory,
-				_documentBuilderFactory, _highlightFieldBuilderFactory,
-				_geoBuilders));
+				_documentBuilderFactory, _geoBuilders,
+				_highlightFieldBuilderFactory, _searchHitBuilderFactory,
+				_searchHitsBuilderFactory));
 	}
 
 	@Override
@@ -169,9 +169,9 @@ public class SearchSearchResponseAssemblerImpl
 
 		HitsMetadataTranslator hitsMetadataTranslator =
 			new HitsMetadataTranslator(
-				_searchHitBuilderFactory, _searchHitsBuilderFactory,
-				_documentBuilderFactory, _highlightFieldBuilderFactory,
-				_geoBuilders);
+				_documentBuilderFactory, _geoBuilders,
+				_highlightFieldBuilderFactory, _searchHitBuilderFactory,
+				_searchHitsBuilderFactory);
 
 		SearchHits searchHits = searchResponse.getHits();
 
