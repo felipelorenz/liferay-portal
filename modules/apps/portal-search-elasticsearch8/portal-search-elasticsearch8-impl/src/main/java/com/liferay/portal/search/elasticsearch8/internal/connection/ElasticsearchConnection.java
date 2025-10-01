@@ -6,6 +6,7 @@
 package com.liferay.portal.search.elasticsearch8.internal.connection;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.json.JsonpMapper;
 import co.elastic.clients.transport.rest_client.RestClientTransport;
 
 import com.liferay.portal.kernel.log.Log;
@@ -62,6 +63,10 @@ public class ElasticsearchConnection {
 
 	public ElasticsearchClient getElasticsearchClient() {
 		return _elasticsearchClient;
+	}
+
+	public JsonpMapper getJsonpMapper() {
+		return _restClientTransport.jsonpMapper();
 	}
 
 	public RestClientTransport getRestClientTransport() {
