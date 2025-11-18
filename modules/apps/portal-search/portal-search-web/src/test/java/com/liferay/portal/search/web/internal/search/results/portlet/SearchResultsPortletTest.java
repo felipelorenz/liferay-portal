@@ -14,6 +14,7 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.configuration.module.configuration.ConfigurationProviderUtil;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
+import com.liferay.portal.kernel.model.Layout;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.portlet.LiferayPortletConfig;
 import com.liferay.portal.kernel.search.Document;
@@ -28,6 +29,7 @@ import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.theme.PortletDisplay;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
+import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.PortalUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.WebKeys;
@@ -147,8 +149,10 @@ public class SearchResultsPortletTest {
 			RandomTestUtil.randomString());
 		String elementId = RandomTestUtil.randomString();
 
-//		Mockito.when(layout.getGroupId()).thenReturn(1L);
-//		Mockito.when(layout.getPlid()).thenReturn(2L);
+		Layout layout = Mockito.mock(Layout.class);
+
+		Mockito.when(layout.getGroupId()).thenReturn(1L);
+		Mockito.when(layout.getPlid()).thenReturn(2L);
 
 		FragmentEntryLink frag = _getFragmentEntryLink(
 			StringBundler.concat(
@@ -157,33 +161,62 @@ public class SearchResultsPortletTest {
 				RandomTestUtil.randomString(), "</div>"),
 			RandomTestUtil.randomString());
 
+		FragmentEntryLink frag2 = _getFragmentEntryLink(
+			StringBundler.concat(
+				"<div class=\"fragment_1\">", RandomTestUtil.randomString(),
+				"old-working-values", portletAlias, " id=\"", elementId, "\">",
+				RandomTestUtil.randomString(), "</div>"),
+			RandomTestUtil.randomString());
+
 		List<String> expectedPortletIds = new ArrayList<>(
 			Arrays.asList("portlet.id.1", "portlet.id.2"));
 
-		Mockito.when(
-			fragmentEntryLinkLocalService.
-				getFragmentEntryLinksBySegmentsExperienceId(
-					Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong())
-		).thenReturn(
-			expectedPortletIds
-		);
+		List<FragmentEntryLink> fragmentEntryLinks = List.of(
+			frag, frag2);
+
+		Mockito.doReturn(
+			fragmentEntryLinks
+		).when(
+			fragmentEntryLinkLocalService
+		).getFragmentEntryLinksBySegmentsExperienceId(
+			Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong());
+
+//		Mockito.when(
+//			fragmentEntryLinkLocalService.
+//				getFragmentEntryLinksBySegmentsExperienceId(
+//					Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong())
+//		).thenReturn(
+//			expectedPortletIds
+//		);
 
 //		Mockito.when(
 //			portletRegistry.getFragmentEntryLinkPortletIds(frag)
 //		).thenReturn(
 //			Set.of("portletA")
 //		);
-//
-//		// agora pode chamar o método via reflection
-//		Set<String> result = ReflectionTestUtil.invoke(
-//			portletSharedSearchRequestImpl,
-//			"_getSegmentExperiencePortletIds",
-//			new Class<?>[] {Layout.class, long.class},
-//			layout,
-//			123L
-//		);
-//
-//		Assert.assertEquals(Set.of("portletA"), result);
+
+		Mockito.doReturn(
+			ListUtil.toList("portletA")
+		).when(
+			portletRegistry
+		).getFragmentEntryLinkPortletIds(frag);
+
+		Mockito.doReturn(
+			ListUtil.toList("portletB")
+		).when(
+			portletRegistry
+		).getFragmentEntryLinkPortletIds(frag2);
+
+		// agora pode chamar o método via reflection
+		Set<String> result = ReflectionTestUtil.invoke(
+			portletSharedSearchRequestImpl,
+			"_getSegmentExperiencePortletIds",
+			new Class<?>[] {Layout.class, long.class},
+			layout,
+			123L
+		);
+
+		Assert.assertEquals(Set.of("portletA", "portletB"), result);
 	}
 
 	@Test
