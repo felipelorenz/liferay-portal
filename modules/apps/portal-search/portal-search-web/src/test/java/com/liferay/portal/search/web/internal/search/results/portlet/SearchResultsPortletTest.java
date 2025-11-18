@@ -7,8 +7,13 @@ package com.liferay.portal.search.web.internal.search.results.portlet;
 
 import com.liferay.asset.kernel.service.AssetEntryLocalService;
 import com.liferay.asset.util.AssetRendererFactoryLookup;
+import com.liferay.fragment.model.FragmentEntryLink;
+import com.liferay.fragment.processor.PortletRegistry;
+import com.liferay.fragment.service.FragmentEntryLinkLocalService;
+import com.liferay.petra.string.StringBundler;
 import com.liferay.portal.configuration.module.configuration.ConfigurationProviderUtil;
 import com.liferay.portal.kernel.dao.search.SearchContainer;
+import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.model.User;
 import com.liferay.portal.kernel.portlet.LiferayPortletConfig;
 import com.liferay.portal.kernel.search.Document;
@@ -24,6 +29,7 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.theme.PortletDisplay;
 import com.liferay.portal.kernel.theme.ThemeDisplay;
 import com.liferay.portal.kernel.util.PortalUtil;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.search.searcher.SearchRequest;
 import com.liferay.portal.search.searcher.SearchResponse;
@@ -31,6 +37,7 @@ import com.liferay.portal.search.summary.Summary;
 import com.liferay.portal.search.summary.SummaryBuilder;
 import com.liferay.portal.search.summary.SummaryBuilderFactory;
 import com.liferay.portal.search.web.internal.display.context.PortletURLFactory;
+import com.liferay.portal.search.web.internal.portlet.shared.search.PortletSharedSearchRequestImpl;
 import com.liferay.portal.search.web.portlet.shared.search.PortletSharedSearchRequest;
 import com.liferay.portal.search.web.portlet.shared.search.PortletSharedSearchResponse;
 import com.liferay.portal.search.web.search.request.SearchSettings;
@@ -47,7 +54,12 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -108,6 +120,70 @@ public class SearchResultsPortletTest {
 		render();
 
 		_assertDisplayContextDocuments(document);
+	}
+
+	@Test
+	public void testSegmentExperiencePortletIds() {
+
+		FragmentEntryLinkLocalService fragmentEntryLinkLocalService =
+			Mockito.mock(FragmentEntryLinkLocalService.class);
+
+		PortletRegistry portletRegistry = Mockito.mock(PortletRegistry.class);
+
+		PortletSharedSearchRequestImpl portletSharedSearchRequestImpl =
+			new PortletSharedSearchRequestImpl();
+
+		ReflectionTestUtil.setFieldValue(
+			portletSharedSearchRequestImpl,
+			"_fragmentEntryLinkLocalService",
+			fragmentEntryLinkLocalService);
+
+		ReflectionTestUtil.setFieldValue(
+			portletSharedSearchRequestImpl,
+			"_portletRegistry",
+			portletRegistry);
+
+		String portletAlias = StringUtil.toLowerCase(
+			RandomTestUtil.randomString());
+		String elementId = RandomTestUtil.randomString();
+
+//		Mockito.when(layout.getGroupId()).thenReturn(1L);
+//		Mockito.when(layout.getPlid()).thenReturn(2L);
+
+		FragmentEntryLink frag = _getFragmentEntryLink(
+			StringBundler.concat(
+				"<div class=\"fragment_1\">", RandomTestUtil.randomString(),
+				"<lfr-widget-", portletAlias, " id=\"", elementId, "\">",
+				RandomTestUtil.randomString(), "</div>"),
+			RandomTestUtil.randomString());
+
+		List<String> expectedPortletIds = new ArrayList<>(
+			Arrays.asList("portlet.id.1", "portlet.id.2"));
+
+		Mockito.when(
+			fragmentEntryLinkLocalService.
+				getFragmentEntryLinksBySegmentsExperienceId(
+					Mockito.anyLong(), Mockito.anyLong(), Mockito.anyLong())
+		).thenReturn(
+			expectedPortletIds
+		);
+
+//		Mockito.when(
+//			portletRegistry.getFragmentEntryLinkPortletIds(frag)
+//		).thenReturn(
+//			Set.of("portletA")
+//		);
+//
+//		// agora pode chamar o método via reflection
+//		Set<String> result = ReflectionTestUtil.invoke(
+//			portletSharedSearchRequestImpl,
+//			"_getSegmentExperiencePortletIds",
+//			new Class<?>[] {Layout.class, long.class},
+//			layout,
+//			123L
+//		);
+//
+//		Assert.assertEquals(Set.of("portletA"), result);
 	}
 
 	@Test
@@ -236,6 +312,45 @@ public class SearchResultsPortletTest {
 		);
 
 		return renderRequest;
+	}
+
+	private FragmentEntryLink _getFragmentEntryLink(
+		String html, String namespace) {
+
+		return _getFragmentEntryLink("{}", html, namespace);
+	}
+
+	private FragmentEntryLink _getFragmentEntryLink(
+		String editableValues, String html, String namespace) {
+
+		FragmentEntryLink fragmentEntryLink = Mockito.mock(
+			FragmentEntryLink.class);
+
+		Mockito.when(
+			fragmentEntryLink.getEditableValues()
+		).thenReturn(
+			editableValues
+		);
+
+		Mockito.when(
+			fragmentEntryLink.getEditableValuesJSONObject()
+		).thenReturn(
+			JSONFactoryUtil.safeCreateJSONObject(editableValues)
+		);
+
+		Mockito.when(
+			fragmentEntryLink.getHtml()
+		).thenReturn(
+			html
+		);
+
+		Mockito.when(
+			fragmentEntryLink.getNamespace()
+		).thenReturn(
+			namespace
+		);
+
+		return fragmentEntryLink;
 	}
 
 	private RenderResponse _createRenderResponse() {
