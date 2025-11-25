@@ -17,7 +17,6 @@ import performLogin, {
 	performLogout,
 	userData,
 } from '../../../utils/performLogin';
-import {PORTLET_URLS} from '../../../utils/portletUrls';
 import {waitForAlert} from '../../../utils/waitForAlert';
 import {cmsPagesTest} from './fixtures/cmsPagesTest';
 
@@ -600,22 +599,8 @@ test(
 				spaceName
 			);
 
-			await test.step('Create an user and add to the Space', async () => {
-				user = await apiHelpers.headlessAdminUser.postUserAccount();
-
-				userData[user.alternateName] = {
-					name: user.givenName,
-					password: 'test',
-					surname: user.familyName,
-				};
-
-				await spaceSummaryPage.goto(spaceName);
-
-				await spaceSummaryPage.addUserOrUserGroup(user.name, 'users');
-			});
-
 			await test.step('Go to All Assets and open the Info Panel Categorization Tab', async () => {
-				await page.goto(PORTLET_URLS.cmsAll);
+				await assetsPage.gotoAll();
 
 				await assetsPage.execItemAction({
 					action: 'Show Details',
@@ -664,12 +649,26 @@ test(
 				await expect(categoryLabel).toBeAttached();
 			});
 
+			await test.step('Create an user and add to the Space', async () => {
+				user = await apiHelpers.headlessAdminUser.postUserAccount();
+
+				userData[user.alternateName] = {
+					name: user.givenName,
+					password: 'test',
+					surname: user.familyName,
+				};
+
+				await spaceSummaryPage.goto(spaceName);
+
+				await spaceSummaryPage.addUserOrUserGroup(user.name, 'users');
+			});
+
 			await test.step('Login as a space member and go to Info Panel Categorization tab', async () => {
 				await performLogout(page);
 
 				await performLogin(page, user.alternateName);
 
-				await page.goto(PORTLET_URLS.cmsAll);
+				await assetsPage.gotoAll();
 
 				await expect(assetsPage.getItem(file1Title)).toBeVisible();
 
@@ -1131,7 +1130,7 @@ test(
 					spaceName
 				);
 
-				await page.goto(PORTLET_URLS.cmsAll);
+				await assetsPage.gotoAll();
 			});
 
 			await test.step('Select the asset, open the Side Panel and then expire the asset', async () => {
@@ -1196,7 +1195,7 @@ test(
 				'Default'
 			);
 
-			await page.goto(PORTLET_URLS.cmsAll);
+			await assetsPage.gotoAll();
 
 			await assetsPage.execItemAction({
 				action: 'Show Details',
@@ -1324,6 +1323,8 @@ test(
 				await expect(
 					infoPanelPage.dropdownVersionActionMenuItem('View')
 				).toBeVisible();
+
+				await infoPanelPage.dropdownVersionAction('Version 2').click();
 
 				await infoPanelPage.dropdownVersionAction('Version 1').click();
 
@@ -1474,6 +1475,8 @@ test(
 					infoPanelPage.dropdownVersionActionMenuItem('View')
 				).toBeVisible();
 
+				await infoPanelPage.dropdownVersionAction('Version 2').click();
+
 				await infoPanelPage.dropdownVersionAction('Version 1').click();
 
 				await expect(
@@ -1614,5 +1617,127 @@ test(
 				String(objectEntryFile.id)
 			);
 		}
+	}
+);
+
+test(
+	'Bulk action download assets',
+	{tag: '@LPD-62554'},
+	async ({apiHelpers, assetsPage, page}) => {
+		const contentApplicationName = 'cms/basic-web-contents';
+		const fileApplicationName = 'cms/basic-documents';
+		const spaceName = 'Default';
+
+		const content1 = `title ${getRandomString()}`;
+		const fileAssetTitle1 = `title ${getRandomString()}`;
+		const fileAssetTitle2 = `title ${getRandomString()}`;
+		const fileNameImg = `file_${getRandomString()}.png`;
+
+		await apiHelpers.objectEntry.postObjectEntry(
+			{
+				objectEntryFolderExternalReferenceCode: 'L_CONTENTS',
+				title: content1,
+			},
+			contentApplicationName,
+			spaceName
+		);
+
+		await apiHelpers.objectEntry.postObjectEntry(
+			{
+				file: {
+					fileBase64: 'R0lGODlhAQABAAAAACw=',
+					name: fileNameImg,
+				},
+				objectEntryFolderExternalReferenceCode: 'L_FILES',
+				title: fileAssetTitle1,
+			},
+			fileApplicationName,
+			'Default'
+		);
+
+		await apiHelpers.objectEntry.postObjectEntry(
+			{
+				file: {
+					fileBase64: 'R0lGODlhAQABAAAAACw=',
+					name: fileNameImg,
+				},
+				objectEntryFolderExternalReferenceCode: 'L_FILES',
+				title: fileAssetTitle2,
+			},
+			fileApplicationName,
+			'Default'
+		);
+
+		await test.step('Go to All section and try to download a content asset from the bulk action, un unexpected error occurred', async () => {
+			await assetsPage.gotoAll();
+			await assetsPage.selectItems([content1]);
+			await assetsPage.execBulkItemAction('Download');
+
+			await waitForAlert(
+				page,
+				'Error:Unable to process the bulk download. Please check your selection and try again.',
+				{
+					type: 'danger',
+				}
+			);
+		});
+
+		await test.step('Download a file asset from the bulk action', async () => {
+			await assetsPage
+				.getItem(content1)
+				.locator('input[title="Select Item"]')
+				.uncheck();
+			await assetsPage.selectItems([fileAssetTitle1]);
+
+			const downloadPromise = page.waitForEvent('download');
+
+			await assetsPage.execBulkItemAction('Download');
+
+			await waitForAlert(
+				page,
+				'Warning:The download of 1 file is being prepared. Please do not close this window or navigate to another section.',
+				{
+					type: 'warning',
+				}
+			);
+
+			await waitForAlert(page, 'Success:The download will begin shortly');
+
+			const download = await downloadPromise;
+
+			expect(download.suggestedFilename()).toBeDefined();
+		});
+
+		await test.step('Download both content and files assets from the bulk action, a message will inform the user that content assets will be skipped from the download', async () => {
+			await assetsPage.selectItems([
+				content1,
+				fileAssetTitle1,
+				fileAssetTitle2,
+			]);
+
+			const downloadPromise = page.waitForEvent('download');
+
+			await assetsPage.execBulkItemAction('Download');
+
+			await waitForAlert(
+				page,
+				'Warning:You have selected both content and file assets. Only file assets can be downloaded. Content assets will be skipped.',
+				{
+					type: 'warning',
+				}
+			);
+			await waitForAlert(
+				page,
+				'Warning:The download of 2 files is being prepared. Please do not close this window or navigate to another section.',
+				{
+					type: 'warning',
+				}
+			);
+			await waitForAlert(page, 'Success:The download will begin shortly');
+
+			const download = await downloadPromise;
+
+			expect(download.suggestedFilename()).toBeDefined();
+		});
 	}
 );

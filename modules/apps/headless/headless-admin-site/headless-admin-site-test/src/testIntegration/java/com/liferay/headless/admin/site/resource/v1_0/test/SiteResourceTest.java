@@ -220,9 +220,12 @@ public class SiteResourceTest extends BaseSiteResourceTestCase {
 		_testPostSiteFailureTemplateKeyNoTemplateType();
 		_testPostSiteFailureTemplateTypeNoTemplateKey();
 		_testPostSiteSuccessChild();
+		_testPostSiteSuccessMembershipTypeOpen();
 		_testPostSiteSuccessMembershipTypePrivate();
+		_testPostSiteSuccessMembershipTypeRestricted();
 		_testPostSiteSuccessSiteInitializer();
 		_testPostSiteSuccessSiteTemplate();
+		_testPostSiteWithFriendlyURLMissingSlash();
 		_testPostSiteWithLocalizedDescription();
 		_testPostSiteWithLocalizedName();
 		_testPostSiteWithNondefaultLocales();
@@ -278,8 +281,6 @@ public class SiteResourceTest extends BaseSiteResourceTestCase {
 				manualMembership = RandomTestUtil.randomBoolean();
 				membershipRestriction =
 					GroupConstants.DEFAULT_MEMBERSHIP_RESTRICTION;
-				membershipType = MembershipType.create(
-					GroupConstants.getTypeLabel(GroupConstants.TYPE_SITE_OPEN));
 				name = RandomTestUtil.randomString();
 				parentSiteExternalReferenceCode = StringPool.BLANK;
 				typeSettings = LinkedHashMapBuilder.put(
@@ -368,10 +369,20 @@ public class SiteResourceTest extends BaseSiteResourceTestCase {
 		Assert.assertEquals(
 			site.getMembershipRestriction(),
 			Integer.valueOf(group.getMembershipRestriction()));
-		Assert.assertEquals(
-			site.getMembershipType(),
-			Site.MembershipType.create(
-				GroupConstants.getTypeLabel(group.getType())));
+
+		if (site.getMembershipType() == null) {
+			Assert.assertEquals(
+				Site.MembershipType.RESTRICTED,
+				Site.MembershipType.create(
+					GroupConstants.getTypeLabel(group.getType())));
+		}
+		else {
+			Assert.assertEquals(
+				site.getMembershipType(),
+				Site.MembershipType.create(
+					GroupConstants.getTypeLabel(group.getType())));
+		}
+
 		Assert.assertEquals(
 			site.getName(), group.getName(LocaleUtil.getDefault()));
 	}
@@ -835,6 +846,20 @@ public class SiteResourceTest extends BaseSiteResourceTestCase {
 			parentGroup.getExternalReferenceCode());
 	}
 
+	private void _testPostSiteSuccessMembershipTypeOpen() throws Exception {
+		Site randomSite = randomSite();
+
+		randomSite.setMembershipType(Site.MembershipType.OPEN);
+
+		Site postSite = _testPostSiteSuccess(randomSite);
+
+		Group group = _groupLocalService.fetchGroupByExternalReferenceCode(
+			postSite.getExternalReferenceCode(),
+			TestPropsValues.getCompanyId());
+
+		Assert.assertEquals(GroupConstants.TYPE_SITE_OPEN, group.getType());
+	}
+
 	private void _testPostSiteSuccessMembershipTypePrivate() throws Exception {
 		Site randomSite = randomSite();
 
@@ -847,6 +872,23 @@ public class SiteResourceTest extends BaseSiteResourceTestCase {
 			TestPropsValues.getCompanyId());
 
 		Assert.assertEquals(GroupConstants.TYPE_SITE_PRIVATE, group.getType());
+	}
+
+	private void _testPostSiteSuccessMembershipTypeRestricted()
+		throws Exception {
+
+		Site randomSite = randomSite();
+
+		randomSite.setMembershipType(Site.MembershipType.RESTRICTED);
+
+		Site postSite = _testPostSiteSuccess(randomSite);
+
+		Group group = _groupLocalService.fetchGroupByExternalReferenceCode(
+			postSite.getExternalReferenceCode(),
+			TestPropsValues.getCompanyId());
+
+		Assert.assertEquals(
+			GroupConstants.TYPE_SITE_RESTRICTED, group.getType());
 	}
 
 	private void _testPostSiteSuccessSiteInitializer() throws Exception {
@@ -886,6 +928,20 @@ public class SiteResourceTest extends BaseSiteResourceTestCase {
 		Assert.assertEquals(
 			layoutSetPrototype.getLayoutSetPrototypeId(),
 			publicLayoutSet.getLayoutSetPrototypeId());
+	}
+
+	private void _testPostSiteWithFriendlyURLMissingSlash() throws Exception {
+		Site site = randomSite();
+
+		String friendlyUrlPath = StringUtil.toLowerCase(
+			RandomTestUtil.randomString());
+
+		site.setFriendlyUrlPath(friendlyUrlPath);
+
+		site = _testPostSite_addSite(site);
+
+		Assert.assertEquals(
+			StringPool.SLASH + friendlyUrlPath, site.getFriendlyUrlPath());
 	}
 
 	private void _testPostSiteWithLocalizedDescription() throws Exception {

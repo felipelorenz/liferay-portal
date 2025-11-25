@@ -467,7 +467,7 @@ public class SiteResourceImpl extends BaseSiteResourceImpl {
 			_getTypeSettings(site.getTypeSettings(), null),
 			_isManualMembership(site.getManualMembership()),
 			_getMembershipRestriction(site.getMembershipRestriction()),
-			site.getFriendlyUrlPath(), true, false, _isActive(site.getActive()),
+			_getFriendlyUrlPath(site), true, false, _isActive(site.getActive()),
 			serviceContext);
 
 		LiveUsers.joinGroup(
@@ -509,6 +509,18 @@ public class SiteResourceImpl extends BaseSiteResourceImpl {
 		return HashMapBuilder.put(
 			LocaleUtil.getDefault(), site.getDescription()
 		).build();
+	}
+
+	private String _getFriendlyUrlPath(Site site) {
+		String friendlyUrlPath = site.getFriendlyUrlPath();
+
+		if (Validator.isNotNull(friendlyUrlPath) &&
+			!friendlyUrlPath.startsWith(StringPool.SLASH)) {
+
+			friendlyUrlPath = StringPool.SLASH + friendlyUrlPath;
+		}
+
+		return friendlyUrlPath;
 	}
 
 	private int _getMembershipRestriction(Integer membershipRestriction) {
@@ -606,9 +618,10 @@ public class SiteResourceImpl extends BaseSiteResourceImpl {
 	}
 
 	private int _getType(Site.MembershipType membershipType) {
-		if ((membershipType == null) ||
-			membershipType.equals(Site.MembershipType.OPEN)) {
-
+		if (membershipType == null) {
+			return GroupConstants.TYPE_SITE_RESTRICTED;
+		}
+		else if (membershipType.equals(Site.MembershipType.OPEN)) {
 			return GroupConstants.TYPE_SITE_OPEN;
 		}
 		else if (membershipType.equals(Site.MembershipType.PRIVATE)) {
@@ -768,7 +781,7 @@ public class SiteResourceImpl extends BaseSiteResourceImpl {
 					site.getTypeSettings(), group.getTypeSettingsProperties()),
 				_isManualMembership(site.getManualMembership()),
 				_getMembershipRestriction(site.getMembershipRestriction()),
-				site.getFriendlyUrlPath(), false, _isActive(site.getActive()),
+				_getFriendlyUrlPath(site), false, _isActive(site.getActive()),
 				_getServiceContext());
 
 			LiveUsers.joinGroup(

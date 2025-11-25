@@ -90,6 +90,7 @@ JavaDefaultAdminScreenNameCheck | [Bug Prevention](bug_prevention_checks.md#bug-
 JavaDeprecatedJavadocCheck | [Javadoc](javadoc_checks.md#javadoc-checks) | Checks if the `@deprecated` javadoc is pointing to the correct version. |
 JavaDeserializationSecurityCheck | [Security](security_checks.md#security-checks) | Finds Java serialization vulnerabilities. |
 JavaDiamondOperatorCheck | [Miscellaneous](miscellaneous_checks.md#miscellaneous-checks) | Finds cases where Diamond Operator is not used. |
+JavaDocumentAddCallsOrderCheck | [Styling](styling_checks.md#styling-checks) | Sorts `add*` calls for type `Document`. |
 JavaDuplicateVariableCheck | [Miscellaneous](miscellaneous_checks.md#miscellaneous-checks) | Finds variables where a variable with the same name already exists in an extended class. |
 [JavaElseStatementCheck](check/java_else_statement_check.md#javaelsestatementcheck) | [Miscellaneous](miscellaneous_checks.md#miscellaneous-checks) | Finds unnecessary `else` statements (when the `if` statement ends with a `return` statement). |
 JavaEmptyLineAfterSuperCallCheck | [Miscellaneous](miscellaneous_checks.md#miscellaneous-checks) | Finds missing empty line after a `super` call. |
@@ -189,6 +190,7 @@ JavaUpgradeAlterColumnCallsOrderCheck | [Styling](styling_checks.md#styling-chec
 [JavaUpgradeClassCheck](check/java_upgrade_class_check.md#javaupgradeclasscheck) | [Bug Prevention](bug_prevention_checks.md#bug-prevention-checks) | Performs several checks on Upgrade classes. |
 JavaUpgradeCompanyThreadLocalCheck | [Bug Prevention](bug_prevention_checks.md#bug-prevention-checks) | Checks that we do not use `CompanyThreadLocal.setCompanyId*` in upgrade classes. |
 JavaUpgradeConnectionCheck | [Bug Prevention](bug_prevention_checks.md#bug-prevention-checks) | Finds cases where `DataAccess.getConnection` is used (instead of using the available global variable `connection`). |
+JavaUpgradeCreateTableCheck | [Bug Prevention](bug_prevention_checks.md#bug-prevention-checks) | Checks that we do not use `create table` statement in upgrade classes. |
 [JavaUpgradeDropTableCheck](check/java_upgrade_drop_table_check.md#javaupgradedroptablecheck) | [Bug Prevention](bug_prevention_checks.md#bug-prevention-checks) | Finds cases where `DROP_TABLE_IF_EXISTS` should be used (instead of `drop table if exists`). |
 JavaUpgradeEmptyLinesCheck | [Styling](styling_checks.md#styling-checks) | Finds missing and unnecessary empty lines in upgrade classes. |
 [JavaUpgradeIndexCheck](check/java_upgrade_index_check.md#javaupgradeindexcheck) | [Bug Prevention](bug_prevention_checks.md#bug-prevention-checks) | Finds cases where the service builder indexes are updated manually in Upgrade classes. This is not needed because Liferay takes care of it. |
@@ -291,6 +293,7 @@ SubstringCheck | [Performance](performance_checks.md#performance-checks) | Finds
 SystemEventCheck | [Bug Prevention](bug_prevention_checks.md#bug-prevention-checks) | Finds missing or redundant usage of @SystemEvent for delete events. |
 TernaryOperatorCheck | [Styling](styling_checks.md#styling-checks) | Finds use of ternary operator in `java` files (use if statement instead). |
 TestClassCheck | [Naming Conventions](naming_conventions_checks.md#naming-conventions-checks) | Checks that names of test classes follow naming conventions. |
+TestClassDBConnectionCheck | [Bug Prevention](bug_prevention_checks.md#bug-prevention-checks) | Finds cases of incorrect use of database connection. |
 TestClassMissingLiferayUnitTestRuleCheck | [Bug Prevention](bug_prevention_checks.md#bug-prevention-checks) | Finds missing LiferayUnitTestRule. |
 TextBlockCheck | [Styling](styling_checks.md#styling-checks) | Finds usage of text block. |
 [ThreadContextClassLoaderCheck](check/thread_context_class_loader_check.md#threadcontextclassloadercheck) | [Bug Prevention](bug_prevention_checks.md#bug-prevention-checks) | Checks usage of `Thread.setContextClassLoader`. |

@@ -22,6 +22,8 @@ import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.workflow.WorkflowInstance;
 import com.liferay.portal.kernel.workflow.WorkflowInstanceManager;
+import com.liferay.portal.kernel.workflow.WorkflowNode;
+import com.liferay.portal.search.test.util.IdempotentRetryAssert;
 import com.liferay.portal.test.rule.FeatureFlag;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.workflow.constants.WorkflowDefinitionConstants;
@@ -41,7 +43,9 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -70,12 +74,16 @@ public class TaskResourceTest extends BaseTaskResourceTestCase {
 		_workflowDefinitionManager.deployWorkflowDefinition(
 			null, TestPropsValues.getCompanyId(), TestPropsValues.getUserId(),
 			StringUtil.randomId(), _WORKFLOW_DEFINITION_NAME,
-			_getContentBytes());
+			_getContentBytes("workflow-definition.json"));
+		_workflowDefinitionManager.deployWorkflowDefinition(
+			null, TestPropsValues.getCompanyId(), TestPropsValues.getUserId(),
+			StringUtil.randomId(), "AI Decision Node Workflow Definition",
+			_getContentBytes("ai-decision-node-workflow-definition.json"));
 	}
 
 	@After
-	public void tearDown() throws Exception {
-		SseUtil.close();
+	public void tearDown() {
+		SseUtil.closeAll();
 	}
 
 	@Override
@@ -86,40 +94,55 @@ public class TaskResourceTest extends BaseTaskResourceTestCase {
 
 	@Override
 	@Test
-	public void testPostTask() throws Exception {
-		_testPostTask();
-		_testPostTaskWithScope();
+	public void testPostByExternalReferenceCodeTask() throws Exception {
+		_testPostByExternalReferenceCodeTask();
+		_testPostByExternalReferenceCodeTaskWithScope();
+	}
+
+	@Ignore
+	@Test
+	public void testPostTaskWithTypeAIDecisionWorkflowDefinition()
+		throws Exception {
+
+		_testPostTaskWithTypeAIDecisionWorkflowDefinition(
+			"Blue banana, or Blue Java, is a variety of a banana that grows " +
+				"in Brazil.",
+			"approved");
+		_testPostTaskWithTypeAIDecisionWorkflowDefinition(
+			"Innovative technology transforms everyday life with smarter " +
+				"digital solutions.",
+			"rejected");
 	}
 
 	@Ignore
 	@Test
 	public void testPostTaskWithTypeFixSpellingAndGrammar() throws Exception {
-		CountDownLatch countDownLatch = new CountDownLatch(5);
+		CountDownLatch countDownLatch = new CountDownLatch(4);
 		List<String> lines = new ArrayList<>();
 
 		_testGetTaskSubscribe(countDownLatch, lines);
 
-		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+		HTTPTestUtil.invokeToJSONObject(
 			JSONUtil.put(
-				"context", JSONUtil.put("text", "Thi text ix wrongy")
+				"context", JSONUtil.put("text", "Thi text ix wrong.")
 			).put(
 				"type",
 				WorkflowDefinitionConstants.NAME_FIX_SPELLING_AND_GRAMMAR
 			).toString(),
-			"ai-hub/v1.0/tasks", Http.Method.POST);
+			"ai-hub/v1.0/by-external-reference-code/" +
+				StringUtil.replaceFirst(lines.get(1), "data: ", "") + "/tasks",
+			Http.Method.POST);
 
 		Assert.assertTrue(countDownLatch.await(10, TimeUnit.SECONDS));
 
-		Assert.assertEquals(lines.toString(), 5, lines.size());
+		Assert.assertEquals(lines.toString(), 4, lines.size());
 		Assert.assertEquals("event: Fix Spelling and Grammar", lines.get(2));
-		Assert.assertEquals(
-			"id: " + jsonObject.getLong("externalReferenceCode"), lines.get(3));
-		Assert.assertEquals("data: This text is wrong.", lines.get(4));
+		Assert.assertEquals("data: This text is wrong.", lines.get(3));
 	}
 
-	private static byte[] _getContentBytes() throws Exception {
+	private static byte[] _getContentBytes(String fileName) throws Exception {
 		InputStream inputStream = TaskResourceTest.class.getResourceAsStream(
-			"dependencies/workflow-definition.json");
+			"dependencies/" + fileName);
 
 		String content = StringUtil.read(inputStream);
 
@@ -186,17 +209,27 @@ public class TaskResourceTest extends BaseTaskResourceTestCase {
 
 		Assert.assertEquals(lines.toString(), 2, lines.size());
 		Assert.assertEquals("event: Subscribe", lines.get(0));
-		Assert.assertEquals("data: Successfully Subscribed", lines.get(1));
+
+		Set<String> sseEventSinksKeys = SseUtil.getSSEEventSinksKeys();
+
+		Assert.assertEquals(
+			sseEventSinksKeys.toString(), 1, sseEventSinksKeys.size());
+
+		Iterator<String> iterator = sseEventSinksKeys.iterator();
+
+		Assert.assertEquals("data: " + iterator.next(), lines.get(1));
 	}
 
-	private void _testPostTask() throws Exception {
+	private void _testPostByExternalReferenceCodeTask() throws Exception {
 		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
 			JSONUtil.put(
 				"context", JSONUtil.put("text", RandomTestUtil.randomString())
 			).put(
 				"type", _WORKFLOW_DEFINITION_NAME
 			).toString(),
-			"ai-hub/v1.0/tasks", Http.Method.POST);
+			"ai-hub/v1.0/by-external-reference-code/" +
+				RandomTestUtil.randomString() + "/tasks",
+			Http.Method.POST);
 
 		WorkflowInstance workflowInstance =
 			_workflowInstanceManager.getWorkflowInstance(
@@ -208,7 +241,9 @@ public class TaskResourceTest extends BaseTaskResourceTestCase {
 			workflowInstance.getWorkflowDefinitionName());
 	}
 
-	private void _testPostTaskWithScope() throws Exception {
+	private void _testPostByExternalReferenceCodeTaskWithScope()
+		throws Exception {
+
 		Group group = GroupTestUtil.addGroup();
 
 		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
@@ -221,7 +256,9 @@ public class TaskResourceTest extends BaseTaskResourceTestCase {
 			).put(
 				"type", _WORKFLOW_DEFINITION_NAME
 			).toString(),
-			"ai-hub/v1.0/tasks", Http.Method.POST);
+			"ai-hub/v1.0/by-external-reference-code/" +
+				RandomTestUtil.randomString() + "/tasks",
+			Http.Method.POST);
 
 		WorkflowInstance workflowInstance =
 			_workflowInstanceManager.getWorkflowInstance(
@@ -232,6 +269,39 @@ public class TaskResourceTest extends BaseTaskResourceTestCase {
 		Assert.assertEquals(
 			_WORKFLOW_DEFINITION_NAME,
 			workflowInstance.getWorkflowDefinitionName());
+	}
+
+	private void _testPostTaskWithTypeAIDecisionWorkflowDefinition(
+			String content, String workflowNodeName)
+		throws Exception {
+
+		JSONObject jsonObject = HTTPTestUtil.invokeToJSONObject(
+			JSONUtil.put(
+				"context", JSONUtil.put("content", content)
+			).put(
+				"type", "AI Decision Node Workflow Definition"
+			).toString(),
+			"ai-hub/v1.0/by-external-reference-code/" +
+				RandomTestUtil.randomString() + "/tasks",
+			Http.Method.POST);
+
+		IdempotentRetryAssert.retryAssert(
+			5, TimeUnit.SECONDS, 1, TimeUnit.SECONDS,
+			() -> {
+				WorkflowInstance workflowInstance =
+					_workflowInstanceManager.getWorkflowInstance(
+						TestPropsValues.getCompanyId(),
+						jsonObject.getLong("externalReferenceCode"));
+
+				List<WorkflowNode> workflowNodes =
+					workflowInstance.getCurrentWorkflowNodes();
+
+				WorkflowNode workflowNode = workflowNodes.get(0);
+
+				Assert.assertEquals(workflowNodeName, workflowNode.getName());
+
+				return null;
+			});
 	}
 
 	private static final String _WORKFLOW_DEFINITION_NAME =

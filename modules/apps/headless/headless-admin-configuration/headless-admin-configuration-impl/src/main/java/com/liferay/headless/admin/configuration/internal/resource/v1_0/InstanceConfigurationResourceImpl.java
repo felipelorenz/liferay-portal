@@ -12,6 +12,7 @@ import com.liferay.headless.admin.configuration.internal.util.ConfigurationUtil;
 import com.liferay.headless.admin.configuration.resource.v1_0.InstanceConfigurationResource;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.configuration.metatype.annotations.ExtendedObjectClassDefinition;
 import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
@@ -19,6 +20,8 @@ import com.liferay.portal.kernel.settings.SettingsLocatorHelper;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.vulcan.pagination.Page;
+
+import jakarta.validation.ValidationException;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotAuthorizedException;
@@ -52,11 +55,7 @@ public class InstanceConfigurationResourceImpl
 			String instanceConfigurationExternalReferenceCode)
 		throws Exception {
 
-		if (!FeatureFlagManagerUtil.isEnabled(
-				contextCompany.getCompanyId(), "LPD-65399")) {
-
-			throw new UnsupportedOperationException();
-		}
+		_checkFeatureFlag();
 
 		_checkPermission();
 
@@ -95,11 +94,7 @@ public class InstanceConfigurationResourceImpl
 	public Page<InstanceConfiguration> getInstanceConfigurationsPage()
 		throws Exception {
 
-		if (!FeatureFlagManagerUtil.isEnabled(
-				contextCompany.getCompanyId(), "LPD-65399")) {
-
-			throw new UnsupportedOperationException();
-		}
+		_checkFeatureFlag();
 
 		_checkPermission();
 
@@ -128,6 +123,68 @@ public class InstanceConfigurationResourceImpl
 		return Page.of(instanceConfigurations);
 	}
 
+	@Override
+	public InstanceConfiguration postInstanceConfiguration(
+			InstanceConfiguration instanceConfiguration)
+		throws Exception {
+
+		return putInstanceConfiguration(
+			instanceConfiguration.getExternalReferenceCode(),
+			instanceConfiguration);
+	}
+
+	@Override
+	public InstanceConfiguration putInstanceConfiguration(
+			String instanceConfigurationExternalReferenceCode,
+			InstanceConfiguration instanceConfiguration)
+		throws Exception {
+
+		_checkFeatureFlag();
+
+		_checkPermission();
+
+		instanceConfiguration.setExternalReferenceCode(
+			() -> instanceConfigurationExternalReferenceCode);
+
+		long companyId = contextCompany.getCompanyId();
+
+		String filterString =
+			ConfigurationFilterStringUtil.getCompanyScopedFilterString(
+				String.valueOf(companyId),
+				instanceConfiguration.getExternalReferenceCode(),
+				contextCompany.getDefaultWebId());
+
+		try {
+			Configuration configuration =
+				ConfigurationUtil.addOrUpdateConfiguration(
+					companyId, _configurationAdmin,
+					instanceConfiguration.getExternalReferenceCode(),
+					filterString, instanceConfiguration.getProperties(),
+					ExtendedObjectClassDefinition.Scope.COMPANY,
+					_settingsLocatorHelper);
+
+			if (configuration == null) {
+				throw new NotFoundException(
+					"Unable to find instance configuration with external " +
+						"reference code " +
+							instanceConfiguration.getExternalReferenceCode());
+			}
+
+			return _toInstanceConfiguration(configuration);
+		}
+		catch (ValidationException validationException) {
+			throw new BadRequestException(validationException.getMessage());
+		}
+	}
+
+	private void _checkFeatureFlag() {
+		if (!FeatureFlagManagerUtil.isEnabled(
+				contextCompany.getCompanyId(), "LPD-65399")) {
+
+			throw new UnsupportedOperationException();
+		}
+	}
+
 	private void _checkPermission() {
 		PermissionChecker permissionChecker =
 			PermissionThreadLocal.getPermissionChecker();
@@ -145,6 +202,7 @@ public class InstanceConfigurationResourceImpl
 
 		Map<String, Object> properties = ConfigurationUtil.getProperties(
 			configuration, _configurationExportImportProcessor,
+			ExtendedObjectClassDefinition.Scope.COMPANY,
 			_settingsLocatorHelper);
 
 		if (properties.isEmpty()) {

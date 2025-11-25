@@ -161,6 +161,7 @@ JavaUniqueUpgradeProcessCheck | .java | Checks that only one regular `UpgradePro
 [JavaUpgradeClassCheck](check/java_upgrade_class_check.md#javaupgradeclasscheck) | .java | Performs several checks on Upgrade classes. |
 JavaUpgradeCompanyThreadLocalCheck | .java | Checks that we do not use `CompanyThreadLocal.setCompanyId*` in upgrade classes. |
 JavaUpgradeConnectionCheck | .java | Finds cases where `DataAccess.getConnection` is used (instead of using the available global variable `connection`). |
+JavaUpgradeCreateTableCheck | .java | Checks that we do not use `create table` statement in upgrade classes. |
 [JavaUpgradeDropTableCheck](check/java_upgrade_drop_table_check.md#javaupgradedroptablecheck) | .java | Finds cases where `DROP_TABLE_IF_EXISTS` should be used (instead of `drop table if exists`). |
 [JavaUpgradeIndexCheck](check/java_upgrade_index_check.md#javaupgradeindexcheck) | .java | Finds cases where the service builder indexes are updated manually in Upgrade classes. This is not needed because Liferay takes care of it. |
 JavaUpgradeMissingCTCollectionIdDuringUpdateCheck | .java | Finds missing `ctCollectionId` in where clause during update. |
@@ -225,6 +226,7 @@ SystemEventCheck | .java | Finds missing or redundant usage of @SystemEvent for 
 TLDTypeCheck | .tld | Ensures the fully qualified name is used for types in `.tld` file. |
 TSConfigFileCheck | .ts or .tsx | Performs several checks on `ts.config` file. |
 TSSpecFileLocationCheck | .ts or .tsx | Checks that `*.spec.ts` file should be inside a folder that contains a `config.ts`. |
+TestClassDBConnectionCheck | .java | Finds cases of incorrect use of database connection. |
 TestClassMissingLiferayUnitTestRuleCheck | .java | Finds missing LiferayUnitTestRule. |
 [ThreadContextClassLoaderCheck](check/thread_context_class_loader_check.md#threadcontextclassloadercheck) | .java | Checks usage of `Thread.setContextClassLoader`. |
 TransactionalTestRuleCheck | .java | Finds usage of `TransactionalTestRule` in `*StagedModelDataHandlerTest`. |

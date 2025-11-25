@@ -616,7 +616,13 @@
 						"items": "integer",
 						"type": "array"
 					},
+					"title": {
+						"type": "string"
+					},
 					"userId": {
+						"type": "integer"
+					},
+					"version": {
 						"type": "integer"
 					}
 				},
@@ -2117,6 +2123,13 @@
 					{
 						"in": "query",
 						"name": "pageSize",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "sort",
 						"schema": {
 							"type": "string"
 						}
@@ -3736,6 +3749,13 @@
 					{
 						"in": "query",
 						"name": "pageSize",
+						"schema": {
+							"type": "string"
+						}
+					},
+					{
+						"in": "query",
+						"name": "sort",
 						"schema": {
 							"type": "string"
 						}

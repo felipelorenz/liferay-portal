@@ -196,23 +196,20 @@ public abstract class BaseTaskResourceTestCase {
 	}
 
 	@Test
-	public void testPostTask() throws Exception {
+	public void testPostByExternalReferenceCodeTask() throws Exception {
 		Task randomTask = randomTask();
 
-		Task postTask = testPostTask_addTask(randomTask);
+		Task postTask = testPostByExternalReferenceCodeTask_addTask(randomTask);
 
 		assertEquals(randomTask, postTask);
 		assertValid(postTask);
 	}
 
-	protected Task testPostTask_addTask(Task task) throws Exception {
+	protected Task testPostByExternalReferenceCodeTask_addTask(Task task)
+		throws Exception {
+
 		throw new UnsupportedOperationException(
 			"This method needs to be implemented");
-	}
-
-	@Test
-	public void testBatchEngineDeleteImportTask() throws Exception {
-		Assert.assertTrue(true);
 	}
 
 	protected void assertContains(Task task, List<Task> tasks) {

@@ -80,7 +80,11 @@ public class FragmentConfigurationTestUtil {
 		).put(
 			"collectionSelector", "object"
 		).put(
+			"itemSelector", "object"
+		).put(
 			"length", "string"
+		).put(
+			"navigationMenuSelector", "object"
 		).put(
 			"select", "string"
 		).put(
