@@ -27,10 +27,16 @@ import {
 	getUpdatedDefaultValueType,
 } from '../../../../utils/defaultValues';
 import {removeFieldSettings} from '../../../../utils/fieldSettings';
+import BooleanDefaultValueSelect from '../../DefaultValueFields/BooleanDefaultValueSelect';
 import ListTypeDefaultValueSelect from '../../DefaultValueFields/ListTypeDefaultValueSelect';
+import NumericDefaultValueInput from '../../DefaultValueFields/NumericDefaultValueInput';
+import RichTextDefaultValue from '../../DefaultValueFields/RichTextDefaultValue';
+import TextDefaultValueInput from '../../DefaultValueFields/TextDefaultValueInput';
 import {ObjectFieldErrors} from '../../ObjectFieldFormBase';
 interface DefaultValueContainerProps {
+	ckEditor5Config?: object;
 	creationLanguageId: Liferay.Language.Locale;
+	decimalSeparator: string;
 	errors: ObjectFieldErrors;
 	learnResources: ILearnResourceContext;
 	modelBuilder?: boolean;
@@ -41,9 +47,13 @@ interface DefaultValueContainerProps {
 }
 
 export interface InputAsValueFieldComponentProps {
+	ckEditor5Config?: object;
 	creationLanguageId: Liferay.Language.Locale;
+	dataType?: string;
+	decimalSeparator?: string;
 	defaultValue?: ObjectFieldSettingValue;
 	error?: string;
+	id?: string;
 	label: string;
 	onSubmit?: (values?: Partial<ObjectField>) => void;
 	placeholder?: string;
@@ -57,11 +67,23 @@ type InputAsValueFieldComponents = {
 };
 
 const InputAsValueFieldComponents: Partial<InputAsValueFieldComponents> = {
+	...(Liferay.FeatureFlags['LPD-46451'] && {
+		Boolean: BooleanDefaultValueSelect,
+		Decimal: NumericDefaultValueInput,
+		Integer: NumericDefaultValueInput,
+		LongInteger: NumericDefaultValueInput,
+		LongText: TextDefaultValueInput,
+		PrecisionDecimal: NumericDefaultValueInput,
+		RichText: RichTextDefaultValue,
+		Text: TextDefaultValueInput,
+	}),
 	Picklist: ListTypeDefaultValueSelect,
 };
 
 export function DefaultValueContainer({
+	ckEditor5Config,
 	creationLanguageId,
+	decimalSeparator,
 	errors,
 	learnResources,
 	modelBuilder = false,
@@ -81,13 +103,17 @@ export function DefaultValueContainer({
 		defaultValueType || 'inputAsValue'
 	);
 
+	const dataType =
+		values.businessType === 'Decimal' ||
+		values.businessType === 'PrecisionDecimal'
+			? 'double'
+			: '';
+
 	useEffect(() => {
 		if (values.state) {
 			setDefaultValueToggleEnabled(true);
 			setDefaultValueTypeSelection('inputAsValue');
 		}
-
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [values]);
 
 	const handleToggle = (toggled: boolean) => {
@@ -210,11 +236,15 @@ export function DefaultValueContainer({
 				defaultValueTypeSelection === 'inputAsValue' &&
 				InputAsValueFieldComponent && (
 					<InputAsValueFieldComponent
+						ckEditor5Config={ckEditor5Config}
 						creationLanguageId={creationLanguageId}
+						dataType={dataType}
+						decimalSeparator={decimalSeparator}
 						defaultValue={
 							defaultValueType === 'inputAsValue' && defaultValue
 						}
 						error={errors.defaultValue}
+						id="default_value_container_input"
 						label={
 							!values.state
 								? Liferay.Language.get('default-value')
@@ -232,7 +262,7 @@ export function DefaultValueContainer({
 					<ExpressionBuilder
 						error={errors.defaultValue}
 						feedbackMessage={Liferay.Language.get(
-							'use-expressions-to-create-a-condition'
+							'click-on-the-button-to-expand-the-expression-input-area'
 						)}
 						label={Liferay.Language.get('default-value')}
 						onBlur={(event) => {

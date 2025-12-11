@@ -10,6 +10,7 @@ import React from 'react';
 
 import ConvertToPageTemplateModal from '../../plugins/convert_to_page_template_modal/components/ConvertToPageTemplateModal';
 import {StyleBookContextProvider} from '../../plugins/page_design_options/hooks/useStyleBook';
+import RulesModal from '../../plugins/page_rules/components/RulesModal';
 import {INIT} from '../actions/types';
 import {ClipboardContextProvider} from '../contexts/ClipboardContext';
 import {CollectionActiveItemContextProvider} from '../contexts/CollectionActiveItemContext';
@@ -26,6 +27,7 @@ import {LayoutKeyboardContextProvider} from '../contexts/LayoutKeyboardContext';
 import {LocalConfigContextProvider} from '../contexts/LocalConfigContext';
 import {ObjectDataContextProvider} from '../contexts/ObjectDataContext';
 import {PortletContentContextProvider} from '../contexts/PortletContentContext';
+import {RulesModalContextProvider} from '../contexts/RulesModalContext';
 import {ShortcutContextProvider} from '../contexts/ShortcutContext';
 import {StoreContextProvider} from '../contexts/StoreContext';
 import {WidgetsContextProvider} from '../contexts/WidgetsContext';
@@ -88,15 +90,19 @@ export default function App({state}) {
 
 																	<StyleBookContextProvider>
 																		<ObjectDataContextProvider>
-																			<Sidebar />
+																			<RulesModalContextProvider>
+																				<Sidebar />
 
-																			<LayoutKeyboardContextProvider>
-																				<LayoutViewport />
-																			</LayoutKeyboardContextProvider>
+																				<LayoutKeyboardContextProvider>
+																					<LayoutViewport />
+																				</LayoutKeyboardContextProvider>
 
-																			<LayoutBreadcrumbs />
+																				<LayoutBreadcrumbs />
 
-																			<ItemConfigurationSidebar />
+																				<ItemConfigurationSidebar />
+
+																				<RulesModal />
+																			</RulesModalContextProvider>
 																		</ObjectDataContextProvider>
 																	</StyleBookContextProvider>
 																</GlobalContextProvider>

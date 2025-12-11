@@ -35,6 +35,7 @@ import com.liferay.document.library.kernel.service.DLFileEntryLocalService;
 import com.liferay.document.library.kernel.service.DLFileEntryService;
 import com.liferay.document.library.kernel.service.DLFolderService;
 import com.liferay.document.library.util.DLURLHelper;
+import com.liferay.exportimport.kernel.lar.ExportImportThreadLocal;
 import com.liferay.list.type.entry.util.ListTypeEntryUtil;
 import com.liferay.list.type.model.ListTypeDefinition;
 import com.liferay.list.type.model.ListTypeEntry;
@@ -152,6 +153,7 @@ import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
 import com.liferay.portal.kernel.service.OrganizationLocalService;
 import com.liferay.portal.kernel.service.ResourcePermissionLocalService;
 import com.liferay.portal.kernel.service.RoleLocalService;
+import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserGroupRoleLocalService;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.service.WorkflowDefinitionLinkLocalService;
@@ -261,8 +263,8 @@ import org.junit.runner.RunWith;
  */
 @FeatureFlags(
 	featureFlags = {
-		@FeatureFlag(value = "LPD-32050"), @FeatureFlag(value = "LPD-34594"),
-		@FeatureFlag(value = "LPS-164801"), @FeatureFlag(value = "LPS-172017")
+		@FeatureFlag(value = "LPD-34594"), @FeatureFlag(value = "LPS-164801"),
+		@FeatureFlag("LPS-172017")
 	}
 )
 @RunWith(Arquillian.class)
@@ -424,7 +426,7 @@ public class DefaultObjectEntryManagerImplTest
 				null, adminUser.getUserId(),
 				Collections.singletonMap(
 					LocaleUtil.US, RandomTestUtil.randomString()),
-				false, Collections.emptyList());
+				false, Collections.emptyList(), new ServiceContext());
 
 		_listTypeEntryKey1 = _addListTypeEntry();
 		_listTypeEntryKey2 = _addListTypeEntry();
@@ -853,7 +855,7 @@ public class DefaultObjectEntryManagerImplTest
 		_objectDefinition3 =
 			objectDefinitionLocalService.addCustomObjectDefinition(
 				null, adminUser.getUserId(), 0, null, false, true, false, true,
-				true, false, false, false, false, null,
+				false, false, false, false, null,
 				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
 				ObjectDefinitionTestUtil.getRandomName(), null, null,
 				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
@@ -2431,9 +2433,7 @@ public class DefaultObjectEntryManagerImplTest
 				ObjectDefinitionConstants.SCOPE_COMPANY));
 	}
 
-	@FeatureFlags(
-		featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-32050")}
-	)
+	@FeatureFlag("LPD-17564")
 	@Test
 	public void testAddObjectEntryWithLocalizedAttachmentObjectField()
 		throws Exception {
@@ -2694,8 +2694,10 @@ public class DefaultObjectEntryManagerImplTest
 		AssertUtils.assertFailure(
 			NoSuchRoleException.class,
 			String.format(
-				"No Role exists with the key {companyId=%s, name=%s}",
-				_objectDefinition1.getCompanyId(), permission.getRoleName()),
+				"No Role exists with the key {externalReferenceCode=%s, " +
+					"companyId=%s}",
+				permission.getRoleExternalReferenceCode(),
+				_objectDefinition1.getCompanyId()),
 			() -> _defaultObjectEntryManager.addObjectEntry(
 				_simpleDTOConverterContext, _objectDefinition1,
 				new ObjectEntry() {
@@ -2738,7 +2740,6 @@ public class DefaultObjectEntryManagerImplTest
 		}
 	}
 
-	@FeatureFlag("LPD-32050")
 	@Test
 	public void testAddObjectEntryWithMissingTaxonomyCategoryBriefReference()
 		throws Exception {
@@ -2829,6 +2830,89 @@ public class DefaultObjectEntryManagerImplTest
 					_assetEntryAssetCategoryRelLocalService.
 						getAssetCategoryPrimaryKeys(assetEntry.getEntryId())));
 		}
+	}
+
+	@FeatureFlag("LPD-17564")
+	@Test
+	public void testAddObjectEntryWithPortletImportInProcess()
+		throws Exception {
+
+		ExportImportThreadLocal.setPortletImportInProcess(true);
+
+		ObjectDefinition objectDefinition =
+			ObjectDefinitionTestUtil.publishObjectDefinition();
+
+		_assertObjectEntryStatus(
+			WorkflowConstants.STATUS_APPROVED,
+			_addObjectEntry(
+				objectDefinition, WorkflowConstants.STATUS_APPROVED));
+		_assertObjectEntryStatus(
+			WorkflowConstants.STATUS_APPROVED,
+			_addObjectEntry(objectDefinition, WorkflowConstants.STATUS_DRAFT));
+		_assertObjectEntryStatus(
+			WorkflowConstants.STATUS_APPROVED,
+			_addObjectEntry(
+				objectDefinition, WorkflowConstants.STATUS_EXPIRED));
+		_assertObjectEntryStatus(
+			WorkflowConstants.STATUS_APPROVED,
+			_addObjectEntry(
+				objectDefinition, WorkflowConstants.STATUS_PENDING));
+		_assertObjectEntryStatus(
+			WorkflowConstants.STATUS_APPROVED,
+			_addObjectEntry(
+				objectDefinition, WorkflowConstants.STATUS_SCHEDULED));
+
+		objectDefinition.setEnableObjectEntryDraft(true);
+
+		objectDefinition = objectDefinitionLocalService.updateObjectDefinition(
+			objectDefinition);
+
+		_assertObjectEntryStatus(
+			WorkflowConstants.STATUS_APPROVED,
+			_addObjectEntry(
+				objectDefinition, WorkflowConstants.STATUS_APPROVED));
+		_assertObjectEntryStatus(
+			WorkflowConstants.STATUS_APPROVED,
+			_addObjectEntry(
+				objectDefinition, WorkflowConstants.STATUS_EXPIRED));
+		_assertObjectEntryStatus(
+			WorkflowConstants.STATUS_APPROVED,
+			_addObjectEntry(
+				objectDefinition, WorkflowConstants.STATUS_SCHEDULED));
+		_assertObjectEntryStatus(
+			WorkflowConstants.STATUS_DRAFT,
+			_addObjectEntry(objectDefinition, WorkflowConstants.STATUS_DRAFT));
+		_assertObjectEntryStatus(
+			WorkflowConstants.STATUS_DRAFT,
+			_addObjectEntry(
+				objectDefinition, WorkflowConstants.STATUS_PENDING));
+
+		objectDefinition.setEnableObjectEntrySchedule(true);
+
+		objectDefinition = objectDefinitionLocalService.updateObjectDefinition(
+			objectDefinition);
+
+		_assertObjectEntryStatus(
+			WorkflowConstants.STATUS_APPROVED,
+			_addObjectEntry(
+				objectDefinition, WorkflowConstants.STATUS_APPROVED));
+		_assertObjectEntryStatus(
+			WorkflowConstants.STATUS_DRAFT,
+			_addObjectEntry(objectDefinition, WorkflowConstants.STATUS_DRAFT));
+		_assertObjectEntryStatus(
+			WorkflowConstants.STATUS_DRAFT,
+			_addObjectEntry(
+				objectDefinition, WorkflowConstants.STATUS_PENDING));
+		_assertObjectEntryStatus(
+			WorkflowConstants.STATUS_EXPIRED,
+			_addObjectEntry(
+				objectDefinition, WorkflowConstants.STATUS_EXPIRED));
+		_assertObjectEntryStatus(
+			WorkflowConstants.STATUS_SCHEDULED,
+			_addObjectEntry(
+				objectDefinition, WorkflowConstants.STATUS_SCHEDULED));
+
+		ExportImportThreadLocal.setPortletImportInProcess(false);
 	}
 
 	@Test
@@ -2932,9 +3016,7 @@ public class DefaultObjectEntryManagerImplTest
 		}
 	}
 
-	@FeatureFlags(
-		featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-32050")}
-	)
+	@FeatureFlag("LPD-17564")
 	@Test
 	public void testAddObjectEntryWithScheduleDates() throws Exception {
 
@@ -3163,7 +3245,8 @@ public class DefaultObjectEntryManagerImplTest
 							RandomTestUtil.randomString())
 					).name(
 						"integerObjectField"
-					).build()));
+					).build()),
+				false);
 
 		_addObjectAction(
 			objectDefinition, ObjectActionTriggerConstants.KEY_ON_AFTER_ADD);
@@ -3231,7 +3314,8 @@ public class DefaultObjectEntryManagerImplTest
 					ListTypeEntryUtil.createListTypeEntry(
 						"listTypeEntryKey2",
 						Collections.singletonMap(
-							LocaleUtil.US, RandomTestUtil.randomString()))));
+							LocaleUtil.US, RandomTestUtil.randomString()))),
+				new ServiceContext());
 
 		ObjectDefinition objectDefinition = _addObjectDefinition(
 			Collections.singletonList(
@@ -3343,9 +3427,7 @@ public class DefaultObjectEntryManagerImplTest
 					objectRelationship, _group.getGroupKey()));
 	}
 
-	@FeatureFlags(
-		featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-32050")}
-	)
+	@FeatureFlag("LPD-17564")
 	@Test
 	public void testCopyObjectEntry() throws Exception {
 		DepotEntry depotEntry = _addDepotEntry();
@@ -3722,9 +3804,7 @@ public class DefaultObjectEntryManagerImplTest
 			objectDefinition2.getObjectDefinitionId());
 	}
 
-	@FeatureFlags(
-		featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-32050")}
-	)
+	@FeatureFlag("LPD-17564")
 	@Test
 	public void testDeleteObjectEntryByVersion() throws Exception {
 
@@ -3749,7 +3829,7 @@ public class DefaultObjectEntryManagerImplTest
 			2,
 			_defaultObjectEntryManager.getVersionedObjectEntries(
 				dtoConverterContext, objectEntry1.getExternalReferenceCode(),
-				_objectDefinition1, null, null
+				_objectDefinition1, null, null, null
 			).getItems(
 			).size());
 
@@ -3767,7 +3847,7 @@ public class DefaultObjectEntryManagerImplTest
 			1,
 			_defaultObjectEntryManager.getVersionedObjectEntries(
 				dtoConverterContext, objectEntry1.getExternalReferenceCode(),
-				_objectDefinition1, null, null
+				_objectDefinition1, null, null, null
 			).getItems(
 			).size());
 
@@ -3791,7 +3871,7 @@ public class DefaultObjectEntryManagerImplTest
 			2,
 			_defaultObjectEntryManager.getVersionedObjectEntries(
 				dtoConverterContext, objectEntry2.getExternalReferenceCode(),
-				_objectDefinition4, _group.getGroupKey(), null
+				_objectDefinition4, _group.getGroupKey(), null, null
 			).getItems(
 			).size());
 
@@ -3811,7 +3891,7 @@ public class DefaultObjectEntryManagerImplTest
 			1,
 			_defaultObjectEntryManager.getVersionedObjectEntries(
 				dtoConverterContext, objectEntry2.getExternalReferenceCode(),
-				_objectDefinition4, _group.getGroupKey(), null
+				_objectDefinition4, _group.getGroupKey(), null, null
 			).getItems(
 			).size());
 
@@ -4294,9 +4374,7 @@ public class DefaultObjectEntryManagerImplTest
 					_group.getGroupKey()));
 	}
 
-	@FeatureFlags(
-		featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-32050")}
-	)
+	@FeatureFlag("LPD-17564")
 	@Test
 	public void testExpireObjectEntry() throws Exception {
 		_enableObjectEntryVersioning();
@@ -4333,9 +4411,7 @@ public class DefaultObjectEntryManagerImplTest
 			WorkflowConstants.STATUS_EXPIRED, objectEntryVersion.getStatus());
 	}
 
-	@FeatureFlags(
-		featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-32050")}
-	)
+	@FeatureFlag("LPD-17564")
 	@Test
 	public void testExpireObjectEntryByVersion() throws Exception {
 
@@ -4479,9 +4555,7 @@ public class DefaultObjectEntryManagerImplTest
 					dtoConverterContext, _objectDefinition4, objectEntryId, 1));
 	}
 
-	@FeatureFlags(
-		featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-32050")}
-	)
+	@FeatureFlag("LPD-17564")
 	@Test
 	public void testGetApprovedObjectEntries() throws Exception {
 		_assertApprovedObjectEntries();
@@ -4573,9 +4647,7 @@ public class DefaultObjectEntryManagerImplTest
 				objectEntry4.getId(), _objectDefinition1));
 	}
 
-	@FeatureFlags(
-		featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-32050")}
-	)
+	@FeatureFlag("LPD-17564")
 	@Test
 	public void testGetApprovedObjectEntriesWithNestedFields()
 		throws Exception {
@@ -4712,9 +4784,7 @@ public class DefaultObjectEntryManagerImplTest
 		}
 	}
 
-	@FeatureFlags(
-		featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-32050")}
-	)
+	@FeatureFlag("LPD-17564")
 	@Test
 	public void testGetApprovedObjectEntry() throws Exception {
 		ObjectEntry objectEntry1 = _addObjectEntry(
@@ -6315,9 +6385,7 @@ public class DefaultObjectEntryManagerImplTest
 			});
 	}
 
-	@FeatureFlags(
-		featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-32050")}
-	)
+	@FeatureFlag("LPD-17564")
 	@Test
 	public void testGetObjectEntryByVersion() throws Exception {
 
@@ -6848,9 +6916,7 @@ public class DefaultObjectEntryManagerImplTest
 					objectEntry1.getExternalReferenceCode(), null));
 	}
 
-	@FeatureFlags(
-		featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-32050")}
-	)
+	@FeatureFlag("LPD-17564")
 	@Test
 	public void testGetVersionedObjectEntries() throws Exception {
 
@@ -6866,7 +6932,7 @@ public class DefaultObjectEntryManagerImplTest
 		Page<ObjectEntry> page =
 			_defaultObjectEntryManager.getVersionedObjectEntries(
 				dtoConverterContext, _objectDefinition1, objectEntry1.getId(),
-				null);
+				null, null);
 
 		assertEquals(
 			(List<ObjectEntry>)page.getItems(),
@@ -6878,7 +6944,7 @@ public class DefaultObjectEntryManagerImplTest
 			_objectDefinition1, objectEntry1, 2);
 
 		page = _defaultObjectEntryManager.getVersionedObjectEntries(
-			dtoConverterContext, _objectDefinition1, objectEntry2.getId(),
+			dtoConverterContext, _objectDefinition1, objectEntry2.getId(), null,
 			null);
 
 		objectEntry1 = _defaultObjectEntryManager.getObjectEntryByVersion(
@@ -6892,6 +6958,20 @@ public class DefaultObjectEntryManagerImplTest
 				_defaultObjectEntryManager.getObjectEntryByVersion(
 					dtoConverterContext, objectEntry2.getId(), 2)));
 
+		Sort[] sorts = {new Sort("version", Sort.INT_TYPE, true)};
+
+		page = _defaultObjectEntryManager.getVersionedObjectEntries(
+			dtoConverterContext, _objectDefinition1, objectEntry2.getId(), null,
+			sorts);
+
+		assertEquals(
+			(List<ObjectEntry>)page.getItems(),
+			ListUtil.fromArray(
+				_defaultObjectEntryManager.getObjectEntryByVersion(
+					dtoConverterContext, objectEntry2.getId(), 2),
+				_defaultObjectEntryManager.getObjectEntryByVersion(
+					dtoConverterContext, objectEntry1.getId(), 1)));
+
 		// Site scope
 
 		objectEntry1 = _addObjectEntry(
@@ -6901,7 +6981,7 @@ public class DefaultObjectEntryManagerImplTest
 
 		page = _defaultObjectEntryManager.getVersionedObjectEntries(
 			dtoConverterContext, objectEntry1.getExternalReferenceCode(),
-			_objectDefinition4, _group.getGroupKey(), null);
+			_objectDefinition4, _group.getGroupKey(), null, null);
 
 		assertEquals(
 			(List<ObjectEntry>)page.getItems(),
@@ -6914,7 +6994,7 @@ public class DefaultObjectEntryManagerImplTest
 
 		page = _defaultObjectEntryManager.getVersionedObjectEntries(
 			dtoConverterContext, objectEntry2.getExternalReferenceCode(),
-			_objectDefinition4, _group.getGroupKey(), null);
+			_objectDefinition4, _group.getGroupKey(), null, null);
 
 		objectEntry1 = _defaultObjectEntryManager.getObjectEntryByVersion(
 			dtoConverterContext, objectEntry1.getId(), 1);
@@ -6926,11 +7006,21 @@ public class DefaultObjectEntryManagerImplTest
 					dtoConverterContext, objectEntry1.getId(), 1),
 				_defaultObjectEntryManager.getObjectEntryByVersion(
 					dtoConverterContext, objectEntry2.getId(), 2)));
+
+		page = _defaultObjectEntryManager.getVersionedObjectEntries(
+			dtoConverterContext, objectEntry2.getExternalReferenceCode(),
+			_objectDefinition4, _group.getGroupKey(), null, sorts);
+
+		assertEquals(
+			(List<ObjectEntry>)page.getItems(),
+			ListUtil.fromArray(
+				_defaultObjectEntryManager.getObjectEntryByVersion(
+					dtoConverterContext, objectEntry2.getId(), 2),
+				_defaultObjectEntryManager.getObjectEntryByVersion(
+					dtoConverterContext, objectEntry1.getId(), 1)));
 	}
 
-	@FeatureFlags(
-		featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-32050")}
-	)
+	@FeatureFlag("LPD-17564")
 	@Test
 	public void testMoveObjectEntry() throws Exception {
 		DepotEntry depotEntry = _addDepotEntry();
@@ -7534,9 +7624,7 @@ public class DefaultObjectEntryManagerImplTest
 			"Edited", objectEntry.getPropertyValue("textObjectFieldName"));
 	}
 
-	@FeatureFlags(
-		featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-32050")}
-	)
+	@FeatureFlag("LPD-17564")
 	@Test
 	public void testRestoreObjectEntryByVersion() throws Exception {
 
@@ -7617,9 +7705,7 @@ public class DefaultObjectEntryManagerImplTest
 					dtoConverterContext, _objectDefinition4, objectEntryId, 1));
 	}
 
-	@FeatureFlags(
-		featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-32050")}
-	)
+	@FeatureFlag("LPD-17564")
 	@Test
 	public void testRestoreObjectEntryFromTrash() throws Exception {
 		_enableObjectEntryVersioning();
@@ -7705,9 +7791,7 @@ public class DefaultObjectEntryManagerImplTest
 		_assertObjectEntriesSize1(_objectDefinition3, "Delta", 1);
 	}
 
-	@FeatureFlags(
-		featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-32050")}
-	)
+	@FeatureFlag("LPD-17564")
 	@Test
 	public void testSubscribeObjectEntry() throws Exception {
 		ObjectDefinition objectDefinition = _addObjectDefinition(
@@ -7857,9 +7941,7 @@ public class DefaultObjectEntryManagerImplTest
 				objectDefinition.getClassName(), objectEntry2.getId()));
 	}
 
-	@FeatureFlags(
-		featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-32050")}
-	)
+	@FeatureFlag("LPD-17564")
 	@Test
 	public void testSubscribeObjectEntryWithHierarchy() throws Exception {
 		ObjectDefinition objectDefinitionA = _addObjectDefinition(
@@ -8943,9 +9025,7 @@ public class DefaultObjectEntryManagerImplTest
 		PrincipalThreadLocal.setName(_originalName);
 	}
 
-	@FeatureFlags(
-		featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-32050")}
-	)
+	@FeatureFlag("LPD-17564")
 	@Test
 	public void testUpdateObjectEntryWithScheduleDates() throws Exception {
 		ObjectDefinition objectDefinition = _addObjectDefinition(
@@ -9331,7 +9411,7 @@ public class DefaultObjectEntryManagerImplTest
 		ObjectDefinition objectDefinition =
 			objectDefinitionLocalService.addCustomObjectDefinition(
 				null, adminUser.getUserId(), 0, null, false, true, false, true,
-				true, false, false, enableObjectEntrySubscription, false, null,
+				false, false, enableObjectEntrySubscription, false, null,
 				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
 				ObjectDefinitionTestUtil.getRandomName(), null, null,
 				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
@@ -9562,6 +9642,25 @@ public class DefaultObjectEntryManagerImplTest
 				}
 			},
 			ObjectDefinitionConstants.SCOPE_COMPANY);
+	}
+
+	private ObjectEntry _addObjectEntry(
+			ObjectDefinition objectDefinition, int statusCode)
+		throws Exception {
+
+		return _addObjectEntry(
+			objectDefinition,
+			new ObjectEntry() {
+				{
+					properties = Collections.emptyMap();
+					status = new Status() {
+						{
+							code = statusCode;
+						}
+					};
+				}
+			},
+			null);
 	}
 
 	private ObjectEntry _addObjectEntry(

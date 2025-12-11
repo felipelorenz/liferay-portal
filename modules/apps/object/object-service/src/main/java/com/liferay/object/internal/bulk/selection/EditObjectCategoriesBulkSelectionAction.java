@@ -9,7 +9,10 @@ import com.liferay.asset.kernel.model.AssetEntry;
 import com.liferay.asset.kernel.service.AssetEntryLocalService;
 import com.liferay.bulk.selection.BulkSelection;
 import com.liferay.bulk.selection.BulkSelectionAction;
+import com.liferay.object.constants.ObjectEntryFolderConstants;
+import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.model.ObjectEntry;
+import com.liferay.object.service.ObjectDefinitionLocalService;
 import com.liferay.object.service.ObjectEntryLocalService;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.log.Log;
@@ -22,6 +25,7 @@ import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermi
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.MapUtil;
 import com.liferay.portal.kernel.util.SetUtil;
 
@@ -52,8 +56,11 @@ public class EditObjectCategoriesBulkSelectionAction
 			Map<String, Serializable> inputMap)
 		throws Exception {
 
+		long bulkActionTaskId = GetterUtil.getLong(
+			inputMap.get("bulkActionTaskId"));
+
 		ObjectEntry objectEntry = _objectEntryLocalService.getObjectEntry(
-			GetterUtil.getLong(inputMap.get("bulkActionTaskId")));
+			bulkActionTaskId);
 
 		Map<String, Serializable> values = objectEntry.getValues();
 
@@ -66,18 +73,47 @@ public class EditObjectCategoriesBulkSelectionAction
 		try {
 			values.put("executionStatus", "started");
 
+			long companyId = objectEntry.getCompanyId();
+
 			bulkSelection.forEach(
 				object -> {
+					long objectDefinitionId = _getObjectDefinitionId(companyId);
+					String status = "completed";
+
 					try {
 						if (object instanceof ObjectEntry) {
 							_updateAssetEntry(
 								user, inputMap, (ObjectEntry)object);
+
+							numberOfSuccessfulItems.getAndIncrement();
 						}
 					}
 					catch (PortalException portalException) {
 						if (_log.isWarnEnabled()) {
 							_log.warn(portalException);
 						}
+
+						numberOfFailedItems.getAndIncrement();
+						status = "failed";
+					}
+					finally {
+						_objectEntryLocalService.addObjectEntry(
+							0, user.getUserId(), objectDefinitionId,
+							ObjectEntryFolderConstants.
+								PARENT_OBJECT_ENTRY_FOLDER_ID_DEFAULT,
+							null,
+							HashMapBuilder.<String, Serializable>put(
+								"bulkActionTaskId", bulkActionTaskId
+							).put(
+								"executionStatus", status
+							).put(
+								"r_cmsBATaskToCMSBATaskItems_c_cmsBulkAct" +
+									"ionTaskId",
+								bulkActionTaskId
+							).put(
+								"type", "ObjectEntryFolder"
+							).build(),
+							new ServiceContext());
 					}
 				});
 		}
@@ -97,6 +133,15 @@ public class EditObjectCategoriesBulkSelectionAction
 
 			_partialUpdateObjectEntry(objectEntry, values);
 		}
+	}
+
+	private long _getObjectDefinitionId(long companyId) throws PortalException {
+		ObjectDefinition objectDefinition =
+			_objectDefinitionLocalService.
+				getObjectDefinitionByExternalReferenceCode(
+					"L_CMS_BULK_ACTION_TASK_ITEM", companyId);
+
+		return objectDefinition.getObjectDefinitionId();
 	}
 
 	private ObjectEntry _partialUpdateObjectEntry(
@@ -186,6 +231,9 @@ public class EditObjectCategoriesBulkSelectionAction
 
 	@Reference
 	private AssetEntryLocalService _assetEntryLocalService;
+
+	@Reference
+	private ObjectDefinitionLocalService _objectDefinitionLocalService;
 
 	@Reference
 	private ObjectEntryLocalService _objectEntryLocalService;

@@ -16,6 +16,7 @@ import com.liferay.frontend.token.definition.FrontendTokenDefinition;
 import com.liferay.frontend.token.definition.FrontendTokenDefinitionRegistry;
 import com.liferay.frontend.token.definition.FrontendTokenMapping;
 import com.liferay.info.item.ClassPKInfoItemIdentifier;
+import com.liferay.info.item.ERCInfoItemIdentifier;
 import com.liferay.info.item.InfoItemServiceRegistry;
 import com.liferay.info.item.provider.InfoItemObjectProvider;
 import com.liferay.info.pagination.InfoPage;
@@ -608,18 +609,49 @@ public class FragmentEntryConfigurationParserImpl
 		try {
 			JSONObject jsonObject = _jsonFactory.createJSONObject(value);
 
+			String className = jsonObject.getString("className");
+			long classPK = jsonObject.getLong("classPK");
+			String externalReferenceCode = jsonObject.getString(
+				"externalReferenceCode");
+
+			if (Validator.isNull(className) ||
+				((classPK <= 0) && Validator.isNull(externalReferenceCode))) {
+
+				return null;
+			}
+
 			InfoItemObjectProvider<?> infoItemObjectProvider =
 				_infoItemServiceRegistry.getFirstInfoItemService(
-					InfoItemObjectProvider.class,
-					jsonObject.getString("className"),
+					InfoItemObjectProvider.class, className,
 					ClassPKInfoItemIdentifier.INFO_ITEM_SERVICE_FILTER);
 
 			if (infoItemObjectProvider == null) {
 				return null;
 			}
 
+			if (classPK > 0) {
+				return infoItemObjectProvider.getInfoItem(
+					new ClassPKInfoItemIdentifier(classPK));
+			}
+
+			ServiceContext serviceContext =
+				ServiceContextThreadLocal.getServiceContext();
+
+			if (serviceContext == null) {
+				return null;
+			}
+
+			ThemeDisplay themeDisplay = serviceContext.getThemeDisplay();
+
+			if (themeDisplay == null) {
+				return null;
+			}
+
 			return infoItemObjectProvider.getInfoItem(
-				new ClassPKInfoItemIdentifier(jsonObject.getLong("classPK")));
+				themeDisplay.getScopeGroupId(),
+				new ERCInfoItemIdentifier(
+					externalReferenceCode,
+					jsonObject.getString("scopeExternalReferenceCode")));
 		}
 		catch (Exception exception) {
 			if (_log.isDebugEnabled()) {
@@ -654,6 +686,10 @@ public class FragmentEntryConfigurationParserImpl
 			).put(
 				"externalReferenceCode",
 				configurationValueJSONObject.getString("externalReferenceCode")
+			).put(
+				"scopeExternalReferenceCode",
+				configurationValueJSONObject.getString(
+					"scopeExternalReferenceCode")
 			).put(
 				"template", configurationValueJSONObject.get("template")
 			).put(

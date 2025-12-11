@@ -32,6 +32,7 @@ import com.liferay.object.model.ObjectDefinition;
 import com.liferay.object.model.ObjectEntryFolder;
 import com.liferay.object.model.ObjectEntryTable;
 import com.liferay.object.model.ObjectEntryVersion;
+import com.liferay.object.model.ObjectEntryVersionTable;
 import com.liferay.object.model.ObjectField;
 import com.liferay.object.model.ObjectRelationship;
 import com.liferay.object.model.ObjectRelationshipModel;
@@ -92,7 +93,6 @@ import com.liferay.portal.kernel.model.ExternalReferenceCodeModel;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.GroupedModel;
 import com.liferay.portal.kernel.model.PersistedModel;
-import com.liferay.portal.kernel.model.role.RoleConstants;
 import com.liferay.portal.kernel.search.BooleanClauseOccur;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.Sort;
@@ -109,6 +109,7 @@ import com.liferay.portal.kernel.service.RoleService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.service.permission.ModelPermissions;
+import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.Base64;
 import com.liferay.portal.kernel.util.DateUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
@@ -118,6 +119,8 @@ import com.liferay.portal.kernel.util.Http;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.MapUtil;
+import com.liferay.portal.kernel.util.OrderByComparator;
+import com.liferay.portal.kernel.util.OrderByComparatorFactoryUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UniqueUtil;
@@ -141,12 +144,10 @@ import com.liferay.portal.vulcan.fields.NestedFieldsSupplier;
 import com.liferay.portal.vulcan.pagination.Page;
 import com.liferay.portal.vulcan.pagination.Pagination;
 import com.liferay.portal.vulcan.permission.ModelPermissionsUtil;
-import com.liferay.portal.vulcan.permission.Permission;
 import com.liferay.portal.vulcan.scope.Scope;
 import com.liferay.portal.vulcan.util.ActionUtil;
 import com.liferay.portal.vulcan.util.ObjectMapperUtil;
 import com.liferay.portal.vulcan.util.SearchUtil;
-import com.liferay.roles.admin.role.type.contributor.RoleTypeContributor;
 import com.liferay.roles.admin.role.type.contributor.provider.RoleTypeContributorProvider;
 import com.liferay.sharing.configuration.SharingConfiguration;
 import com.liferay.sharing.configuration.SharingConfigurationFactory;
@@ -1132,7 +1133,7 @@ public class DefaultObjectEntryManagerImpl
 	public Page<ObjectEntry> getVersionedObjectEntries(
 			DTOConverterContext dtoConverterContext,
 			ObjectDefinition objectDefinition, long objectEntryId,
-			Pagination pagination)
+			Pagination pagination, Sort[] sorts)
 		throws Exception {
 
 		com.liferay.object.model.ObjectEntry serviceBuilderObjectEntry =
@@ -1146,7 +1147,7 @@ public class DefaultObjectEntryManagerImpl
 			TransformUtil.transform(
 				_objectEntryVersionService.getObjectEntryVersions(
 					objectEntryId, _getStartPosition(pagination),
-					_getEndPosition(pagination)),
+					_getEndPosition(pagination), _getOrderByComparator(sorts)),
 				objectEntryVersion -> _objectEntryDTOConverter.toDTO(
 					_getObjectEntryVersionDTOConverterContext(
 						dtoConverterContext, objectEntryVersion,
@@ -1161,7 +1162,7 @@ public class DefaultObjectEntryManagerImpl
 	public Page<ObjectEntry> getVersionedObjectEntries(
 			DTOConverterContext dtoConverterContext,
 			String externalReferenceCode, ObjectDefinition objectDefinition,
-			String scopeKey, Pagination pagination)
+			String scopeKey, Pagination pagination, Sort[] sorts)
 		throws Exception {
 
 		com.liferay.object.model.ObjectEntry serviceBuilderObjectEntry =
@@ -1171,7 +1172,7 @@ public class DefaultObjectEntryManagerImpl
 
 		return getVersionedObjectEntries(
 			dtoConverterContext, objectDefinition,
-			serviceBuilderObjectEntry.getObjectEntryId(), pagination);
+			serviceBuilderObjectEntry.getObjectEntryId(), pagination, sorts);
 	}
 
 	@Override
@@ -1779,7 +1780,37 @@ public class DefaultObjectEntryManagerImpl
 						}
 					}
 
-					if (LazyReferencingThreadLocal.isEnabled()) {
+					// Root model check must precede lazy reference check
+
+					if (objectRelationship.isEdge()) {
+						com.liferay.object.model.ObjectEntry
+							nestedServiceBuilderObjectEntry =
+								_objectEntryService.fetchObjectEntry(
+									nestedObjectEntry.
+										getExternalReferenceCode(),
+									groupId,
+									relatedObjectDefinition.
+										getObjectDefinitionId());
+
+						if (nestedServiceBuilderObjectEntry == null) {
+							nestedObjectEntry = addRelatedObjectEntry(
+								dtoConverterContext,
+								serviceBuilderObjectEntry.
+									getExternalReferenceCode(),
+								nestedObjectEntry, objectRelationship,
+								nestedScopeKey);
+						}
+						else {
+							nestedObjectEntry = updateRelatedObjectEntry(
+								dtoConverterContext,
+								nestedObjectEntry.getExternalReferenceCode(),
+								nestedObjectEntry, objectRelationship,
+								serviceBuilderObjectEntry.
+									getExternalReferenceCode(),
+								nestedScopeKey);
+						}
+					}
+					else if (LazyReferencingThreadLocal.isEnabled()) {
 						nestedObjectEntry = _toObjectEntry(
 							dtoConverterContext, relatedObjectDefinition,
 							_objectEntryService.getOrAddEmptyObjectEntry(
@@ -2019,31 +2050,6 @@ public class DefaultObjectEntryManagerImpl
 				getGroupId(objectDefinition, scopeKey),
 				dtoConverterContext.getLocale(), null, objectEntry,
 				dtoConverterContext.getUserId());
-		}
-
-		if (LazyReferencingThreadLocal.isEnabled()) {
-			for (Permission permission : objectEntry.getPermissions()) {
-				if (Validator.isNull(
-						permission.getRoleExternalReferenceCode())) {
-
-					continue;
-				}
-
-				String className = StringPool.BLANK;
-
-				RoleTypeContributor roleTypeContributor =
-					_roleTypeContributorProvider.getRoleTypeContributor(
-						RoleConstants.getLabelType(permission.getRoleType()));
-
-				if (roleTypeContributor != null) {
-					className = roleTypeContributor.getClassName();
-				}
-
-				_roleService.getOrAddEmptyRole(
-					permission.getRoleExternalReferenceCode(), className, 0,
-					permission.getRoleName(),
-					RoleConstants.getLabelType(permission.getRoleType()));
-			}
 		}
 
 		ModelPermissions modelPermissions =
@@ -2620,6 +2626,24 @@ public class DefaultObjectEntryManagerImpl
 		}
 
 		return objectRelationships;
+	}
+
+	private OrderByComparator<ObjectEntryVersion> _getOrderByComparator(
+		Sort[] sorts) {
+
+		if (ArrayUtil.isEmpty(sorts)) {
+			return null;
+		}
+
+		List<Object> columns = new ArrayList<>();
+
+		for (Sort sort : sorts) {
+			columns.add(sort.getFieldName());
+			columns.add(!sort.isReverse());
+		}
+
+		return OrderByComparatorFactoryUtil.create(
+			ObjectEntryVersionTable.INSTANCE.getTableName(), columns.toArray());
 	}
 
 	private List<? extends BaseModel<?>> _getRelatedModels(
@@ -3348,7 +3372,7 @@ public class DefaultObjectEntryManagerImpl
 					}
 
 					return _addAction(
-						ActionKeys.ADD_ENTRY,
+						ActionKeys.UPDATE,
 						"postObjectEntryByObjectEntryFolderCopy",
 						serviceBuilderObjectEntry,
 						dtoConverterContext.getUriInfo());
@@ -3364,7 +3388,7 @@ public class DefaultObjectEntryManagerImpl
 					}
 
 					return _addAction(
-						ActionKeys.ADD_ENTRY,
+						ActionKeys.UPDATE,
 						"postObjectEntryByObjectEntryFolderCopyReplace",
 						serviceBuilderObjectEntry,
 						dtoConverterContext.getUriInfo());
@@ -3432,7 +3456,7 @@ public class DefaultObjectEntryManagerImpl
 					}
 
 					return _addAction(
-						ActionKeys.ADD_ENTRY,
+						ActionKeys.UPDATE,
 						"postObjectEntryByObjectEntryFolderMove",
 						serviceBuilderObjectEntry,
 						dtoConverterContext.getUriInfo());
@@ -3448,7 +3472,7 @@ public class DefaultObjectEntryManagerImpl
 					}
 
 					return _addAction(
-						ActionKeys.ADD_ENTRY,
+						ActionKeys.UPDATE,
 						"postObjectEntryByObjectEntryFolderMoveReplace",
 						serviceBuilderObjectEntry,
 						dtoConverterContext.getUriInfo());

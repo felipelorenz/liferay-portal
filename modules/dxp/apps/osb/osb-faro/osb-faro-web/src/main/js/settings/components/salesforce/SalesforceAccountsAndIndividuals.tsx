@@ -1,35 +1,49 @@
 import ClayIcon from '@clayui/icon';
 import ClayList from '@clayui/list';
+import ClaySticker from '@clayui/sticker';
 import React from 'react';
-import {ClayToggle} from '@clayui/form';
+import {ClayCheckbox} from '@clayui/form';
 import {sub} from 'shared/util/lang';
 
 interface ISalesforceAccountsAndIndividualsProps {
-	accounts: boolean;
 	accountsSyncedCount?: number;
-	individualsSyncedCount?: number;
-	individuals: boolean;
 	disabled?: boolean;
-	onChange: (values: {accounts: boolean; individuals: boolean}) => void;
+	enabledAccount: boolean;
+	enabledIndividual: boolean;
+	individualsSyncedCount?: number;
+	loading?: boolean;
+	onAccountChange: () => void;
+	onIndividualChange: () => void;
+	type?: string;
 }
 
 const SalesforceAccountsAndIndividuals: React.FC<ISalesforceAccountsAndIndividualsProps> = ({
-	accounts,
 	accountsSyncedCount,
 	disabled = false,
-	individuals,
+	enabledAccount,
+	enabledIndividual,
 	individualsSyncedCount,
-	onChange
+	onAccountChange,
+	onIndividualChange
 }) => (
 	<div className='pt-1'>
 		<ClayList className='mb-0'>
 			<ClayList.Item flex>
 				<ClayList.ItemField>
-					<ClayIcon
-						aria-label={Liferay.Language.get('accounts')}
-						className='mr-2 mt-1 text-secondary'
-						symbol='briefcase'
+					<ClayCheckbox
+						checked={enabledAccount}
+						disabled={disabled}
+						onChange={onAccountChange}
 					/>
+				</ClayList.ItemField>
+
+				<ClayList.ItemField>
+					<ClaySticker displayType='unstyled'>
+						<ClayIcon
+							className='text-secondary'
+							symbol='briefcase'
+						/>
+					</ClaySticker>
 				</ClayList.ItemField>
 
 				<ClayList.ItemField expand>
@@ -51,37 +65,27 @@ const SalesforceAccountsAndIndividuals: React.FC<ISalesforceAccountsAndIndividua
 						</ClayList.ItemText>
 					)}
 				</ClayList.ItemField>
-
-				<ClayList.ItemField style={{width: '120px'}}>
-					<ClayToggle
-						disabled={disabled}
-						id='accounts'
-						label={
-							accounts
-								? Liferay.Language.get('connected')
-								: Liferay.Language.get('disconnected')
-						}
-						onToggle={value => {
-							onChange({accounts: value, individuals});
-
-							// TODO: fire SyncAccounts function when endpoint is ready
-						}}
-						sizing='sm'
-						toggled={accounts && !disabled}
-					/>
-				</ClayList.ItemField>
 			</ClayList.Item>
 
 			<ClayList.Item flex>
 				<ClayList.ItemField>
-					<ClayIcon
-						aria-label={Liferay.Language.get('individuals')}
-						className='mr-2 mt-1 text-secondary'
-						symbol='users'
+					<ClayCheckbox
+						checked={enabledIndividual}
+						disabled={disabled}
+						onChange={onIndividualChange}
 					/>
 				</ClayList.ItemField>
 
-				<ClayList.ItemField expand>
+				<ClayList.ItemField>
+					<ClaySticker displayType='unstyled'>
+						<ClayIcon className='text-secondary' symbol='users' />
+					</ClaySticker>
+				</ClayList.ItemField>
+
+				<ClayList.ItemField
+					className='d-flex justify-content-center'
+					expand
+				>
 					<ClayList.ItemTitle>
 						{Liferay.Language.get('individuals')}
 					</ClayList.ItemTitle>
@@ -99,26 +103,6 @@ const SalesforceAccountsAndIndividuals: React.FC<ISalesforceAccountsAndIndividua
 							])}
 						</ClayList.ItemText>
 					)}
-				</ClayList.ItemField>
-
-				<ClayList.ItemField style={{width: '120px'}}>
-					<ClayToggle
-						disabled={disabled}
-						id='individuals'
-						label={
-							individuals
-								? Liferay.Language.get('connected')
-								: Liferay.Language.get('disconnected')
-						}
-						name={Liferay.Language.get('individuals')}
-						onToggle={value => {
-							onChange({accounts, individuals: value});
-
-							// TODO: fire SyncIndividuals function when endpoint is ready
-						}}
-						sizing='sm'
-						toggled={individuals && !disabled}
-					/>
 				</ClayList.ItemField>
 			</ClayList.Item>
 		</ClayList>

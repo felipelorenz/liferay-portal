@@ -180,7 +180,6 @@ import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
-import com.liferay.portal.test.rule.FeatureFlag;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
@@ -272,7 +271,7 @@ public class RenderLayoutStructureTagTest {
 		ObjectDefinition objectDefinition =
 			_objectDefinitionLocalService.addCustomObjectDefinition(
 				null, TestPropsValues.getUserId(), 0, null, false, true, true,
-				true, true, false, false, false, false, null,
+				true, false, false, false, false, null,
 				RandomTestUtil.randomLocaleStringMap(),
 				ObjectDefinitionTestUtil.getRandomName(), null, null,
 				RandomTestUtil.randomLocaleStringMap(), true,
@@ -295,7 +294,7 @@ public class RenderLayoutStructureTagTest {
 		ObjectDefinition relationshipObjectDefinition =
 			_objectDefinitionLocalService.addCustomObjectDefinition(
 				null, TestPropsValues.getUserId(), 0, null, false, true, true,
-				true, true, false, false, false, false, null,
+				true, false, false, false, false, null,
 				RandomTestUtil.randomLocaleStringMap(),
 				ObjectDefinitionTestUtil.getRandomName(), null, null,
 				RandomTestUtil.randomLocaleStringMap(), true,
@@ -831,7 +830,8 @@ public class RenderLayoutStructureTagTest {
 					ObjectFieldUtil.createObjectField(
 						ObjectFieldConstants.BUSINESS_TYPE_BOOLEAN,
 						ObjectFieldConstants.DB_TYPE_BOOLEAN,
-						RandomTestUtil.randomString(), "boolean")));
+						RandomTestUtil.randomString(), "boolean")),
+				false);
 
 		Layout layout = LayoutTestUtil.addTypeContentLayout(_group);
 
@@ -1721,7 +1721,6 @@ public class RenderLayoutStructureTagTest {
 		_testRenderLayoutWithLocale(layout, LocaleUtil.US, myTextValue);
 	}
 
-	@FeatureFlag("LPD-32050")
 	@Test
 	@TestInfo("LPD-48715")
 	public void testRenderCollectionStyledLayoutStructureItemWithLocalizedObjectField()
@@ -2930,7 +2929,7 @@ public class RenderLayoutStructureTagTest {
 							fileEntry, fileEntry.getFileVersion(), null,
 							StringPool.BLANK)),
 					"\" data-fileentryid=\"", fileEntry.getFileEntryId(),
-					"\"></a>")));
+					"\"")));
 	}
 
 	@Test

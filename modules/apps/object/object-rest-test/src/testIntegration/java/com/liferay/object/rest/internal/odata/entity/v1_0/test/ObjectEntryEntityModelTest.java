@@ -156,8 +156,13 @@ public class ObjectEntryEntityModelTest {
 					new IntegerEntityField(
 						"taxonomyCategoryIds", locale -> "assetCategoryIds"))
 			).put(
+				"title", new StringEntityField("title", locale -> Field.TITLE)
+			).put(
 				"userId",
 				new IntegerEntityField("userId", locale -> Field.USER_ID)
+			).put(
+				"version",
+				new IntegerEntityField("version", locale -> "version")
 			).putAll(
 				_getExpectedObjectFieldsEntityFieldsMap(customObjectFields)
 			).putAll(
@@ -359,7 +364,7 @@ public class ObjectEntryEntityModelTest {
 		ObjectDefinition objectDefinition =
 			_objectDefinitionLocalService.addCustomObjectDefinition(
 				null, TestPropsValues.getUserId(), 0, null, false, true, false,
-				true, false, false, false, false, false, null,
+				true, false, false, false, false, null,
 				LocalizedMapUtil.getLocalizedMap(objectDefinitionName),
 				objectDefinitionName, null, null,
 				LocalizedMapUtil.getLocalizedMap(objectDefinitionName), true,

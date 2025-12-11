@@ -53,6 +53,7 @@ import {config as configurationAdminWebConfig} from './tests/configuration-admin
 import {config as contentDashboardWebConfig} from './tests/content-dashboard-web/main/config';
 import {config as cookiesBannerWebConfig} from './tests/cookies-banner-web/main/config';
 import {config as depotWebConfig} from './tests/depot-web/main/config';
+import {config as digitalSalesRoomWebConfig} from './tests/digital-sales-room-web/main/config';
 import {config as dispatchWebConfig} from './tests/dispatch-web/main/config';
 import {config as documentLibraryWebConfig} from './tests/document-library-web/main/config';
 import {config as dynamicDataMappingFormWebConfig} from './tests/dynamic-data-mapping-form-web/main/config';
@@ -120,6 +121,7 @@ import {config as portalSecurityScriptManagementWebConfig} from './tests/portal-
 import {config as portalSecurityServiceAccessPolicyService} from './tests/portal-security-service-access-policy-service/main/config';
 import {config as portalToolsRestBuilderTestImpl} from './tests/portal-tools-rest-builder-test-impl/main/config';
 import {config as portalUserLocaleOptionsConfig} from './tests/portal-user-locale-options-web/main/config';
+import {config as portalWebCDNConfig} from './tests/portal-web/cdn/config';
 import {config as portalWebConfig} from './tests/portal-web/main/config';
 import {config as portalWorkflowKaleoDesignerWebConfig} from './tests/portal-workflow-kaleo-designer-web/main/config';
 import {config as portalWorkflowKaleoFormsWebConfig} from './tests/portal-workflow-kaleo-forms-web/main/config';
@@ -234,6 +236,7 @@ export default defineConfig({
 		cookiesBannerWebConfig,
 		customerConfig,
 		depotWebConfig,
+		digitalSalesRoomWebConfig,
 		dispatchWebConfig,
 		documentLibraryWebConfig,
 		dynamicDataMappingFormWebConfig,
@@ -303,6 +306,7 @@ export default defineConfig({
 		portalSecurityServiceAccessPolicyService,
 		portalToolsRestBuilderTestImpl,
 		portalUserLocaleOptionsConfig,
+		portalWebCDNConfig,
 		portalWebConfig,
 		portalWorkflowKaleoDesignerWebConfig,
 		portalWorkflowKaleoFormsWebConfig,

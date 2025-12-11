@@ -37,7 +37,6 @@ import com.liferay.object.exception.ObjectDefinitionEnableCategorizationExceptio
 import com.liferay.object.exception.ObjectDefinitionEnableCommentsException;
 import com.liferay.object.exception.ObjectDefinitionEnableFormContainerException;
 import com.liferay.object.exception.ObjectDefinitionEnableFriendlyURLCustomizationException;
-import com.liferay.object.exception.ObjectDefinitionEnableLocalizationException;
 import com.liferay.object.exception.ObjectDefinitionEnableObjectEntryHistoryException;
 import com.liferay.object.exception.ObjectDefinitionEnableObjectEntryScheduleException;
 import com.liferay.object.exception.ObjectDefinitionEnableObjectEntrySubscriptionException;
@@ -75,7 +74,6 @@ import com.liferay.object.model.ObjectDefinitionSetting;
 import com.liferay.object.model.ObjectEntry;
 import com.liferay.object.model.ObjectEntryTable;
 import com.liferay.object.model.ObjectField;
-import com.liferay.object.model.ObjectFieldModel;
 import com.liferay.object.model.ObjectFolder;
 import com.liferay.object.model.ObjectRelationship;
 import com.liferay.object.model.impl.ObjectDefinitionImpl;
@@ -240,8 +238,8 @@ public class ObjectDefinitionLocalServiceImpl
 			String externalReferenceCode, long userId, long objectFolderId,
 			String className, boolean enableComments,
 			boolean enableFormContainer, boolean enableFriendlyURLCustomization,
-			boolean enableIndexSearch, boolean enableLocalization,
-			boolean enableObjectEntryDraft, boolean enableObjectEntrySchedule,
+			boolean enableIndexSearch, boolean enableObjectEntryDraft,
+			boolean enableObjectEntrySchedule,
 			boolean enableObjectEntrySubscription,
 			boolean enableObjectEntryVersioning, String friendlyURLSeparator,
 			Map<Locale, String> labelMap, String name, String panelAppOrder,
@@ -255,7 +253,7 @@ public class ObjectDefinitionLocalServiceImpl
 		return _addObjectDefinition(
 			externalReferenceCode, userId, objectFolderId, className, null,
 			enableComments, enableFormContainer, enableFriendlyURLCustomization,
-			enableIndexSearch, enableLocalization, enableObjectEntryDraft,
+			enableIndexSearch, enableObjectEntryDraft,
 			enableObjectEntrySchedule, enableObjectEntrySubscription,
 			enableObjectEntryVersioning, friendlyURLSeparator, labelMap, true,
 			name, panelAppOrder, panelCategoryKey, null, null, pluralLabelMap,
@@ -343,11 +341,9 @@ public class ObjectDefinitionLocalServiceImpl
 				systemObjectDefinitionManager.getExternalReferenceCode(),
 				userId, objectFolderId,
 				systemObjectDefinitionManager.getModelClassName(),
-				table.getTableName(), false, false, false, true,
-				systemObjectDefinitionManager.isEnableLocalization(), false,
-				false, false, false, null,
-				systemObjectDefinitionManager.getLabelMap(), false,
-				systemObjectDefinitionManager.getName(), null, null,
+				table.getTableName(), false, false, false, true, false, false,
+				false, false, null, systemObjectDefinitionManager.getLabelMap(),
+				false, systemObjectDefinitionManager.getName(), null, null,
 				primaryKeyColumn.getName(), primaryKeyColumn.getName(),
 				systemObjectDefinitionManager.getPluralLabelMap(), false,
 				systemObjectDefinitionManager.getScope(),
@@ -441,8 +437,8 @@ public class ObjectDefinitionLocalServiceImpl
 			String externalReferenceCode, long userId, long objectFolderId,
 			String className, String dbTableName, boolean enableComments,
 			boolean enableFormContainer, boolean enableFriendlyURLCustomization,
-			boolean enableIndexSearch, boolean enableLocalization,
-			boolean enableObjectEntryDraft, boolean enableObjectEntrySchedule,
+			boolean enableIndexSearch, boolean enableObjectEntryDraft,
+			boolean enableObjectEntrySchedule,
 			boolean enableObjectEntrySubscription,
 			boolean enableObjectEntryVersioning, String friendlyURLSeparator,
 			Map<Locale, String> labelMap, boolean modifiable, String name,
@@ -468,14 +464,14 @@ public class ObjectDefinitionLocalServiceImpl
 			externalReferenceCode, userId, objectFolderId, className,
 			dbTableName, enableComments, enableFormContainer,
 			enableFriendlyURLCustomization, enableIndexSearch,
-			enableLocalization, enableObjectEntryDraft,
-			enableObjectEntrySchedule, enableObjectEntrySubscription,
-			enableObjectEntryVersioning, friendlyURLSeparator, labelMap,
-			modifiable, name, panelAppOrder, panelCategoryKey,
-			pkObjectFieldDBColumnName, pkObjectFieldName, pluralLabelMap,
-			portlet, scope, ObjectDefinitionConstants.STORAGE_TYPE_DEFAULT,
-			true, titleObjectFieldName, version, status,
-			objectDefinitionSettings, objectFields, workflowDefinitionLinks);
+			enableObjectEntryDraft, enableObjectEntrySchedule,
+			enableObjectEntrySubscription, enableObjectEntryVersioning,
+			friendlyURLSeparator, labelMap, modifiable, name, panelAppOrder,
+			panelCategoryKey, pkObjectFieldDBColumnName, pkObjectFieldName,
+			pluralLabelMap, portlet, scope,
+			ObjectDefinitionConstants.STORAGE_TYPE_DEFAULT, true,
+			titleObjectFieldName, version, status, objectDefinitionSettings,
+			objectFields, workflowDefinitionLinks);
 	}
 
 	@Override
@@ -706,13 +702,7 @@ public class ObjectDefinitionLocalServiceImpl
 
 			_dropTable(objectDefinition.getDBTableName());
 			_dropTable(objectDefinition.getExtensionDBTableName());
-
-			if (FeatureFlagManagerUtil.isEnabled(
-					objectDefinition.getCompanyId(), "LPD-32050") ||
-				objectDefinition.isEnableLocalization()) {
-
-				_dropTable(objectDefinition.getLocalizationDBTableName());
-			}
+			_dropTable(objectDefinition.getLocalizationDBTableName());
 
 			undeployObjectDefinition(objectDefinition);
 
@@ -1222,8 +1212,8 @@ public class ObjectDefinitionLocalServiceImpl
 			boolean active, String className, boolean enableCategorization,
 			boolean enableComments, boolean enableFormContainer,
 			boolean enableFriendlyURLCustomization, boolean enableIndexSearch,
-			boolean enableLocalization, boolean enableObjectEntryDraft,
-			boolean enableObjectEntryHistory, boolean enableObjectEntrySchedule,
+			boolean enableObjectEntryDraft, boolean enableObjectEntryHistory,
+			boolean enableObjectEntrySchedule,
 			boolean enableObjectEntrySubscription,
 			boolean enableObjectEntryVersioning, String friendlyURLSeparator,
 			Map<Locale, String> labelMap, String name, String panelAppOrder,
@@ -1248,13 +1238,12 @@ public class ObjectDefinitionLocalServiceImpl
 			objectFolderId, titleObjectFieldId, accountEntryRestricted, active,
 			className, null, enableCategorization, enableComments,
 			enableFormContainer, enableFriendlyURLCustomization,
-			enableIndexSearch, enableLocalization, enableObjectEntryDraft,
-			enableObjectEntryHistory, enableObjectEntrySchedule,
-			enableObjectEntrySubscription, enableObjectEntryVersioning,
-			friendlyURLSeparator, labelMap, name, panelAppOrder,
-			panelCategoryKey, portlet, null, null, pluralLabelMap, scope,
-			status, objectDefinitionSettings, objectFields,
-			workflowDefinitionLinks);
+			enableIndexSearch, enableObjectEntryDraft, enableObjectEntryHistory,
+			enableObjectEntrySchedule, enableObjectEntrySubscription,
+			enableObjectEntryVersioning, friendlyURLSeparator, labelMap, name,
+			panelAppOrder, panelCategoryKey, portlet, null, null,
+			pluralLabelMap, scope, status, objectDefinitionSettings,
+			objectFields, workflowDefinitionLinks);
 	}
 
 	@Indexable(type = IndexableType.REINDEX)
@@ -1428,8 +1417,8 @@ public class ObjectDefinitionLocalServiceImpl
 			String externalReferenceCode, long userId, long objectFolderId,
 			String className, String dbTableName, boolean enableComments,
 			boolean enableFormContainer, boolean enableFriendlyURLCustomization,
-			boolean enableIndexSearch, boolean enableLocalization,
-			boolean enableObjectEntryDraft, boolean enableObjectEntrySchedule,
+			boolean enableIndexSearch, boolean enableObjectEntryDraft,
+			boolean enableObjectEntrySchedule,
 			boolean enableObjectEntrySubscription,
 			boolean enableObjectEntryVersioning, String friendlyURLSeparator,
 			Map<Locale, String> labelMap, boolean modifiable, String name,
@@ -1475,8 +1464,6 @@ public class ObjectDefinitionLocalServiceImpl
 		_validateEnableFriendlyURLCustomization(
 			enableFriendlyURLCustomization, friendlyURLSeparator, modifiable,
 			storageType, system);
-		_validateEnableLocalization(
-			user.getCompanyId(), enableLocalization, modifiable);
 		_validateEnableObjectEntrySchedule(
 			enableObjectEntrySchedule, modifiable, null, system);
 		_validateEnableObjectEntrySubscription(
@@ -1515,7 +1502,6 @@ public class ObjectDefinitionLocalServiceImpl
 		objectDefinition.setEnableFriendlyURLCustomization(
 			enableFriendlyURLCustomization);
 		objectDefinition.setEnableIndexSearch(enableIndexSearch);
-		objectDefinition.setEnableLocalization(enableLocalization);
 		objectDefinition.setEnableObjectEntryDraft(enableObjectEntryDraft);
 
 		if (FeatureFlagManagerUtil.isEnabled(
@@ -2387,22 +2373,6 @@ public class ObjectDefinitionLocalServiceImpl
 			_objectFieldPersistence.findByObjectDefinitionId(
 				objectDefinition.getObjectDefinitionId());
 
-		if (!FeatureFlagManagerUtil.isEnabled(
-				objectDefinition.getCompanyId(), "LPD-32050") &&
-			!objectDefinition.isEnableLocalization() &&
-			ListUtil.exists(objectFields, ObjectFieldModel::isLocalized)) {
-
-			_handleException(
-				new ObjectDefinitionEnableLocalizationException(
-					"You cannot disable entry translation for the object " +
-						"definition because translation is enabled for " +
-							"custom fields",
-					"you-cannot-disable-entry-translation-for-the-object-" +
-						"definition-because-translation-is-enabled-for-" +
-							"custom-fields"),
-				"enableLocalization", false);
-		}
-
 		if (!ListUtil.exists(
 				objectFields, objectField -> !objectField.isMetadata())) {
 
@@ -2564,9 +2534,8 @@ public class ObjectDefinitionLocalServiceImpl
 			boolean active, String className, String dbTableName,
 			boolean enableCategorization, boolean enableComments,
 			boolean enableFormContainer, boolean enableFriendlyURLCustomization,
-			boolean enableIndexSearch, boolean enableLocalization,
-			boolean enableObjectEntryDraft, boolean enableObjectEntryHistory,
-			boolean enableObjectEntrySchedule,
+			boolean enableIndexSearch, boolean enableObjectEntryDraft,
+			boolean enableObjectEntryHistory, boolean enableObjectEntrySchedule,
 			boolean enableObjectEntrySubscription,
 			boolean enableObjectEntryVersioning, String friendlyURLSeparator,
 			Map<Locale, String> labelMap, String name, String panelAppOrder,
@@ -2624,9 +2593,6 @@ public class ObjectDefinitionLocalServiceImpl
 			enableFriendlyURLCustomization, friendlyURLSeparator,
 			objectDefinition.isModifiable(), objectDefinition.getStorageType(),
 			objectDefinition.isSystem());
-		_validateEnableLocalization(
-			objectDefinition.getCompanyId(), enableLocalization,
-			objectDefinition.isModifiable());
 		_validateEnableObjectEntryHistory(
 			objectDefinition.isEnableObjectEntryHistory() !=
 				enableObjectEntryHistory,
@@ -2786,7 +2752,6 @@ public class ObjectDefinitionLocalServiceImpl
 
 		objectDefinition.setDBTableName(dbTableName);
 		objectDefinition.setEnableIndexSearch(enableIndexSearch);
-		objectDefinition.setEnableLocalization(enableLocalization);
 		objectDefinition.setName(name);
 		objectDefinition.setPKObjectFieldDBColumnName(
 			pkObjectFieldDBColumnName);
@@ -3119,25 +3084,6 @@ public class ObjectDefinitionLocalServiceImpl
 					"Enable friendly URL customization is only allowed for " +
 						"object definitions with the default storage type"),
 				"enableFriendlyURLCustomization", true);
-		}
-	}
-
-	private void _validateEnableLocalization(
-			long companyId, boolean enableLocalization, boolean modifiable)
-		throws PortalException {
-
-		if (enableLocalization && !modifiable) {
-			return;
-		}
-
-		if (FeatureFlagManagerUtil.isEnabled(companyId, "LPD-32050") &&
-			!enableLocalization && modifiable) {
-
-			_handleException(
-				new ObjectDefinitionEnableLocalizationException(
-					"Enable localization must be true for modifiable object " +
-						"definitions"),
-				"enableLocalization", false);
 		}
 	}
 

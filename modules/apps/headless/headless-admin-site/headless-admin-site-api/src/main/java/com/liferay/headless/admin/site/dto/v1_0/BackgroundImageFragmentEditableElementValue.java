@@ -59,35 +59,36 @@ public class BackgroundImageFragmentEditableElementValue
 	}
 
 	@io.swagger.v3.oas.annotations.media.Schema(
-		description = "The fragment editable element's background image."
+		description = "The fragment editable element's background image value."
 	)
 	@Valid
-	public FragmentImage getBackgroundFragmentImage() {
-		if (_backgroundFragmentImageSupplier != null) {
-			backgroundFragmentImage = _backgroundFragmentImageSupplier.get();
+	public FragmentImageValue getBackgroundFragmentImageValue() {
+		if (_backgroundFragmentImageValueSupplier != null) {
+			backgroundFragmentImageValue =
+				_backgroundFragmentImageValueSupplier.get();
 
-			_backgroundFragmentImageSupplier = null;
+			_backgroundFragmentImageValueSupplier = null;
 		}
 
-		return backgroundFragmentImage;
+		return backgroundFragmentImageValue;
 	}
 
-	public void setBackgroundFragmentImage(
-		FragmentImage backgroundFragmentImage) {
+	public void setBackgroundFragmentImageValue(
+		FragmentImageValue backgroundFragmentImageValue) {
 
-		this.backgroundFragmentImage = backgroundFragmentImage;
+		this.backgroundFragmentImageValue = backgroundFragmentImageValue;
 
-		_backgroundFragmentImageSupplier = null;
+		_backgroundFragmentImageValueSupplier = null;
 	}
 
 	@JsonIgnore
-	public void setBackgroundFragmentImage(
-		UnsafeSupplier<FragmentImage, Exception>
-			backgroundFragmentImageUnsafeSupplier) {
+	public void setBackgroundFragmentImageValue(
+		UnsafeSupplier<FragmentImageValue, Exception>
+			backgroundFragmentImageValueUnsafeSupplier) {
 
-		_backgroundFragmentImageSupplier = () -> {
+		_backgroundFragmentImageValueSupplier = () -> {
 			try {
-				return backgroundFragmentImageUnsafeSupplier.get();
+				return backgroundFragmentImageValueUnsafeSupplier.get();
 			}
 			catch (RuntimeException runtimeException) {
 				throw runtimeException;
@@ -99,13 +100,13 @@ public class BackgroundImageFragmentEditableElementValue
 	}
 
 	@GraphQLField(
-		description = "The fragment editable element's background image."
+		description = "The fragment editable element's background image value."
 	)
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
-	protected FragmentImage backgroundFragmentImage;
+	protected FragmentImageValue backgroundFragmentImageValue;
 
 	@JsonIgnore
-	private Supplier<FragmentImage> _backgroundFragmentImageSupplier;
+	private Supplier<FragmentImageValue> _backgroundFragmentImageValueSupplier;
 
 	@Override
 	public boolean equals(Object object) {
@@ -137,16 +138,17 @@ public class BackgroundImageFragmentEditableElementValue
 
 		sb.append("{");
 
-		FragmentImage backgroundFragmentImage = getBackgroundFragmentImage();
+		FragmentImageValue backgroundFragmentImageValue =
+			getBackgroundFragmentImageValue();
 
-		if (backgroundFragmentImage != null) {
+		if (backgroundFragmentImageValue != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
 			}
 
-			sb.append("\"backgroundFragmentImage\": ");
+			sb.append("\"backgroundFragmentImageValue\": ");
 
-			sb.append(String.valueOf(backgroundFragmentImage));
+			sb.append(String.valueOf(backgroundFragmentImageValue));
 		}
 
 		Type type = getType();

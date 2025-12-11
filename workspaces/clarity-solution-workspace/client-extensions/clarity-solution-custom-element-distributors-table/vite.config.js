@@ -12,9 +12,9 @@ export default defineConfig({
 		rollupOptions: {
 			external: [
 				'/@clayui/*/',
+				'clarity-solution-js-import-maps-entry',
 				'react',
 				'react-dom',
-				'clarity-distributors-api',
 			],
 			output: {
 				assetFileNames: '[name]-[hash][extname]',

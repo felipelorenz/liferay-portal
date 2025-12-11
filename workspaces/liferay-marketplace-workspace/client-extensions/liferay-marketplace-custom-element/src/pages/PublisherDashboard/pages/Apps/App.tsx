@@ -11,6 +11,7 @@ import {useMemo} from 'react';
 import {useLocation, useNavigate, useParams} from 'react-router-dom';
 import useSWR from 'swr';
 
+import {breadcrumbStore} from '../../../../components/Breadcrumb/BreadcrumbStore';
 import {
 	ProductWorkflowStatusCode,
 	ProductWorkflowStatusLabel,
@@ -57,6 +58,11 @@ const App: React.FC<AppProps> = ({header}) => {
 	if (isLoading || !product) {
 		return null;
 	}
+
+	breadcrumbStore.send({
+		replacements: {[productId as string]: product.name.en_US},
+		type: 'setReplacements',
+	});
 
 	const thumbnail = getThumbnailByProductAttachment(product?.images);
 

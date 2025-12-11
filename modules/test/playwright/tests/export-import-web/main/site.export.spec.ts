@@ -17,34 +17,37 @@ import getRandomString from '../../../utils/getRandomString';
 import {getTempDir} from '../../../utils/temp';
 import {exportImportPagesTest} from './fixtures/exportImportPagesTest';
 
-export const test = mergeTests(
+export const baseTest = mergeTests(
 	dataApiHelpersTest,
 	exportImportPagesTest,
-	featureFlagsTest({
-		'LPD-35914': {enabled: false},
-	}),
+	isolatedSiteTest,
 	loginTest(),
 	productMenuPageTest,
 	uiElementsPageTest
 );
 
+export const test = mergeTests(
+	baseTest,
+	featureFlagsTest({
+		'LPD-35914': {enabled: false},
+	})
+);
+
 export const testWithExportImportAtInstanceLevelFF = mergeTests(
-	test,
+	baseTest,
 	featureFlagsTest({
 		'LPD-35914': {enabled: true},
 	})
 );
 
 export const testWithHeadlessContentPagesFF = mergeTests(
-	testWithExportImportAtInstanceLevelFF,
+	baseTest,
 	featureFlagsTest({
 		'LPD-35443': {enabled: true},
+		'LPD-35914': {enabled: true},
 	}),
-	isolatedSiteTest,
 	masterPagesPagesTest,
-	pageTemplatesPagesTest,
-	productMenuPageTest,
-	uiElementsPageTest
+	pageTemplatesPagesTest
 );
 
 async function expectExportName(exportImportPage, taskName: string) {
@@ -177,5 +180,20 @@ testWithHeadlessContentPagesFF(
 		expect(
 			exportImportPage.page.getByText('Master Pages (2)', {exact: true})
 		).toBeVisible();
+	}
+);
+
+testWithHeadlessContentPagesFF(
+	'cannot see Site Pages checkbox',
+	async ({exportImportPage, productMenuPage}) => {
+		await productMenuPage.openProductMenuIfClosed();
+		await productMenuPage.goToPublishingExport();
+		await productMenuPage.page
+			.getByRole('link', {name: 'Custom Export'})
+			.click();
+
+		await expect(
+			exportImportPage.page.getByLabel(/Site Pages\s+\d+\s+Items/)
+		).not.toBeVisible();
 	}
 );

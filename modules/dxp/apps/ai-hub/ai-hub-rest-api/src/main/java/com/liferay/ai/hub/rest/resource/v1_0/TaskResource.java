@@ -14,15 +14,12 @@ import com.liferay.portal.odata.filter.ExpressionConvert;
 import com.liferay.portal.odata.filter.FilterParserProvider;
 import com.liferay.portal.odata.sort.SortParserProvider;
 import com.liferay.portal.vulcan.accept.language.AcceptLanguage;
-import com.liferay.portal.vulcan.batch.engine.resource.VulcanBatchEngineExportTaskResource;
-import com.liferay.portal.vulcan.batch.engine.resource.VulcanBatchEngineImportTaskResource;
 
 import jakarta.annotation.Generated;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
 import java.util.Collections;
@@ -47,9 +44,8 @@ public interface TaskResource {
 	public void getTaskSubscribe(jakarta.ws.rs.sse.SseEventSink sseEventSink)
 		throws Exception;
 
-	public Task postTask(Task task) throws Exception;
-
-	public Response postTaskBatch(String callbackURL, Object object)
+	public Task postByExternalReferenceCodeTask(
+			String externalReferenceCode, Task task)
 		throws Exception;
 
 	public default void setContextAcceptLanguage(
@@ -91,14 +87,6 @@ public interface TaskResource {
 	public void setRoleLocalService(RoleLocalService roleLocalService);
 
 	public void setSortParserProvider(SortParserProvider sortParserProvider);
-
-	public void setVulcanBatchEngineExportTaskResource(
-		VulcanBatchEngineExportTaskResource
-			vulcanBatchEngineExportTaskResource);
-
-	public void setVulcanBatchEngineImportTaskResource(
-		VulcanBatchEngineImportTaskResource
-			vulcanBatchEngineImportTaskResource);
 
 	public default com.liferay.portal.kernel.search.filter.Filter toFilter(
 		String filterString) {

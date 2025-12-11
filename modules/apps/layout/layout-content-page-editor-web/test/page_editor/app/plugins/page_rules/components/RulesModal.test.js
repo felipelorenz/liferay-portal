@@ -3,12 +3,14 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {act, fireEvent, render, screen} from '@testing-library/react';
+import {act, render, screen} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import React from 'react';
 
 import '@testing-library/jest-dom';
 
 import {LAYOUT_DATA_ITEM_TYPES} from '../../../../../../src/main/resources/META-INF/resources/page_editor/app/config/constants/layoutDataItemTypes';
+import {RulesModalContext} from '../../../../../../src/main/resources/META-INF/resources/page_editor/app/contexts/RulesModalContext';
 import {StoreAPIContextProvider} from '../../../../../../src/main/resources/META-INF/resources/page_editor/app/contexts/StoreContext';
 import addRule from '../../../../../../src/main/resources/META-INF/resources/page_editor/app/thunks/addRule';
 import {
@@ -34,20 +36,59 @@ jest.mock(
 	() => jest.fn(() => [{id: 'condition-id'}])
 );
 
+jest.mock(
+	'../../../../../../src/main/resources/META-INF/resources/page_editor/app/utils/isInputFragment',
+	() => jest.fn(() => false)
+);
+
 jest.mock('frontend-js-components-web', () => ({
 	...jest.requireActual('frontend-js-components-web'),
 	openToast: jest.fn(),
 }));
 
-const renderComponent = ({rules = []} = {}) => {
+const DEFAULT_RULE = {
+	actions: [{id: 'action-1', type: undefined}],
+	conditionType: 'all',
+	conditions: [{id: 'condition-1', type: undefined}],
+	name: 'Rule',
+};
+
+function MockRulesContextProvider({children, editingRule: initialEditingRule}) {
+	const [editingRule, setEditingRule] = React.useState(initialEditingRule);
+	const [visible, setVisible] = React.useState(true);
+	const [trigger, setTrigger] = React.useState(null);
+	const [shouldValidate, setShouldValidate] = React.useState(false);
+
+	return (
+		<RulesModalContext.Provider
+			value={{
+				editingRule,
+				setEditingRule,
+				setShouldValidate,
+				setTrigger,
+				setVisible,
+				shouldValidate,
+				trigger,
+				visible,
+			}}
+		>
+			{children}
+		</RulesModalContext.Provider>
+	);
+}
+
+const renderComponent = ({rules = [], editingRule = DEFAULT_RULE} = {}) => {
+	jest.useFakeTimers();
+
 	render(
 		<StoreAPIContextProvider
 			dispatch={() => Promise.resolve()}
 			getState={() => ({
 				fragmentEntryLinks: [],
 				layoutData: {
+					deletedItems: [],
 					items: {
-						itemId: {
+						item1: {
 							config: {
 								name: 'containercillo',
 							},
@@ -59,34 +100,32 @@ const renderComponent = ({rules = []} = {}) => {
 				},
 			})}
 		>
-			<RulesModal onCloseModal={() => {}} />
+			<MockRulesContextProvider editingRule={editingRule}>
+				<RulesModal onCloseModal={() => {}} />
+			</MockRulesContextProvider>
 		</StoreAPIContextProvider>
 	);
 
 	act(() => {
 		jest.advanceTimersByTime(100);
 	});
+
+	jest.useRealTimers();
 };
 
-const selectPickerOption = (pickerLabel, optionValue) => {
-	fireEvent.click(screen.getByLabelText(pickerLabel));
+const selectPickerOption = async (pickerLabel, optionValue) => {
+	const picker = await screen.findByLabelText(pickerLabel);
 
-	fireEvent.click(
-		screen.getByText(optionValue, {
-			selector: '[role="option"]',
-		})
-	);
+	await userEvent.click(picker);
+
+	const option = await screen.findByText(optionValue, {
+		selector: '[role="option"]',
+	});
+
+	await userEvent.click(option);
 };
 
 describe('RulesSidebar', () => {
-	afterAll(() => {
-		jest.useRealTimers();
-	});
-
-	beforeAll(() => {
-		jest.useFakeTimers();
-	});
-
 	beforeEach(() => {
 		disposeCache();
 		initializeCache();
@@ -111,33 +150,39 @@ describe('RulesSidebar', () => {
 	it('does not allow saving an incomplete rule', async () => {
 		renderComponent();
 
-		fireEvent.click(screen.getByText('save'));
+		await userEvent.click(screen.getByText('save'));
 
 		expect(
-			screen.getByText(
-				'the-rule-is-incomplete.-please-check-that-the-conditions-and-actions-are-completed-before-saving'
-			)
+			screen.getByText('please-review-the-following-fields-before-saving')
 		).toBeInTheDocument();
 	});
 
 	it('does not allow saving an unnamed rule', async () => {
-		renderComponent();
+		renderComponent({editingRule: {...DEFAULT_RULE, name: ''}});
 
-		fireEvent.change(screen.getByLabelText('rule-name'), {
-			target: {value: ''},
+		await userEvent.click(screen.getByText('save'));
+
+		const nameInput = screen.getByLabelText('rule-name');
+
+		await expect(nameInput).toHaveAccessibleDescription(
+			'this-field-is-required'
+		);
+
+		const nameErrorLink = screen.getByRole('link', {
+			name: 'the-rule-name-field-is-required',
 		});
 
-		fireEvent.click(screen.getByText('save'));
+		await userEvent.click(nameErrorLink);
 
-		expect(screen.getByText('this-field-is-required')).toBeInTheDocument();
+		await expect(nameInput).toHaveFocus();
 	});
 
 	it('does allow completing a condition', async () => {
 		renderComponent();
 
-		selectPickerOption('select-item-for-the-condition', 'user');
-		selectPickerOption('select-condition', 'is-the-user');
-		selectPickerOption('select-user', 'user1');
+		await selectPickerOption('select-item-for-the-condition', 'user');
+		await selectPickerOption('select-condition', 'is-the-user');
+		await selectPickerOption('select-user', 'user1');
 
 		expect(
 			screen.getByText('user1', {selector: '[role="combobox"]'})
@@ -147,25 +192,68 @@ describe('RulesSidebar', () => {
 	it('does allow completing a action', async () => {
 		renderComponent();
 
-		selectPickerOption('select-action', 'show');
-		selectPickerOption('select-fragment-for-the-action', 'containercillo');
+		await selectPickerOption('select-action', 'show');
+
+		await selectPickerOption(
+			'select-fragment-for-the-action',
+			'containercillo'
+		);
 
 		expect(
 			screen.getByText('containercillo', {selector: '[role="combobox"]'})
 		).toBeInTheDocument();
 	});
 
+	it('limits action types to show/hide for readOnly non-input fragments', async () => {
+		renderComponent({
+			editingRule: {
+				...DEFAULT_RULE,
+				actions: [
+					{
+						id: 'action-1',
+						itemId: 'item1',
+						readOnly: true,
+						type: undefined,
+					},
+				],
+			},
+		});
+
+		const picker = await screen.findByLabelText('select-action');
+
+		await userEvent.click(picker);
+
+		expect(
+			await screen.findByText('show', {selector: '[role="option"]'})
+		).toBeInTheDocument();
+
+		expect(
+			await screen.findByText('hide', {selector: '[role="option"]'})
+		).toBeInTheDocument();
+
+		expect(
+			screen.queryByText('enable', {selector: '[role="option"]'})
+		).not.toBeInTheDocument();
+
+		expect(
+			screen.queryByText('disable', {selector: '[role="option"]'})
+		).not.toBeInTheDocument();
+	});
+
 	it('allows saving a rule', async () => {
 		renderComponent();
 
-		selectPickerOption('select-item-for-the-condition', 'user');
-		selectPickerOption('select-condition', 'is-the-user');
-		selectPickerOption('select-user', 'user1');
+		await selectPickerOption('select-item-for-the-condition', 'user');
+		await selectPickerOption('select-condition', 'is-the-user');
+		await selectPickerOption('select-user', 'user1');
 
-		selectPickerOption('select-action', 'show');
-		selectPickerOption('select-fragment-for-the-action', 'containercillo');
+		await selectPickerOption('select-action', 'show');
+		await selectPickerOption(
+			'select-fragment-for-the-action',
+			'containercillo'
+		);
 
-		fireEvent.click(screen.getByText('save'));
+		await userEvent.click(screen.getByText('save'));
 
 		expect(addRule).toBeCalledWith(
 			expect.objectContaining({
@@ -185,7 +273,7 @@ describe('RulesSidebar', () => {
 						type: 'user',
 					}),
 				],
-				name: 'rule',
+				name: 'Rule',
 			})
 		);
 	});
@@ -193,13 +281,11 @@ describe('RulesSidebar', () => {
 	it('removes selection in first condition when pressing delete condition', async () => {
 		renderComponent();
 
-		selectPickerOption('select-item-for-the-condition', 'user');
-		selectPickerOption('select-condition', 'is-the-user');
-		selectPickerOption('select-user', 'user1');
+		await selectPickerOption('select-item-for-the-condition', 'user');
+		await selectPickerOption('select-condition', 'is-the-user');
+		await selectPickerOption('select-user', 'user1');
 
-		act(() => {
-			fireEvent.click(screen.getByTitle('delete-condition'));
-		});
+		await userEvent.click(screen.getByTitle('delete-condition'));
 
 		expect(screen.queryByText('select-condition')).not.toBeInTheDocument();
 		expect(screen.queryByText('select-user')).not.toBeInTheDocument();
@@ -208,12 +294,13 @@ describe('RulesSidebar', () => {
 	it('removes selection in first action when pressing delete action', async () => {
 		renderComponent();
 
-		selectPickerOption('select-action', 'show');
-		selectPickerOption('select-fragment-for-the-action', 'containercillo');
+		await selectPickerOption('select-action', 'show');
+		await selectPickerOption(
+			'select-fragment-for-the-action',
+			'containercillo'
+		);
 
-		act(() => {
-			fireEvent.click(screen.getByTitle('delete-action'));
-		});
+		await userEvent.click(screen.getByTitle('delete-action'));
 
 		expect(
 			screen.queryByText('select-item-for-the-action')
@@ -221,5 +308,88 @@ describe('RulesSidebar', () => {
 		expect(
 			screen.queryByText('select-fragment-for-the-action')
 		).not.toBeInTheDocument();
+	});
+
+	it('shows all errors in the error summary with links', async () => {
+		const getLink = (name) => screen.queryByRole('link', {name});
+
+		renderComponent();
+
+		await userEvent.click(screen.getByText('save'));
+
+		const firstConditionPicker = getLink('select-item-for-the-condition');
+
+		await expect(firstConditionPicker).toBeInTheDocument();
+		await expect(getLink('select-action')).toBeInTheDocument();
+
+		await userEvent.click(firstConditionPicker);
+
+		await expect(
+			screen.getByRole('combobox', {
+				name: 'select-item-for-the-condition',
+			})
+		).toHaveFocus();
+
+		await selectPickerOption('select-item-for-the-condition', 'user');
+
+		await userEvent.click(screen.getByText('save'));
+
+		await expect(firstConditionPicker).not.toBeInTheDocument();
+		await expect(getLink('select-condition')).toBeInTheDocument();
+		await expect(getLink('select-action')).toBeInTheDocument();
+
+		await selectPickerOption('select-condition', 'is-the-user');
+
+		await userEvent.click(screen.getByText('save'));
+
+		await expect(getLink('select-condition')).not.toBeInTheDocument();
+		await expect(getLink('select-user')).toBeInTheDocument();
+
+		await selectPickerOption('select-user', 'user1');
+
+		await userEvent.click(screen.getByText('save'));
+
+		await expect(getLink('select-user')).not.toBeInTheDocument();
+
+		await selectPickerOption('select-action', 'hide');
+
+		await userEvent.click(screen.getByText('save'));
+
+		await expect(getLink('select-action')).not.toBeInTheDocument();
+		await expect(
+			getLink('select-fragment-for-the-action')
+		).toBeInTheDocument();
+
+		await selectPickerOption(
+			'select-fragment-for-the-action',
+			'containercillo'
+		);
+
+		await userEvent.click(screen.getByText('save'));
+
+		await expect(addRule).toBeCalled();
+	});
+
+	it('resets the fragment when the action changes', async () => {
+		renderComponent({
+			editingRule: {
+				...DEFAULT_RULE,
+				actions: [{id: 'action-1', itemId: 'item1', type: 'show'}],
+			},
+		});
+
+		await expect(
+			screen.getByRole('combobox', {
+				name: 'select-fragment-for-the-action',
+			})
+		).toHaveTextContent('containercillo');
+
+		await selectPickerOption('select-action', 'hide');
+
+		await expect(
+			screen.getByRole('combobox', {
+				name: 'select-fragment-for-the-action',
+			})
+		).toHaveTextContent('select');
 	});
 });

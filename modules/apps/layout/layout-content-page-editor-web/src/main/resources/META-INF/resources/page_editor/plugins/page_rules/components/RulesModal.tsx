@@ -5,84 +5,94 @@
 
 import ClayAlert from '@clayui/alert';
 import ClayButton from '@clayui/button';
-import ClayForm, {ClayInput} from '@clayui/form';
+import {ClayInput} from '@clayui/form';
 import ClayIcon from '@clayui/icon';
 import ClayModal, {useModal} from '@clayui/modal';
 import {ScreenReaderAnnouncerContextProvider} from '@liferay/layout-js-components-web';
-import classNames from 'classnames';
 import {openToast, useId} from 'frontend-js-components-web';
-import React, {useEffect, useRef, useState} from 'react';
-import {v4 as uuidv4} from 'uuid';
+import {sub} from 'frontend-js-web';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 
-import {useDispatch, useSelector} from '../../../app/contexts/StoreContext';
+import {
+	useRulesModal,
+	useRulesModalState,
+	useTriggerRuleValidation,
+} from '../../../app/contexts/RulesModalContext';
+import {useDispatch} from '../../../app/contexts/StoreContext';
 import addRule from '../../../app/thunks/addRule';
 import updateRule from '../../../app/thunks/updateRule';
-import {Rule} from '../../../types/Rule';
-import {Action} from './Action';
-import {Condition} from './Condition';
+import {RuleError} from '../../../types/Rule';
 import {
-	ConditionType,
 	RuleBuilderActionSection,
 	RuleBuilderConditionSection,
 } from './RuleBuilderSection';
+import RuleField from './RuleField';
 
-export default function RulesModal({
-	editingRule,
-	onCloseModal,
-}: {
-	editingRule?: Rule | null;
-	onCloseModal: (id: string | undefined) => void;
-}) {
-	const {observer, onClose} = useModal({
-		onClose: () => onCloseModal(editingRule?.id),
-	});
+export default function RulesModal() {
+	const {editingRule, visible} = useRulesModalState();
+	const triggerRuleValidation = useTriggerRuleValidation();
 
-	const layoutData = useSelector((state) => state.layoutData);
-
-	const rules = layoutData.pageRules;
+	const {closeRulesModal, updateEditingRule} = useRulesModal();
 
 	const dispatch = useDispatch();
 	const nameId = useId();
-
-	const [name, setName] = useState(
-		editingRule?.name || getDefaultName(rules)
-	);
+	const nameInputRef = useRef<HTMLInputElement | null>(null);
 
 	const [nameError, setNameError] = useState(false);
-	const [ruleError, setRuleError] = useState(false);
+	const [ruleErrors, setRuleErrors] = useState<RuleError[]>([]);
 
-	const [actions, setActions] = useState<Action[]>(
-		() => editingRule?.actions || [{id: uuidv4(), type: undefined}]
-	);
-	const [conditions, setConditions] = useState<Condition[]>(
-		() => editingRule?.conditions || [{id: uuidv4(), type: undefined}]
-	);
-	const [conditionType, setConditionType] = useState<ConditionType>('all');
+	const {observer, onClose} = useModal({
+		onClose: () => {
+			setRuleErrors([]);
+			closeRulesModal();
+		},
+	});
 
-	const onSave = () => {
-		if (!name) {
+	const onSave = useCallback(() => {
+		const errors: RuleError[] = [];
+
+		if (!editingRule.name) {
 			setNameError(true);
 
+			errors.push({
+				element: nameInputRef.current!,
+				message: sub(
+					Liferay.Language.get('the-x-field-is-required'),
+					Liferay.Language.get('rule-name')
+				),
+			});
+		}
+
+		[...editingRule.conditions, ...editingRule.actions].forEach((item) => {
+			if (item.error) {
+				errors.push(item.error);
+			}
+		});
+
+		if (errors.length) {
+			setRuleErrors(errors);
+			triggerRuleValidation();
+
 			return;
 		}
 
-		if (
-			actions.some((action) => !action.itemId) ||
-			conditions.some((condition) => !condition.options?.value)
-		) {
-			setRuleError(true);
+		// Remove readOnly and error props so it's not persisted
 
-			return;
-		}
+		const rule = {
+			...editingRule,
+			actions: editingRule.actions.map(
+				({error: _error, readOnly: _readOnly, ...action}) => action
+			),
+			conditions: editingRule.conditions.map(
+				({error: _error, ...condition}) => condition
+			),
+		};
 
-		if (editingRule) {
+		if (rule.id) {
 			dispatch(
 				updateRule({
-					actions,
-					conditionType,
-					conditions,
-					name,
-					ruleId: editingRule.id,
+					...rule,
+					ruleId: rule.id,
 				})
 			).then(() =>
 				openToast({
@@ -94,14 +104,7 @@ export default function RulesModal({
 			);
 		}
 		else {
-			dispatch(
-				addRule({
-					actions,
-					conditionType,
-					conditions,
-					name,
-				})
-			).then(() =>
+			dispatch(addRule(rule)).then(() =>
 				openToast({
 					message: Liferay.Language.get(
 						'the-rule-was-created-successfully'
@@ -112,11 +115,15 @@ export default function RulesModal({
 		}
 
 		onClose();
-	};
+	}, [dispatch, editingRule, onClose, triggerRuleValidation]);
 
-	const title = editingRule
+	const title = editingRule.id
 		? Liferay.Language.get('edit-rule')
 		: Liferay.Language.get('new-rule');
+
+	if (!visible) {
+		return null;
+	}
 
 	return (
 		<ClayModal
@@ -131,10 +138,17 @@ export default function RulesModal({
 			</ClayModal.Header>
 
 			<ClayModal.Body>
-				<ErrorAlert setVisible={setRuleError} visible={ruleError} />
+				<ErrorAlert
+					errors={ruleErrors}
+					onClose={() => setRuleErrors([])}
+				/>
 
-				<ClayForm.Group
-					className={classNames({'has-error': nameError})}
+				<RuleField
+					errorMessage={Liferay.Language.get(
+						'this-field-is-required'
+					)}
+					fieldId={nameId}
+					hasError={nameError}
 				>
 					<label htmlFor={nameId}>
 						{Liferay.Language.get('rule-name')}
@@ -148,27 +162,19 @@ export default function RulesModal({
 					</label>
 
 					<ClayInput
+						aria-describedby={`${nameId}-error`}
 						id={nameId}
 						onChange={(event) => {
 							if (event.target.value) {
 								setNameError(false);
 							}
 
-							setName(event.target.value);
+							updateEditingRule({name: event.target.value});
 						}}
-						value={name}
+						ref={nameInputRef}
+						value={editingRule.name}
 					/>
-
-					{nameError && (
-						<ClayForm.FeedbackGroup>
-							<ClayForm.FeedbackItem>
-								<ClayForm.FeedbackIndicator symbol="exclamation-full" />
-
-								{Liferay.Language.get('this-field-is-required')}
-							</ClayForm.FeedbackItem>
-						</ClayForm.FeedbackGroup>
-					)}
-				</ClayForm.Group>
+				</RuleField>
 
 				<p className="py-3">
 					{Liferay.Language.get(
@@ -182,13 +188,13 @@ export default function RulesModal({
 						role="group"
 					>
 						<RuleBuilderConditionSection
-							conditionType={conditionType}
-							conditions={conditions}
-							setConditionType={setConditionType}
+							conditionType={editingRule.conditionType}
+							conditions={editingRule.conditions}
+							setConditionType={(conditionType) =>
+								updateEditingRule({conditionType})
+							}
 							setConditions={(conditions) => {
-								setRuleError(false);
-
-								setConditions(conditions);
+								updateEditingRule({conditions});
 							}}
 						/>
 					</div>
@@ -198,11 +204,9 @@ export default function RulesModal({
 						role="group"
 					>
 						<RuleBuilderActionSection
-							actions={actions}
+							actions={editingRule.actions}
 							setActions={(actions) => {
-								setRuleError(false);
-
-								setActions(actions);
+								updateEditingRule({actions});
 							}}
 						/>
 					</div>
@@ -226,41 +230,25 @@ export default function RulesModal({
 	);
 }
 
-function getDefaultName(rules: Rule[]) {
-	const nameIsUsed = (rules: Rule[], name: string) =>
-		rules.some((rule) => rule.name === name);
-
-	let name = Liferay.Language.get('rule');
-	let suffix = 0;
-
-	while (nameIsUsed(rules, name)) {
-		suffix++;
-
-		name = `${Liferay.Language.get('rule')} ${suffix}`;
-	}
-
-	return name;
-}
-
 function ErrorAlert({
-	setVisible,
-	visible,
+	errors,
+	onClose,
 }: {
-	setVisible: (visible: boolean) => void;
-	visible: boolean;
+	errors: RuleError[];
+	onClose: () => void;
 }) {
 	const alertRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
-		if (visible) {
+		if (errors.length) {
 			alertRef.current?.scrollIntoView?.({
 				behavior: 'smooth',
 				block: 'center',
 			});
 		}
-	}, [visible]);
+	}, [errors]);
 
-	if (!visible) {
+	if (!errors.length) {
 		return null;
 	}
 
@@ -269,12 +257,32 @@ function ErrorAlert({
 			<ClayAlert
 				displayType="danger"
 				hideCloseIcon={false}
-				onClose={() => setVisible(false)}
+				onClose={onClose}
 				title={Liferay.Language.get('error')}
 			>
 				{Liferay.Language.get(
-					'the-rule-is-incomplete.-please-check-that-the-conditions-and-actions-are-completed-before-saving'
+					'please-review-the-following-fields-before-saving'
 				)}
+
+				{errors.length ? (
+					<ul className="mb-0">
+						{errors.map((error) => (
+							<li key={error.element.id}>
+								<a
+									className="text-danger text-underline"
+									href={`#${error.element.id}`}
+									onClick={(event) => {
+										event.preventDefault();
+
+										error.element?.focus();
+									}}
+								>
+									{error.message}
+								</a>
+							</li>
+						))}
+					</ul>
+				) : null}
 			</ClayAlert>
 		</div>
 	);

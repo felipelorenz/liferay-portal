@@ -11,6 +11,7 @@ import com.liferay.client.extension.type.CET;
 import com.liferay.client.extension.type.manager.CETManager;
 import com.liferay.document.library.kernel.model.DLFileEntry;
 import com.liferay.document.library.kernel.service.DLFileEntryServiceUtil;
+import com.liferay.exportimport.kernel.staging.StagingUtil;
 import com.liferay.fragment.processor.FragmentEntryProcessorRegistry;
 import com.liferay.headless.admin.site.dto.v1_0.ClientExtension;
 import com.liferay.headless.admin.site.dto.v1_0.ContentPageSpecification;
@@ -35,6 +36,7 @@ import com.liferay.layout.page.template.constants.LayoutPageTemplateEntryTypeCon
 import com.liferay.layout.page.template.model.LayoutPageTemplateEntry;
 import com.liferay.layout.page.template.service.LayoutPageTemplateEntryLocalServiceUtil;
 import com.liferay.layout.page.template.service.LayoutPageTemplateEntryServiceUtil;
+import com.liferay.layout.util.LayoutServiceContextHelperUtil;
 import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
@@ -50,6 +52,7 @@ import com.liferay.portal.kernel.portlet.PortletIdCodec;
 import com.liferay.portal.kernel.service.LayoutLocalServiceUtil;
 import com.liferay.portal.kernel.service.LayoutServiceUtil;
 import com.liferay.portal.kernel.service.ServiceContext;
+import com.liferay.portal.kernel.service.UserLocalServiceUtil;
 import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.GetterUtil;
 import com.liferay.portal.kernel.util.HashMapBuilder;
@@ -769,7 +772,8 @@ public class LayoutUtil {
 		StyleBookEntry styleBookEntry =
 			StyleBookEntryLocalServiceUtil.
 				fetchStyleBookEntryByExternalReferenceCode(
-					itemExternalReference.getExternalReferenceCode(), groupId);
+					itemExternalReference.getExternalReferenceCode(),
+					StagingUtil.getLiveGroupId(groupId));
 
 		if (styleBookEntry == null) {
 			LogUtil.logOptionalReference(
@@ -1064,36 +1068,43 @@ public class LayoutUtil {
 			PageExperience[] pageExperiences, ServiceContext serviceContext)
 		throws Exception {
 
-		List<SegmentsExperience> segmentsExperiences =
-			SegmentsExperienceServiceUtil.getSegmentsExperiences(
-				layout.getGroupId(), layout.getPlid(), true);
+		try (AutoCloseable autoCloseable =
+				LayoutServiceContextHelperUtil.getServiceContextAutoCloseable(
+					layout,
+					UserLocalServiceUtil.getUser(serviceContext.getUserId()))) {
 
-		if ((pageExperiences == null) ||
-			(pageExperiences.length != segmentsExperiences.size())) {
+			List<SegmentsExperience> segmentsExperiences =
+				SegmentsExperienceServiceUtil.getSegmentsExperiences(
+					layout.getGroupId(), layout.getPlid(), true);
 
-			throw new UnsupportedOperationException();
-		}
+			if ((pageExperiences == null) ||
+				(pageExperiences.length != segmentsExperiences.size())) {
 
-		Map<String, SegmentsExperience> segmentsExperiencesMap =
-			new HashMap<>();
-
-		for (SegmentsExperience segmentsExperience : segmentsExperiences) {
-			segmentsExperiencesMap.put(
-				segmentsExperience.getExternalReferenceCode(),
-				segmentsExperience);
-		}
-
-		for (PageExperience pageExperience : pageExperiences) {
-			SegmentsExperience segmentsExperience = segmentsExperiencesMap.get(
-				pageExperience.getExternalReferenceCode());
-
-			if (segmentsExperience == null) {
 				throw new UnsupportedOperationException();
 			}
 
-			SegmentsExperienceUtil.updateSegmentsExperience(
-				fragmentEntryProcessorRegistry, infoItemServiceRegistry, layout,
-				pageExperience, segmentsExperience, serviceContext);
+			Map<String, SegmentsExperience> segmentsExperiencesMap =
+				new HashMap<>();
+
+			for (SegmentsExperience segmentsExperience : segmentsExperiences) {
+				segmentsExperiencesMap.put(
+					segmentsExperience.getExternalReferenceCode(),
+					segmentsExperience);
+			}
+
+			for (PageExperience pageExperience : pageExperiences) {
+				SegmentsExperience segmentsExperience =
+					segmentsExperiencesMap.get(
+						pageExperience.getExternalReferenceCode());
+
+				if (segmentsExperience == null) {
+					throw new UnsupportedOperationException();
+				}
+
+				SegmentsExperienceUtil.updateSegmentsExperience(
+					fragmentEntryProcessorRegistry, infoItemServiceRegistry,
+					layout, pageExperience, segmentsExperience, serviceContext);
+			}
 		}
 	}
 

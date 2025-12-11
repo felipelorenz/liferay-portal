@@ -12,8 +12,10 @@ import com.liferay.portal.kernel.dao.jdbc.DataAccess;
 import com.liferay.portal.kernel.module.util.BundleUtil;
 import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
+import com.liferay.portal.lpkg.deployer.LPKGDeployer;
 import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.log.LoggerTestUtil;
+import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 
 import java.lang.reflect.Constructor;
@@ -21,12 +23,16 @@ import java.lang.reflect.Method;
 
 import java.sql.Connection;
 
+import java.util.Collections;
+import java.util.Objects;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 
 import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
 
 /**
  * @author Luis Ortiz
@@ -57,6 +63,16 @@ public abstract class BasePostUpgradeDataCleanupProcessTestCase {
 
 	protected abstract String getPostUpgradeDataCleanupProcessClassName();
 
+	protected void installBundle(Bundle bundle, BundleContext bundleContext)
+		throws Exception {
+
+		com.liferay.osgi.util.BundleUtil.installBundle(
+			bundleContext, _lpkgDeployer, bundle.getLocation(), 1);
+
+		com.liferay.osgi.util.BundleUtil.refreshBundles(
+			bundleContext, Collections.singletonList(bundle));
+	}
+
 	protected void test(
 			UnsafeConsumer<LogCapture, Exception> assertUnsafeConsumer,
 			UnsafeRunnable<Exception> cleanUpDataUnsafeRunnable,
@@ -78,12 +94,33 @@ public abstract class BasePostUpgradeDataCleanupProcessTestCase {
 		}
 	}
 
+	protected Bundle uninstallBundle(
+			BundleContext bundleContext, String bundleName)
+		throws Exception {
+
+		for (Bundle bundle : bundleContext.getBundles()) {
+			if (Objects.equals(bundle.getSymbolicName(), bundleName) &&
+				(bundle.getState() == Bundle.ACTIVE)) {
+
+				bundle.uninstall();
+
+				com.liferay.osgi.util.BundleUtil.refreshBundles(
+					bundleContext, Collections.singletonList(bundle));
+
+				return bundle;
+			}
+		}
+
+		return null;
+	}
+
 	protected static Connection connection;
 	protected static DBInspector dbInspector;
 
 	private void _runPostUpgradeDataCleanUpVerifyProcess() throws Exception {
 		Bundle bundle = BundleUtil.getBundle(
-			SystemBundleUtil.getBundleContext(), "com.liferay.data.cleanup");
+			SystemBundleUtil.getBundleContext(),
+			"com.liferay.data.cleanup.impl");
 
 		Class<?> postUpgradeDataCleanupProcessClass = bundle.loadClass(
 			getPostUpgradeDataCleanupProcessClassName());
@@ -99,5 +136,8 @@ public abstract class BasePostUpgradeDataCleanupProcessTestCase {
 
 		method.invoke(object);
 	}
+
+	@Inject
+	private LPKGDeployer _lpkgDeployer;
 
 }

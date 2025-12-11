@@ -3,9 +3,8 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {Action} from '../../plugins/page_rules/components/Action';
-import {Condition} from '../../plugins/page_rules/components/Condition';
 import {ConditionType} from '../../plugins/page_rules/components/RuleBuilderSection';
+import {Action, Condition} from '../../types/Rule';
 import {LayoutData} from '../../types/layout_data/LayoutData';
 import {config} from '../config/index';
 import draftServiceFetch, {OnNetworkStatus} from './draftServiceFetch';
@@ -76,14 +75,14 @@ function deleteRule({
  * Get roles
  */
 function getRoles(): Promise<Array<{name: string; roleId: string}>> {
-	return serviceFetch(config.getRolesURL, {});
+	return serviceFetch(config.getRolesURL, {method: 'GET'});
 }
 
 /**
  * Get users
  */
 function getUsers(): Promise<Array<{screenName: string; userId: string}>> {
-	return serviceFetch(config.getUsersURL, {});
+	return serviceFetch(config.getUsersURL, {method: 'GET'});
 }
 
 /**

@@ -92,6 +92,7 @@ import com.liferay.object.service.persistence.ObjectViewColumnPersistence;
 import com.liferay.object.service.persistence.ObjectViewFilterColumnPersistence;
 import com.liferay.object.service.persistence.ObjectViewSortColumnPersistence;
 import com.liferay.petra.function.UnsafeSupplier;
+import com.liferay.petra.function.transform.TransformUtil;
 import com.liferay.petra.io.StreamUtil;
 import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringBundler;
@@ -107,6 +108,7 @@ import com.liferay.portal.kernel.security.permission.PermissionCheckerFactoryUti
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.GroupLocalServiceUtil;
+import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.test.constants.TestDataConstants;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
@@ -156,7 +158,6 @@ import java.security.Key;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -1177,34 +1178,27 @@ public class BatchEngineBrokerTest {
 	}
 
 	private List<List<String>> _normalize(List<CSVRecord> csvRecords) {
-		List<List<String>> csvRecordStringsList = new ArrayList<>(
-			csvRecords.size());
+		return TransformUtil.transform(
+			csvRecords,
+			csvRecord -> TransformUtil.transform(
+				csvRecord.toList(),
+				csvRecordString -> {
+					if (Validator.isBlank(csvRecordString) ||
+						!_htmlTagPattern.matcher(
+							csvRecordString
+						).find()) {
 
-		for (CSVRecord csvRecord : csvRecords) {
-			List<String> csvRecordStrings = new ArrayList<>();
+						return csvRecordString;
+					}
 
-			for (String csvRecordString : csvRecord.toList()) {
-				if (!Validator.isBlank(csvRecordString) &&
-					_htmlTagPattern.matcher(
-						csvRecordString
-					).find()) {
-
-					csvRecordString = _htmlBreakPattern.matcher(
+					return _htmlBreakPattern.matcher(
 						csvRecordString
 					).replaceAll(
 						StringBundler.concat(
 							"$1", System.lineSeparator(),
 							System.lineSeparator(), "$3")
 					);
-				}
-
-				csvRecordStrings.add(csvRecordString);
-			}
-
-			csvRecordStringsList.add(csvRecordStrings);
-		}
-
-		return csvRecordStringsList;
+				}));
 	}
 
 	private ObjectDefinition _publishObjectDefinition(
@@ -1224,12 +1218,13 @@ public class BatchEngineBrokerTest {
 				null, user.getUserId(),
 				Collections.singletonMap(
 					LocaleUtil.US, RandomTestUtil.randomString()),
-				false, Arrays.asList(listTypeEntry1, listTypeEntry2));
+				false, Arrays.asList(listTypeEntry1, listTypeEntry2),
+				new ServiceContext());
 
 		ObjectDefinition objectDefinition =
 			_objectDefinitionLocalService.addCustomObjectDefinition(
 				null, user.getUserId(), 0, null, false, true, false, true,
-				false, false, false, false, false, null,
+				false, false, false, false, null,
 				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
 				name, null, null,
 				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),

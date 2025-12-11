@@ -45,9 +45,9 @@ test(
 
 		await contentsPage.goto();
 
-		// Create new Basic Content
+		// Create new Basic Web Content
 
-		await contentsPage.createContent('Basic Content');
+		await contentsPage.createContent('Basic Web Content');
 
 		// Fill data and save
 
@@ -84,7 +84,7 @@ test(
 
 		// Create new Knowledge Base content
 
-		await contentsPage.createContent('Basic Content');
+		await contentsPage.createContent('Basic Web Content');
 
 		// Fill data
 
@@ -267,7 +267,7 @@ test(
 
 		await contentsPage.goto();
 
-		// Create new Folder and a Basic Content
+		// Create new Folder and a Basic Web Content
 
 		const folderName = getRandomString();
 
@@ -275,7 +275,7 @@ test(
 
 		await folderPage.clickOption(folderName, 'View Folder');
 
-		await contentsPage.createContent('Basic Content');
+		await contentsPage.createContent('Basic Web Content');
 
 		// Fill data and save
 
@@ -531,7 +531,7 @@ test.describe('Schedule Panel', () => {
 
 			await contentsPage.goto();
 
-			await contentsPage.createContent('Basic Content');
+			await contentsPage.createContent('Basic Web Content');
 
 			await contentsPage.openSidePanel('Schedule');
 
@@ -667,7 +667,7 @@ test.describe('Categorization Panel', () => {
 
 			await contentsPage.goto();
 
-			await contentsPage.createContent('Basic Content');
+			await contentsPage.createContent('Basic Web Content');
 
 			const title = getRandomString();
 
@@ -795,7 +795,7 @@ test(
 
 		await contentsPage.goto();
 
-		await contentsPage.createContent('Basic Content');
+		await contentsPage.createContent('Basic Web Content');
 
 		const title = getRandomString();
 
@@ -830,7 +830,7 @@ test.describe('Schedule Publication', () => {
 
 			await contentsPage.goto();
 
-			await contentsPage.createContent('Basic Content');
+			await contentsPage.createContent('Basic Web Content');
 
 			const title = getRandomString();
 
@@ -901,7 +901,14 @@ test.describe('Schedule Publication', () => {
 					.locator('.cell-embedded-status')
 			).toHaveText('scheduled');
 
+			await contentsPage.viewShowDetails(title);
+
+			expect(page.getByText('Display Date')).toBeVisible();
+			expect(page.getByText(`10/31/${nextYear}`)).toBeVisible();
+
 			// Delete content
+
+			await contentsPage.goto();
 
 			await contentsPage.deleteContent(title);
 		}
@@ -916,7 +923,7 @@ test.describe('Schedule Publication', () => {
 
 			await contentsPage.goto();
 
-			await contentsPage.createContent('Basic Content');
+			await contentsPage.createContent('Basic Web Content');
 
 			await contentsPage.openSidePanel('Schedule');
 
@@ -1381,5 +1388,68 @@ test(
 		await waitForAlert(page, `Success:${title} was moved`, {
 			autoClose: false,
 		});
+	}
+);
+
+// Create a structure with a multiselect field, save content only adding text and then edit it again
+
+test(
+	'Create a structure with a multiselect field, save content only adding text and then edit it again',
+	{tag: '@LPD-73147'},
+	async ({contentsPage, page, picklistBuilderPage, structureBuilderPage}) => {
+
+		// Create picklist
+
+		await picklistBuilderPage.goto();
+
+		const picklistName = getRandomString();
+
+		await picklistBuilderPage.nameInput.fill(picklistName);
+
+		await picklistBuilderPage.addOption('Option 1');
+		await picklistBuilderPage.addOption('Option 2');
+		await picklistBuilderPage.addOption('Option 3');
+
+		await picklistBuilderPage.savePicklist();
+
+		// Create structure
+
+		await structureBuilderPage.goToCreateStructure();
+
+		const structureLabel = `StructureMultiSelect${getRandomInt()}`;
+
+		await structureBuilderPage.changeStructureSettings({
+			label: structureLabel,
+			name: structureLabel,
+		});
+
+		// Add multiselect field
+
+		await structureBuilderPage.addField('Multiselect');
+
+		await structureBuilderPage.changeFieldSettings({
+			label: 'Multiselect',
+			picklist: picklistName,
+		});
+
+		await structureBuilderPage.publishStructure();
+
+		// Create a content, only fill the title
+
+		await contentsPage.goto();
+
+		await contentsPage.createContent(structureLabel);
+
+		const title = getRandomString();
+
+		await page.getByPlaceholder(`New ${structureLabel}`).fill(title);
+
+		await contentsPage.publishButton.click();
+
+		// Edit the created content
+
+		await contentsPage.editContent(title);
+
+		await expect(page.getByText('Option 1')).toBeVisible();
 	}
 );

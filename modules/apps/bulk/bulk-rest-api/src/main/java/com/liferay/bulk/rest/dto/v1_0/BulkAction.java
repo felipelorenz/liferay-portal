@@ -61,6 +61,10 @@ import java.util.function.Supplier;
 			name = "PermissionBulkAction", value = PermissionBulkAction.class
 		),
 		@JsonSubTypes.Type(
+			name = "ResetPermissionBulkAction",
+			value = ResetPermissionBulkAction.class
+		),
+		@JsonSubTypes.Type(
 			name = "StatusBulkAction", value = StatusBulkAction.class
 		),
 		@JsonSubTypes.Type(
@@ -70,7 +74,7 @@ import java.util.function.Supplier;
 	}
 )
 @JsonTypeInfo(
-	include = JsonTypeInfo.As.PROPERTY, property = "type",
+	include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type",
 	use = JsonTypeInfo.Id.NAME, visible = true
 )
 @XmlRootElement(name = "BulkAction")
@@ -317,6 +321,7 @@ public abstract class BulkAction implements Serializable {
 		KEYWORD_BULK_ACTION("KeywordBulkAction"),
 		MOVE_BULK_ACTION("MoveBulkAction"),
 		PERMISSION_BULK_ACTION("PermissionBulkAction"),
+		RESET_PERMISSION_BULK_ACTION("ResetPermissionBulkAction"),
 		STATUS_BULK_ACTION("StatusBulkAction"),
 		TAXONOMY_CATEGORY_BULK_ACTION("TaxonomyCategoryBulkAction");
 

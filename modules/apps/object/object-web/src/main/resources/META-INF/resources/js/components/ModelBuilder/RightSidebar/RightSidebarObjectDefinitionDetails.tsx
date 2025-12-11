@@ -311,6 +311,7 @@ export function RightSidebarObjectDefinitionDetails({
 					hasUpdateObjectDefinitionPermission={
 						!!values.actions?.update
 					}
+					isApproved={values?.status?.label === 'approved'}
 					isEnableObjectEntrySchedule={
 						!!values.enableObjectEntrySchedule
 					}
@@ -324,11 +325,7 @@ export function RightSidebarObjectDefinitionDetails({
 				/>
 			</div>
 			<div className="lfr-objects__model-builder-right-sidebar-object-definition-node-content">
-				<TranslationsContainer
-					onSubmit={onSubmit}
-					setValues={setValues}
-					values={values}
-				/>
+				<TranslationsContainer />
 			</div>
 			{showSeoSection && (
 				<div className="lfr-objects__model-builder-right-sidebar-object-definition-node-content">

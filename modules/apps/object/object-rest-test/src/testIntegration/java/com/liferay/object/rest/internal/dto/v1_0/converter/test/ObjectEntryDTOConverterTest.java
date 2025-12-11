@@ -22,6 +22,7 @@ import com.liferay.object.service.ObjectEntryVersionLocalService;
 import com.liferay.object.test.util.ObjectDefinitionTestUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
@@ -32,7 +33,6 @@ import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.test.rule.FeatureFlag;
-import com.liferay.portal.test.rule.FeatureFlags;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
@@ -67,9 +67,7 @@ public class ObjectEntryDTOConverterTest {
 			new LiferayIntegrationTestRule(),
 			PermissionCheckerMethodTestRule.INSTANCE);
 
-	@FeatureFlags(
-		featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-32050")}
-	)
+	@FeatureFlag("LPD-17564")
 	@Test
 	public void testToDTO() throws Exception {
 		ListTypeDefinition listTypeDefinition =
@@ -78,8 +76,8 @@ public class ObjectEntryDTOConverterTest {
 				RandomTestUtil.randomLocaleStringMap(), false,
 				Arrays.asList(
 					ListTypeEntryUtil.createListTypeEntry("listTypeEntryKey1"),
-					ListTypeEntryUtil.createListTypeEntry(
-						"listTypeEntryKey2")));
+					ListTypeEntryUtil.createListTypeEntry("listTypeEntryKey2")),
+				new ServiceContext());
 
 		_objectDefinition = ObjectDefinitionTestUtil.publishObjectDefinition(
 			false, false, true,

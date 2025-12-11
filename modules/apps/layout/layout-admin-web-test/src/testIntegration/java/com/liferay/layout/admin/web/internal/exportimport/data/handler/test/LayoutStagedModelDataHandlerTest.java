@@ -320,7 +320,7 @@ public class LayoutStagedModelDataHandlerTest
 				null, TestPropsValues.getUserId(), stagingGroup.getGroupId(), 0,
 				0, false, RandomTestUtil.randomString(),
 				LayoutUtilityPageEntryConstants.TYPE_SC_INTERNAL_SERVER_ERROR,
-				0,
+				null,
 				ServiceContextTestUtil.getServiceContext(
 					stagingGroup.getGroupId(), TestPropsValues.getUserId()));
 
@@ -702,7 +702,7 @@ public class LayoutStagedModelDataHandlerTest
 							importedFileEntry.getFileVersion(), null,
 							StringPool.BLANK)),
 					"\" data-fileentryid=\"",
-					importedFileEntry.getFileEntryId(), "\"></a>")));
+					importedFileEntry.getFileEntryId(), "\"")));
 
 		_stagingLocalService.disableStaging(liveGroup, serviceContext);
 
@@ -736,7 +736,7 @@ public class LayoutStagedModelDataHandlerTest
 							importedFileEntry.getFileVersion(), null,
 							StringPool.BLANK)),
 					"\" data-fileentryid=\"",
-					importedFileEntry.getFileEntryId(), "\"></a>")));
+					importedFileEntry.getFileEntryId(), "\"")));
 		Assert.assertTrue(
 			html,
 			html.contains(
@@ -1284,11 +1284,11 @@ public class LayoutStagedModelDataHandlerTest
 
 		StyleBookEntry styleBookEntry =
 			_styleBookEntryLocalService.addStyleBookEntry(
-				null, TestPropsValues.getUserId(), stagingGroup.getGroupId(),
+				null, TestPropsValues.getUserId(), liveGroup.getGroupId(),
 				false, StringPool.BLANK, RandomTestUtil.randomString(),
 				StringPool.BLANK, RandomTestUtil.randomString(),
 				ServiceContextTestUtil.getServiceContext(
-					stagingGroup.getGroupId()));
+					liveGroup.getGroupId()));
 
 		Layout layout = LayoutTestUtil.addTypeContentLayout(stagingGroup);
 

@@ -6,21 +6,16 @@
 package com.liferay.site.cms.site.initializer.internal.model.listener.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
-import com.liferay.batch.engine.unit.BatchEngineUnitProcessor;
-import com.liferay.batch.engine.unit.BatchEngineUnitReader;
 import com.liferay.depot.constants.DepotConstants;
 import com.liferay.depot.constants.DepotRolesConstants;
 import com.liferay.depot.model.DepotEntry;
 import com.liferay.depot.service.DepotEntryLocalService;
 import com.liferay.object.constants.ObjectDefinitionConstants;
 import com.liferay.object.constants.ObjectEntryFolderConstants;
-import com.liferay.object.constants.ObjectFolderConstants;
 import com.liferay.object.model.ObjectEntry;
 import com.liferay.object.model.ObjectEntryFolder;
-import com.liferay.object.model.ObjectFolder;
 import com.liferay.object.rest.filter.factory.FilterFactory;
 import com.liferay.object.service.ObjectEntryFolderLocalService;
-import com.liferay.object.service.ObjectFolderLocalService;
 import com.liferay.petra.sql.dsl.expression.Predicate;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
@@ -47,20 +42,17 @@ import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.test.rule.FeatureFlag;
-import com.liferay.portal.test.rule.FeatureFlags;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
 import com.liferay.sharing.security.permission.SharingEntryAction;
 import com.liferay.sharing.service.SharingEntryLocalService;
+import com.liferay.site.cms.site.initializer.test.util.CMSTestUtil;
 import com.liferay.site.cms.site.initializer.util.CMSDefaultPermissionUtil;
-
-import java.io.File;
 
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -69,17 +61,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.FrameworkUtil;
-
 /**
  * @author Jürgen Kappler
  * @author Roberto Díaz
  */
-@FeatureFlags(
-	featureFlags = {@FeatureFlag("LPD-17564"), @FeatureFlag("LPD-32050")}
-)
+@FeatureFlag("LPD-17564")
 @RunWith(Arquillian.class)
 public class ObjectEntryFolderModelListenerTest {
 
@@ -92,35 +78,7 @@ public class ObjectEntryFolderModelListenerTest {
 
 	@Before
 	public void setUp() throws Exception {
-		if (!_isCMSSiteInitialized()) {
-
-			// Manually initialize the CMS site initializer until the feature
-			// flag LPD-17564 is removed
-
-			Bundle testBundle = FrameworkUtil.getBundle(
-				GroupModelListenerTest.class);
-
-			BundleContext bundleContext = testBundle.getBundleContext();
-
-			for (Bundle bundle : bundleContext.getBundles()) {
-				if (!Objects.equals(
-						bundle.getSymbolicName(),
-						"com.liferay.site.initializer.cms")) {
-
-					continue;
-				}
-
-				_deleteFile(bundle, "00.list.type.definition");
-				_deleteFile(bundle, "01.object.folder");
-				_deleteFile(bundle, "02.object.definition");
-
-				CompletableFuture<Void> completableFuture =
-					_batchEngineUnitProcessor.processBatchEngineUnits(
-						_batchEngineUnitReader.getBatchEngineUnits(bundle));
-
-				completableFuture.join();
-			}
-		}
+		CMSTestUtil.getOrAddGroup(ObjectEntryFolderModelListenerTest.class);
 
 		DepotEntry depotEntry = _depotEntryLocalService.addDepotEntry(
 			HashMapBuilder.put(
@@ -238,6 +196,63 @@ public class ObjectEntryFolderModelListenerTest {
 		Assert.assertNull(_fetchObjectEntry(objectEntryFolder));
 	}
 
+	@Test
+	public void testUpdateObjectEntryFolder() throws Exception {
+		ObjectEntryFolder objectEntryFolder1 =
+			_objectEntryFolderLocalService.
+				getObjectEntryFolderByExternalReferenceCode(
+					ObjectEntryFolderConstants.EXTERNAL_REFERENCE_CODE_CONTENTS,
+					_group.getGroupId(), _group.getCompanyId());
+
+		ObjectEntryFolder objectEntryFolder2 = _addObjectEntryFolder(
+			objectEntryFolder1.getObjectEntryFolderId());
+
+		JSONObject jsonObject = CMSDefaultPermissionUtil.getJSONObject(
+			objectEntryFolder2.getCompanyId(), objectEntryFolder2.getUserId(),
+			objectEntryFolder2.getExternalReferenceCode(),
+			objectEntryFolder2.getModelClassName(), _filterFactory);
+
+		_assertResourcePermissions(jsonObject, objectEntryFolder2, null);
+
+		ObjectEntryFolder objectEntryFolder3 = _addObjectEntryFolder(
+			objectEntryFolder1.getObjectEntryFolderId());
+
+		_assertResourcePermissions(jsonObject, objectEntryFolder3, null);
+
+		ObjectEntry objectEntry = _fetchObjectEntry(objectEntryFolder2);
+
+		Assert.assertNotNull(objectEntry);
+
+		String randomActionId = RandomTestUtil.randomString();
+
+		jsonObject.put(
+			ObjectEntryFolderConstants.EXTERNAL_REFERENCE_CODE_CONTENTS,
+			JSONUtil.put(
+				RoleConstants.CMS_ADMINISTRATOR,
+				JSONUtil.putAll(
+					ActionKeys.UPDATE, ActionKeys.VIEW, randomActionId)
+			).put(
+				RoleConstants.USER, JSONUtil.putAll(ActionKeys.VIEW)
+			));
+
+		CMSDefaultPermissionUtil.addOrUpdateObjectEntry(
+			objectEntry.getExternalReferenceCode(),
+			objectEntryFolder2.getCompanyId(), objectEntryFolder2.getUserId(),
+			objectEntryFolder2.getExternalReferenceCode(),
+			objectEntryFolder2.getModelClassName(), jsonObject,
+			objectEntryFolder2.getGroupId(), objectEntryFolder2.getTreePath());
+
+		objectEntryFolder3 =
+			_objectEntryFolderLocalService.moveObjectEntryFolder(
+				objectEntryFolder3.getUserId(),
+				objectEntryFolder3.getObjectEntryFolderId(),
+				objectEntryFolder2.getObjectEntryFolderId(), false,
+				ServiceContextTestUtil.getServiceContext());
+
+		_assertResourcePermissions(
+			jsonObject, objectEntryFolder3, randomActionId);
+	}
+
 	private ObjectEntryFolder _addObjectEntryFolder(
 			long parentObjectEntryFolderId)
 		throws Exception {
@@ -302,16 +317,6 @@ public class ObjectEntryFolderModelListenerTest {
 		}
 	}
 
-	private void _deleteFile(Bundle bundle, String fileName) {
-		File file = bundle.getDataFile(
-			".com.liferay.site.initializer.cms.internal.batch." + fileName +
-				".batch.engine.data.json.0.processed");
-
-		if ((file != null) && file.exists()) {
-			file.delete();
-		}
-	}
-
 	private ObjectEntry _fetchObjectEntry(ObjectEntryFolder objectEntryFolder)
 		throws Exception {
 
@@ -335,25 +340,6 @@ public class ObjectEntryFolderModelListenerTest {
 			role.getRoleId());
 	}
 
-	private boolean _isCMSSiteInitialized() throws Exception {
-		ObjectFolder objectFolder =
-			_objectFolderLocalService.fetchObjectFolderByExternalReferenceCode(
-				ObjectFolderConstants.EXTERNAL_REFERENCE_CODE_FILE_TYPES,
-				TestPropsValues.getCompanyId());
-
-		if (objectFolder != null) {
-			return true;
-		}
-
-		return false;
-	}
-
-	@Inject
-	private BatchEngineUnitProcessor _batchEngineUnitProcessor;
-
-	@Inject
-	private BatchEngineUnitReader _batchEngineUnitReader;
-
 	@Inject
 	private DepotEntryLocalService _depotEntryLocalService;
 
@@ -367,9 +353,6 @@ public class ObjectEntryFolderModelListenerTest {
 
 	@Inject
 	private ObjectEntryFolderLocalService _objectEntryFolderLocalService;
-
-	@Inject
-	private ObjectFolderLocalService _objectFolderLocalService;
 
 	@Inject
 	private Portal _portal;

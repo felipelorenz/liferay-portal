@@ -850,12 +850,16 @@ public class OIDCUserInfoProcessor {
 				"Email address is null");
 		}
 
-		if (Validator.isNull(firstName) && (user == null)) {
+		if (user != null) {
+			return;
+		}
+
+		if (Validator.isNull(firstName)) {
 			throw new OpenIdConnectServiceException.UserMappingException(
 				"First name is null");
 		}
 
-		if (Validator.isNull(lastName) && (user == null)) {
+		if (Validator.isNull(lastName)) {
 			throw new OpenIdConnectServiceException.UserMappingException(
 				"Last name is null");
 		}

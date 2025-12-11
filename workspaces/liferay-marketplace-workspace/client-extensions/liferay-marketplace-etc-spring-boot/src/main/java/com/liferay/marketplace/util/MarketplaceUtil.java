@@ -5,8 +5,10 @@
 
 package com.liferay.marketplace.util;
 
+import com.liferay.headless.commerce.admin.catalog.client.dto.v1_0.SkuOption;
 import com.liferay.headless.commerce.admin.order.client.dto.v1_0.OrderItem;
 import com.liferay.headless.commerce.admin.order.client.pagination.Page;
+import com.liferay.portal.kernel.util.StringUtil;
 
 import java.util.Map;
 import java.util.Objects;
@@ -104,6 +106,36 @@ public class MarketplaceUtil {
 		}
 
 		return new JSONObject();
+	}
+
+	public static String getSkuOptionValue(String key, SkuOption[] skuOptions) {
+		for (SkuOption skuOption : skuOptions) {
+			if (!Objects.equals(key, skuOption.getKey())) {
+				continue;
+			}
+
+			return StringUtil.upperCaseFirstLetter(skuOption.getValue());
+		}
+
+		return null;
+	}
+
+	public static String getSkuOptionValue(String key, String options) {
+		JSONArray optionsJSONArray = new JSONArray(options);
+
+		for (int i = 0; i < optionsJSONArray.length(); i++) {
+			JSONObject jsonObject = optionsJSONArray.getJSONObject(i);
+
+			if (!Objects.equals(key, jsonObject.getString("key"))) {
+				continue;
+			}
+
+			JSONArray jsonArray = jsonObject.getJSONArray("value");
+
+			return jsonArray.getString(0);
+		}
+
+		return null;
 	}
 
 }

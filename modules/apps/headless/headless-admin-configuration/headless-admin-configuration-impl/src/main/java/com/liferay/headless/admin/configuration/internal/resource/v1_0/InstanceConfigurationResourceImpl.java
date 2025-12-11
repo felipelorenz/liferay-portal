@@ -5,22 +5,30 @@
 
 package com.liferay.headless.admin.configuration.internal.resource.v1_0;
 
+import com.liferay.configuration.admin.display.ConfigurationScreen;
 import com.liferay.configuration.admin.exportimport.ConfigurationExportImportProcessor;
 import com.liferay.configuration.admin.util.ConfigurationFilterStringUtil;
 import com.liferay.headless.admin.configuration.dto.v1_0.InstanceConfiguration;
+import com.liferay.headless.admin.configuration.internal.util.ConfigurationScreenUtil;
 import com.liferay.headless.admin.configuration.internal.util.ConfigurationUtil;
 import com.liferay.headless.admin.configuration.resource.v1_0.InstanceConfigurationResource;
+import com.liferay.osgi.service.tracker.collections.map.ServiceTrackerMap;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
+import com.liferay.portal.configuration.metatype.annotations.ExtendedObjectClassDefinition;
 import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.PermissionThreadLocal;
 import com.liferay.portal.kernel.settings.SettingsLocatorHelper;
 import com.liferay.portal.kernel.util.ArrayUtil;
+import com.liferay.portal.kernel.util.HashMapDictionaryBuilder;
 import com.liferay.portal.kernel.util.ListUtil;
 import com.liferay.portal.vulcan.pagination.Page;
 
+import jakarta.validation.ValidationException;
+
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
@@ -30,9 +38,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.osgi.framework.BundleContext;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ServiceScope;
 
@@ -52,13 +63,26 @@ public class InstanceConfigurationResourceImpl
 			String instanceConfigurationExternalReferenceCode)
 		throws Exception {
 
-		if (!FeatureFlagManagerUtil.isEnabled(
-				contextCompany.getCompanyId(), "LPD-65399")) {
-
-			throw new UnsupportedOperationException();
-		}
+		_checkFeatureFlag();
 
 		_checkPermission();
+
+		ConfigurationScreen configurationScreen = _serviceTrackerMap.getService(
+			instanceConfigurationExternalReferenceCode);
+
+		if (configurationScreen != null) {
+			InstanceConfiguration instanceConfiguration =
+				_toInstanceConfiguration(configurationScreen);
+
+			if (instanceConfiguration == null) {
+				throw new InternalServerErrorException(
+					"Export capability is not implemented for instance " +
+						"configuration with external reference code " +
+							instanceConfigurationExternalReferenceCode);
+			}
+
+			return instanceConfiguration;
+		}
 
 		Configuration[] configurations = _configurationAdmin.listConfigurations(
 			ConfigurationFilterStringUtil.getCompanyScopedFilterString(
@@ -95,11 +119,7 @@ public class InstanceConfigurationResourceImpl
 	public Page<InstanceConfiguration> getInstanceConfigurationsPage()
 		throws Exception {
 
-		if (!FeatureFlagManagerUtil.isEnabled(
-				contextCompany.getCompanyId(), "LPD-65399")) {
-
-			throw new UnsupportedOperationException();
-		}
+		_checkFeatureFlag();
 
 		_checkPermission();
 
@@ -125,7 +145,113 @@ public class InstanceConfigurationResourceImpl
 			instanceConfigurations.add(instanceConfiguration);
 		}
 
+		for (ConfigurationScreen configurationScreen :
+				_serviceTrackerMap.values()) {
+
+			InstanceConfiguration instanceConfiguration =
+				_toInstanceConfiguration(configurationScreen);
+
+			if (instanceConfiguration == null) {
+				continue;
+			}
+
+			instanceConfigurations.add(instanceConfiguration);
+		}
+
 		return Page.of(instanceConfigurations);
+	}
+
+	@Override
+	public InstanceConfiguration postInstanceConfiguration(
+			InstanceConfiguration instanceConfiguration)
+		throws Exception {
+
+		return putInstanceConfiguration(
+			instanceConfiguration.getExternalReferenceCode(),
+			instanceConfiguration);
+	}
+
+	@Override
+	public InstanceConfiguration putInstanceConfiguration(
+			String instanceConfigurationExternalReferenceCode,
+			InstanceConfiguration instanceConfiguration)
+		throws Exception {
+
+		_checkFeatureFlag();
+
+		_checkPermission();
+
+		ConfigurationScreen configurationScreen = _serviceTrackerMap.getService(
+			instanceConfigurationExternalReferenceCode);
+
+		if (configurationScreen != null) {
+			try {
+				ConfigurationScreenUtil.importProperties(
+					_configurationExportImportProcessor, configurationScreen,
+					HashMapDictionaryBuilder.putAll(
+						instanceConfiguration.getProperties()
+					).build(),
+					ExtendedObjectClassDefinition.Scope.COMPANY,
+					contextCompany.getCompanyId());
+			}
+			catch (Exception exception) {
+				throw new BadRequestException(exception.getMessage());
+			}
+
+			return _toInstanceConfiguration(configurationScreen);
+		}
+
+		instanceConfiguration.setExternalReferenceCode(
+			() -> instanceConfigurationExternalReferenceCode);
+
+		long companyId = contextCompany.getCompanyId();
+
+		String filterString =
+			ConfigurationFilterStringUtil.getCompanyScopedFilterString(
+				String.valueOf(companyId),
+				instanceConfiguration.getExternalReferenceCode(),
+				contextCompany.getDefaultWebId());
+
+		try {
+			Configuration configuration =
+				ConfigurationUtil.addOrUpdateConfiguration(
+					companyId, _configurationAdmin,
+					instanceConfiguration.getExternalReferenceCode(),
+					filterString, instanceConfiguration.getProperties(),
+					ExtendedObjectClassDefinition.Scope.COMPANY,
+					_settingsLocatorHelper);
+
+			if (configuration == null) {
+				throw new NotFoundException(
+					"Unable to find instance configuration with external " +
+						"reference code " +
+							instanceConfiguration.getExternalReferenceCode());
+			}
+
+			return _toInstanceConfiguration(configuration);
+		}
+		catch (ValidationException validationException) {
+			throw new BadRequestException(validationException.getMessage());
+		}
+	}
+
+	@Activate
+	protected void activate(BundleContext bundleContext) {
+		_serviceTrackerMap = ConfigurationScreenUtil.createServiceTracker(
+			bundleContext, ExtendedObjectClassDefinition.Scope.COMPANY);
+	}
+
+	@Deactivate
+	protected void deactivate() {
+		_serviceTrackerMap.close();
+	}
+
+	private void _checkFeatureFlag() {
+		if (!FeatureFlagManagerUtil.isEnabled(
+				contextCompany.getCompanyId(), "LPD-65399")) {
+
+			throw new UnsupportedOperationException();
+		}
 	}
 
 	private void _checkPermission() {
@@ -145,6 +271,7 @@ public class InstanceConfigurationResourceImpl
 
 		Map<String, Object> properties = ConfigurationUtil.getProperties(
 			configuration, _configurationExportImportProcessor,
+			ExtendedObjectClassDefinition.Scope.COMPANY,
 			_settingsLocatorHelper);
 
 		if (properties.isEmpty()) {
@@ -160,12 +287,37 @@ public class InstanceConfigurationResourceImpl
 		return instanceConfiguration;
 	}
 
+	private InstanceConfiguration _toInstanceConfiguration(
+			ConfigurationScreen configurationScreen)
+		throws Exception {
+
+		Map<String, Object> properties = ConfigurationScreenUtil.getProperties(
+			_configurationExportImportProcessor, configurationScreen,
+			ExtendedObjectClassDefinition.Scope.COMPANY,
+			contextCompany.getCompanyId());
+
+		if ((properties == null) || properties.isEmpty()) {
+			return null;
+		}
+
+		InstanceConfiguration instanceConfiguration =
+			new InstanceConfiguration();
+
+		instanceConfiguration.setExternalReferenceCode(
+			configurationScreen::getKey);
+		instanceConfiguration.setProperties(() -> properties);
+
+		return instanceConfiguration;
+	}
+
 	@Reference
 	private ConfigurationAdmin _configurationAdmin;
 
 	@Reference
 	private ConfigurationExportImportProcessor
 		_configurationExportImportProcessor;
+
+	private ServiceTrackerMap<String, ConfigurationScreen> _serviceTrackerMap;
 
 	@Reference
 	private SettingsLocatorHelper _settingsLocatorHelper;

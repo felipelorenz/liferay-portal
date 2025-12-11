@@ -17,7 +17,6 @@ import com.liferay.object.definition.security.permission.resource.util.ObjectDef
 import com.liferay.object.definition.util.ObjectDefinitionUtil;
 import com.liferay.object.definition.util.ObjectDefinitionValidationThreadLocal;
 import com.liferay.object.exception.DuplicateObjectFieldExternalReferenceCodeException;
-import com.liferay.object.exception.ObjectDefinitionEnableLocalizationException;
 import com.liferay.object.exception.ObjectFieldBusinessTypeException;
 import com.liferay.object.exception.ObjectFieldDBTypeException;
 import com.liferay.object.exception.ObjectFieldLabelException;
@@ -34,6 +33,7 @@ import com.liferay.object.exception.ObjectFieldSystemException;
 import com.liferay.object.exception.RequiredObjectFieldException;
 import com.liferay.object.field.business.type.ObjectFieldBusinessType;
 import com.liferay.object.field.business.type.ObjectFieldBusinessTypeRegistry;
+import com.liferay.object.field.setting.util.ObjectFieldSettingUtil;
 import com.liferay.object.field.util.ObjectFieldUtil;
 import com.liferay.object.internal.field.setting.contributor.DefaultObjectFieldSettingContributor;
 import com.liferay.object.internal.field.setting.contributor.FiltersObjectFieldSettingsContributor;
@@ -956,9 +956,7 @@ public class ObjectFieldLocalServiceImpl
 			_objectFieldBusinessTypeRegistry.getObjectFieldBusinessType(
 				objectField.getBusinessType());
 
-		_validateLocalized(
-			localized, objectDefinition, objectField, objectFieldBusinessType,
-			required);
+		_validateLocalized(localized, objectField, objectFieldBusinessType);
 
 		User user = _userLocalService.getUser(userId);
 
@@ -1052,6 +1050,19 @@ public class ObjectFieldLocalServiceImpl
 			}
 
 			_addObjectFieldColumn(dbTableName, objectField);
+
+			Object defaultValue = ObjectFieldSettingUtil.getDefaultValue(
+				null, objectField, null);
+
+			if ((defaultValue != null) &&
+				objectField.compareBusinessType(
+					ObjectFieldConstants.BUSINESS_TYPE_PICKLIST) &&
+				objectField.isState()) {
+
+				runSQL(
+					DynamicObjectDefinitionTableUtil.getUpdateDefaultValueSQL(
+						dbColumnName, dbType, defaultValue, dbTableName));
+			}
 		}
 
 		return objectField;
@@ -1167,6 +1178,25 @@ public class ObjectFieldLocalServiceImpl
 					newObjectFieldSetting.getName());
 
 			if (oldObjectFieldSetting == null) {
+				if (!FeatureFlagManagerUtil.isEnabled(
+						newObjectField.getCompanyId(), "LPD-46451") &&
+					!(Objects.equals(
+						newObjectField.getBusinessType(),
+						ObjectFieldConstants.BUSINESS_TYPE_BOOLEAN) ||
+					  Objects.equals(
+						  newObjectField.getBusinessType(),
+						  ObjectFieldConstants.BUSINESS_TYPE_PICKLIST)) &&
+					(StringUtil.equals(
+						newObjectFieldSetting.getName(),
+						ObjectFieldSettingConstants.NAME_DEFAULT_VALUE) ||
+					 StringUtil.equals(
+						 newObjectFieldSetting.getName(),
+						 ObjectFieldSettingConstants.
+							 NAME_DEFAULT_VALUE_TYPE))) {
+
+					continue;
+				}
+
 				objectFieldSettingContributor.addObjectFieldSetting(
 					newObjectField.getUserId(),
 					newObjectField.getObjectFieldId(), newObjectFieldSetting);
@@ -1358,9 +1388,7 @@ public class ObjectFieldLocalServiceImpl
 			return objectField;
 		}
 
-		if (objectDefinition.isEnableLocalization() &&
-			objectField.isLocalized()) {
-
+		if (objectField.isLocalized()) {
 			_alterTableDropColumn(
 				objectDefinition.getLocalizationDBTableName(),
 				objectField.getDBColumnName());
@@ -1580,9 +1608,7 @@ public class ObjectFieldLocalServiceImpl
 			_objectFieldBusinessTypeRegistry.getObjectFieldBusinessType(
 				businessType);
 
-		_validateLocalized(
-			localized, oldObjectField.getObjectDefinition(), newObjectField,
-			objectFieldBusinessType, required);
+		_validateLocalized(localized, newObjectField, objectFieldBusinessType);
 
 		ObjectDefinition objectDefinition =
 			_objectDefinitionPersistence.findByPrimaryKey(
@@ -1894,93 +1920,44 @@ public class ObjectFieldLocalServiceImpl
 	}
 
 	private void _validateLocalized(
-			boolean localized, ObjectDefinition objectDefinition,
-			ObjectField objectField,
-			ObjectFieldBusinessType objectFieldBusinessType, boolean required)
+			boolean localized, ObjectField objectField,
+			ObjectFieldBusinessType objectFieldBusinessType)
 		throws PortalException {
 
 		if (!localized) {
 			return;
 		}
 
-		String objectFieldBusinessTypeName = objectFieldBusinessType.getName();
-
-		if ((!FeatureFlagManagerUtil.isEnabled(
-				objectDefinition.getCompanyId(), "LPD-32050") &&
-			 !objectFieldBusinessTypeName.equals(
-				 ObjectFieldConstants.BUSINESS_TYPE_LONG_TEXT) &&
-			 !objectFieldBusinessTypeName.equals(
-				 ObjectFieldConstants.BUSINESS_TYPE_RICH_TEXT) &&
-			 !objectFieldBusinessTypeName.equals(
-				 ObjectFieldConstants.BUSINESS_TYPE_TEXT)) ||
-			(FeatureFlagManagerUtil.isEnabled(
-				objectDefinition.getCompanyId(), "LPD-32050") &&
-			 !objectFieldBusinessType.isLocalizationSupported(objectField))) {
-
-			if (FeatureFlagManagerUtil.isEnabled(
-					objectDefinition.getCompanyId(), "LPD-32050")) {
-
-				_handleException(
-					new ObjectFieldLocalizedException(
-						StringBundler.concat(
-							"Only ",
-							ObjectFieldConstants.BUSINESS_TYPE_ATTACHMENT,
-							StringPool.COMMA,
-							ObjectFieldConstants.BUSINESS_TYPE_BOOLEAN,
-							StringPool.COMMA,
-							ObjectFieldConstants.BUSINESS_TYPE_DATE,
-							StringPool.COMMA,
-							ObjectFieldConstants.BUSINESS_TYPE_DATE_TIME,
-							StringPool.COMMA,
-							ObjectFieldConstants.BUSINESS_TYPE_DECIMAL,
-							StringPool.COMMA,
-							ObjectFieldConstants.BUSINESS_TYPE_INTEGER,
-							StringPool.COMMA,
-							ObjectFieldConstants.BUSINESS_TYPE_LONG_INTEGER,
-							StringPool.COMMA,
-							ObjectFieldConstants.BUSINESS_TYPE_LONG_TEXT,
-							StringPool.COMMA,
-							ObjectFieldConstants.
-								BUSINESS_TYPE_MULTISELECT_PICKLIST,
-							StringPool.COMMA,
-							ObjectFieldConstants.BUSINESS_TYPE_PICKLIST,
-							StringPool.COMMA,
-							ObjectFieldConstants.
-								BUSINESS_TYPE_PRECISION_DECIMAL,
-							StringPool.COMMA,
-							ObjectFieldConstants.BUSINESS_TYPE_RICH_TEXT,
-							" and ", ObjectFieldConstants.BUSINESS_TYPE_TEXT,
-							" business types support localization")),
-					"localized", true);
-			}
-
+		if (!objectFieldBusinessType.isLocalizationSupported(objectField)) {
 			_handleException(
 				new ObjectFieldLocalizedException(
 					StringBundler.concat(
-						"Only ", ObjectFieldConstants.BUSINESS_TYPE_LONG_TEXT,
+						"Only ", ObjectFieldConstants.BUSINESS_TYPE_ATTACHMENT,
+						StringPool.COMMA,
+						ObjectFieldConstants.BUSINESS_TYPE_BOOLEAN,
+						StringPool.COMMA,
+						ObjectFieldConstants.BUSINESS_TYPE_DATE,
+						StringPool.COMMA,
+						ObjectFieldConstants.BUSINESS_TYPE_DATE_TIME,
+						StringPool.COMMA,
+						ObjectFieldConstants.BUSINESS_TYPE_DECIMAL,
+						StringPool.COMMA,
+						ObjectFieldConstants.BUSINESS_TYPE_INTEGER,
+						StringPool.COMMA,
+						ObjectFieldConstants.BUSINESS_TYPE_LONG_INTEGER,
+						StringPool.COMMA,
+						ObjectFieldConstants.BUSINESS_TYPE_LONG_TEXT,
+						StringPool.COMMA,
+						ObjectFieldConstants.BUSINESS_TYPE_MULTISELECT_PICKLIST,
+						StringPool.COMMA,
+						ObjectFieldConstants.BUSINESS_TYPE_PICKLIST,
+						StringPool.COMMA,
+						ObjectFieldConstants.BUSINESS_TYPE_PRECISION_DECIMAL,
 						StringPool.COMMA,
 						ObjectFieldConstants.BUSINESS_TYPE_RICH_TEXT, " and ",
 						ObjectFieldConstants.BUSINESS_TYPE_TEXT,
 						" business types support localization")),
 				"localized", true);
-		}
-
-		if (!objectDefinition.isEnableLocalization() &&
-			objectDefinition.isApproved()) {
-
-			_handleException(
-				new ObjectDefinitionEnableLocalizationException(),
-				"enableLocalization", objectDefinition.isEnableLocalization());
-		}
-
-		if (!FeatureFlagManagerUtil.isEnabled(
-				objectDefinition.getCompanyId(), "LPD-32050") &&
-			!objectDefinition.isUnmodifiableSystemObject() && required) {
-
-			_handleException(
-				new ObjectFieldLocalizedException(
-					"Localized object fields must not be required"),
-				"required", true);
 		}
 	}
 

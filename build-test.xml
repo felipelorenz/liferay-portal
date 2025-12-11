@@ -3122,23 +3122,11 @@ server.detector.server.id=tomcat</echo>
 				<elseif>
 					<equals arg1="${app.server.type}" arg2="weblogic" />
 					<then>
-						<if>
-							<equals arg1="${app.server.weblogic.version}" arg2="12.2.1" />
-							<then>
-								<echo file="${liferay.home}/tools/portal-tools-db-upgrade-client/app-server.properties">dir=${app.server.dir}
+						<echo file="${liferay.home}/tools/portal-tools-db-upgrade-client/app-server.properties">dir=${app.server.weblogic.dir}
 extra.lib.dirs=wlserver/modules
 global.lib.dir=domains/liferay/lib
 portal.dir=domains/liferay/autodeploy/ROOT
 server.detector.server.id=weblogic</echo>
-							</then>
-							<else>
-								<echo file="${liferay.home}/tools/portal-tools-db-upgrade-client/app-server.properties">dir=${app.server.weblogic.dir}
-extra.lib.dirs=oracle/wlserver/modules
-global.lib.dir=domains/liferay/lib
-portal.dir=/domains/liferay/autodeploy/ROOT
-server.detector.server.id=weblogic</echo>
-							</else>
-						</if>
 					</then>
 				</elseif>
 				<elseif>
@@ -5213,11 +5201,17 @@ tell application "Safari" to quit
 
 	<macrodef name="prepare-test-app-server-custom">
 		<sequential>
-			<ant antfile="build-dist.xml" inheritAll="false" target="unzip-${app.server.type}-custom" />
-
 			<if>
 				<equals arg1="${app.server.type}" arg2="weblogic" />
 				<then>
+					<local name="java.jdk.home" />
+
+					<get-java-jdk-home type="oracle" version="17" />
+
+					<ant antfile="build-dist.xml" inheritAll="false" target="unzip-${app.server.type}-custom">
+						<property name="weblogic.java.jdk.home" value="${java.jdk.home}" />
+					</ant>
+
 					<chmod
 						perm="a+x"
 					>
@@ -5286,6 +5280,9 @@ tell application "Safari" to quit
 
 					<delete file="${weblogic.fix.sh}" />
 				</then>
+				<else>
+					<ant antfile="build-dist.xml" inheritAll="false" target="unzip-${app.server.type}-custom" />
+				</else>
 			</if>
 		</sequential>
 	</macrodef>
@@ -5398,7 +5395,13 @@ tell application "Safari" to quit
 							app.server.type=weblogic
 						</app-server-properties-update>
 
-						<ant antfile="build-dist.xml" inheritAll="false" target="unzip-weblogic-custom" />
+						<local name="java.jdk.home" />
+
+						<get-java-jdk-home type="oracle" version="17" />
+
+						<ant antfile="build-dist.xml" inheritAll="false" target="unzip-weblogic-custom">
+							<property name="weblogic.java.jdk.home" value="${java.jdk.home}" />
+						</ant>
 
 						<antcall inheritAll="false" target="deploy" />
 
@@ -7556,6 +7559,7 @@ org.apache.catalina.startup.ClassLoaderFactory.level=INFO]]>
 		<attribute default="0" name="app.server.bundle.index" />
 		<attribute default="true" name="delete.liferay.home" />
 		<attribute default="" name="testable.portal.started.marker.file" />
+		<attribute default="false" name="skip.wait.server.startup" />
 
 		<sequential>
 			<lstopwatch action="start" name="start.app.server.@{app.server.bundle.index}" />
@@ -7563,6 +7567,7 @@ org.apache.catalina.startup.ClassLoaderFactory.level=INFO]]>
 			<start-app-server-cmd
 				app.server.bundle.index="@{app.server.bundle.index}"
 				delete.liferay.home="@{delete.liferay.home}"
+				skip.wait.server.startup="@{skip.wait.server.startup}"
 				test.docker.environment="${test.docker.environment}"
 				testable.portal.started.marker.file="@{testable.portal.started.marker.file}"
 			/>
@@ -7587,6 +7592,7 @@ org.apache.catalina.startup.ClassLoaderFactory.level=INFO]]>
 		<attribute default="0" name="app.server.bundle.index" />
 		<attribute default="true" name="delete.liferay.home" />
 		<attribute default="host" name="docker.network.name" />
+		<attribute default="false" name="skip.wait.server.startup" />
 		<attribute default="false" name="test.docker.environment" />
 		<attribute default="" name="testable.portal.started.marker.file" />
 
@@ -7653,7 +7659,12 @@ org.apache.catalina.startup.ClassLoaderFactory.level=INFO]]>
 					<get-operating-system-property property.name="operating.system.docker.image" />
 
 					<parallel>
-						<wait-for-app-server app.server.bin.dir="@{app.server.bin.dir}" app.server.bundle.index="@{app.server.bundle.index}" />
+						<if>
+							<equals arg1="@{skip.wait.server.startup}" arg2="false" />
+							<then>
+								<wait-for-app-server app.server.bin.dir="@{app.server.bin.dir}" app.server.bundle.index="@{app.server.bundle.index}" />
+							</then>
+						</if>
 
 						<daemons>
 							<if>
@@ -12446,6 +12457,7 @@ ${update.properties}</echo>
 		<Logger level="${dialect.detector.log.level}" name="com.liferay.portal.spring.hibernate.DialectDetector" />
 		<Logger level="ERROR" name="com.zaxxer.hikari.pool.PoolBase" />
 		<Logger level="ERROR" name="org.apache.http.client.protocol.ResponseProcessCookies" />
+		<Logger level="OFF" name="org.hibernate.engine.jdbc.spi.SqlExceptionHelper" />
 		${log4j.logggers.root}
 	</Loggers>
 </Configuration>]]></echo>
@@ -15281,6 +15293,8 @@ cluster.link.bind.addr["cluster-link-udp"]=127.0.0.1</echo>
 					dest="${liferay.home}"
 					src="${liferay.home}/data-archive-portal-partition-large.zip"
 				/>
+
+				<delete file="${liferay.home}/data-archive-portal-partition-large.zip" />
 			</then>
 			<else>
 				<unzip
@@ -17357,8 +17371,18 @@ CATALINA_OPTS="$CATALINA_OPTS -Dcom.sun.management.jmxremote -Dcom.sun.managemen
 			</then>
 		</if>
 
+		<if>
+			<not>
+				<isset property="skip.wait.server.startup" />
+			</not>
+			<then>
+				<var name="skip.wait.server.startup" value="false" />
+			</then>
+		</if>
+
 		<start-app-server
 			app.server.bundle.index="${app.server.bundle.index}"
+			skip.wait.server.startup="${skip.wait.server.startup}"
 			testable.portal.started.marker.file="${testable.portal.started.marker.file}"
 		/>
 	</target>

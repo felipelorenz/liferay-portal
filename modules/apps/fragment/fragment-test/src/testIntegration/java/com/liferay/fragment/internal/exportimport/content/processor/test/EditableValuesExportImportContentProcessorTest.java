@@ -37,6 +37,7 @@ import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.model.Layout;
+import com.liferay.portal.kernel.service.GroupLocalService;
 import com.liferay.portal.kernel.service.LayoutLocalService;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.test.TestInfo;
@@ -47,6 +48,7 @@ import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.Portal;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.portal.kernel.workflow.WorkflowConstants;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
@@ -111,10 +113,6 @@ public class EditableValuesExportImportContentProcessorTest {
 		JournalArticle journalArticle = JournalTestUtil.addArticle(
 			_stagingGroup.getGroupId(), 0);
 
-		Layout layout = LayoutTestUtil.addTypeContentLayout(_stagingGroup);
-
-		Layout draftLayout = layout.fetchDraftLayout();
-
 		FragmentEntryLink draftFragmentEntryLink =
 			ContentLayoutTestUtil.addFragmentEntryLinkToLayout(
 				JSONUtil.put(
@@ -152,17 +150,17 @@ public class EditableValuesExportImportContentProcessorTest {
 				_fragmentRendererRegistry.getFragmentRenderer(
 					"com.liferay.fragment.internal.renderer." +
 						"ContentObjectFragmentRenderer"),
-				draftLayout, null, 0,
+				_draftLayout, null, 0,
 				_segmentsExperienceLocalService.
-					fetchDefaultSegmentsExperienceId(draftLayout.getPlid()));
+					fetchDefaultSegmentsExperienceId(_draftLayout.getPlid()));
 
-		ContentLayoutTestUtil.publishLayout(draftLayout, layout);
+		ContentLayoutTestUtil.publishLayout(_draftLayout, _layout);
 
 		FragmentEntryLink fragmentEntryLink =
 			_fragmentEntryLinkLocalService.getFragmentEntryLink(
-				layout.getGroupId(),
+				_layout.getGroupId(),
 				draftFragmentEntryLink.getExternalReferenceCode(),
-				layout.getPlid());
+				_layout.getPlid());
 
 		_publishLayouts();
 
@@ -190,6 +188,126 @@ public class EditableValuesExportImportContentProcessorTest {
 	}
 
 	@Test
+	@TestInfo("LPD-67532")
+	public void testEditableValuesWithInfoItemFieldMapped() throws Exception {
+		JournalArticle journalArticle = JournalTestUtil.addArticle(
+			_stagingGroup.getGroupId(), 0);
+
+		FragmentEntry fragmentEntry =
+			_fragmentCollectionContributorRegistry.getFragmentEntry(
+				"BASIC_COMPONENT-heading");
+
+		FragmentEntryLink fragmentEntryLink =
+			ContentLayoutTestUtil.addFragmentEntryLinkToLayout(
+				JSONUtil.put(
+					FragmentEntryProcessorConstants.
+						KEY_EDITABLE_FRAGMENT_ENTRY_PROCESSOR,
+					JSONUtil.put(
+						"element-text",
+						JSONUtil.put(
+							"className", JournalArticle.class.getName()
+						).put(
+							"classNameId",
+							_portal.getClassNameId(JournalArticle.class)
+						).put(
+							"classPK", journalArticle.getResourcePrimKey()
+						).put(
+							"externalReferenceCode",
+							journalArticle.getExternalReferenceCode()
+						).put(
+							"fieldId", "JournalArticle_title"
+						))
+				).toString(),
+				fragmentEntry.getCss(), fragmentEntry.getConfiguration(),
+				fragmentEntry.getExternalReferenceCode(), null,
+				fragmentEntry.getHtml(), fragmentEntry.getJs(), _draftLayout,
+				fragmentEntry.getFragmentEntryKey(),
+				_segmentsExperienceLocalService.
+					fetchDefaultSegmentsExperienceId(_draftLayout.getPlid()),
+				fragmentEntry.getType());
+
+		ContentLayoutTestUtil.publishLayout(_draftLayout, _layout);
+
+		_publishLayouts();
+
+		journalArticle =
+			_journalArticleLocalService.getJournalArticleByUuidAndGroupId(
+				journalArticle.getUuid(), _liveGroup.getGroupId());
+
+		_assertInfoItemFieldMappedEditableValues(
+			journalArticle.getResourcePrimKey(),
+			journalArticle.getExternalReferenceCode(),
+			_fragmentEntryLinkLocalService.getFragmentEntryLinkByUuidAndGroupId(
+				fragmentEntryLink.getUuid(), _liveGroup.getGroupId()),
+			null);
+
+		journalArticle = JournalTestUtil.addArticle(
+			_stagingGroup.getGroupId(), 0);
+
+		fragmentEntryLink = _setEditableValues(
+			JSONUtil.put(
+				FragmentEntryProcessorConstants.
+					KEY_EDITABLE_FRAGMENT_ENTRY_PROCESSOR,
+				JSONUtil.put(
+					"element-text",
+					JSONUtil.put(
+						"className", JournalArticle.class.getName()
+					).put(
+						"externalReferenceCode",
+						journalArticle.getExternalReferenceCode()
+					).put(
+						"fieldId", "JournalArticle_title"
+					))
+			).toString(),
+			fragmentEntryLink);
+
+		_publishLayouts();
+
+		journalArticle =
+			_journalArticleLocalService.getJournalArticleByUuidAndGroupId(
+				journalArticle.getUuid(), _liveGroup.getGroupId());
+
+		_assertInfoItemFieldMappedEditableValues(
+			0, journalArticle.getExternalReferenceCode(),
+			_fragmentEntryLinkLocalService.getFragmentEntryLinkByUuidAndGroupId(
+				fragmentEntryLink.getUuid(), _liveGroup.getGroupId()),
+			null);
+
+		Group group = _groupLocalService.getGroup(TestPropsValues.getGroupId());
+
+		journalArticle = JournalTestUtil.addArticle(
+			TestPropsValues.getGroupId(), 0);
+
+		fragmentEntryLink = _setEditableValues(
+			JSONUtil.put(
+				FragmentEntryProcessorConstants.
+					KEY_EDITABLE_FRAGMENT_ENTRY_PROCESSOR,
+				JSONUtil.put(
+					"element-text",
+					JSONUtil.put(
+						"className", JournalArticle.class.getName()
+					).put(
+						"externalReferenceCode",
+						journalArticle.getExternalReferenceCode()
+					).put(
+						"fieldId", "JournalArticle_title"
+					).put(
+						"scopeExternalReferenceCode",
+						group.getExternalReferenceCode()
+					))
+			).toString(),
+			fragmentEntryLink);
+
+		_publishLayouts();
+
+		_assertInfoItemFieldMappedEditableValues(
+			0, journalArticle.getExternalReferenceCode(),
+			_fragmentEntryLinkLocalService.getFragmentEntryLinkByUuidAndGroupId(
+				fragmentEntryLink.getUuid(), _liveGroup.getGroupId()),
+			group.getExternalReferenceCode());
+	}
+
+	@Test
 	@TestInfo("LPD-63158")
 	public void testEditableValuesWithItemSelectorWithTemplateWithoutTemplateKey()
 		throws Exception {
@@ -206,10 +324,6 @@ public class EditableValuesExportImportContentProcessorTest {
 			ddmStructure.getStructureId(), "BASIC-WEB-CONTENT",
 			ServiceContextTestUtil.getServiceContext(
 				_stagingGroup.getGroupId(), TestPropsValues.getUserId()));
-
-		Layout layout = LayoutTestUtil.addTypeContentLayout(_stagingGroup);
-
-		Layout draftLayout = layout.fetchDraftLayout();
 
 		FragmentEntryLink draftFragmentEntryLink =
 			ContentLayoutTestUtil.addFragmentEntryLinkToLayout(
@@ -244,20 +358,20 @@ public class EditableValuesExportImportContentProcessorTest {
 				_fragmentRendererRegistry.getFragmentRenderer(
 					"com.liferay.fragment.internal.renderer." +
 						"ContentObjectFragmentRenderer"),
-				draftLayout, null, 0,
+				_draftLayout, null, 0,
 				_segmentsExperienceLocalService.
-					fetchDefaultSegmentsExperienceId(draftLayout.getPlid()));
+					fetchDefaultSegmentsExperienceId(_draftLayout.getPlid()));
 
 		_assertItemSelectorClassPK(
 			journalArticle.getResourcePrimKey(), draftFragmentEntryLink);
 
-		ContentLayoutTestUtil.publishLayout(draftLayout, layout);
+		ContentLayoutTestUtil.publishLayout(_draftLayout, _layout);
 
 		FragmentEntryLink fragmentEntryLink =
 			_fragmentEntryLinkLocalService.getFragmentEntryLink(
-				layout.getGroupId(),
+				_layout.getGroupId(),
 				draftFragmentEntryLink.getExternalReferenceCode(),
-				layout.getPlid());
+				_layout.getPlid());
 
 		_assertItemSelectorClassPK(
 			journalArticle.getResourcePrimKey(), fragmentEntryLink);
@@ -286,44 +400,150 @@ public class EditableValuesExportImportContentProcessorTest {
 	}
 
 	@Test
-	@TestInfo({"LPD-34189", "LPS-120198"})
-	public void testLinkedLayoutMapping() throws Exception {
+	@TestInfo({"LPD-34189", "LPD-67532", "LPS-120198"})
+	public void testEditableValuesWithLinkedLayoutMapping() throws Exception {
 		Layout layout = LayoutTestUtil.addTypeContentLayout(_stagingGroup);
 
 		FragmentEntryLink fragmentEntryLink =
 			_addLinkMappedToLayoutFragmentEntryLink(layout);
 
 		_assertLayoutJSONObject(
+			null, _stagingGroup.getGroupId(),
 			_getEditableFragmentEntryProcessorLayoutJSONObject(
 				fragmentEntryLink),
-			layout);
+			layout.getLayoutId(), null);
 
 		_publishLayouts();
 
+		layout = _layoutLocalService.getLayoutByUuidAndGroupId(
+			layout.getUuid(), _liveGroup.getGroupId(),
+			layout.isPrivateLayout());
+
 		_assertLayoutJSONObject(
+			null, _liveGroup.getGroupId(),
 			_getEditableFragmentEntryProcessorLayoutJSONObject(
 				_fragmentEntryLinkLocalService.
 					getFragmentEntryLinkByUuidAndGroupId(
 						fragmentEntryLink.getUuid(), _liveGroup.getGroupId())),
-			_layoutLocalService.getLayoutByUuidAndGroupId(
-				layout.getUuid(), _liveGroup.getGroupId(),
-				layout.isPrivateLayout()));
+			layout.getLayoutId(), null);
+
+		layout = LayoutTestUtil.addTypeContentLayout(_stagingGroup);
+
+		fragmentEntryLink = _setEditableValues(
+			JSONUtil.put(
+				FragmentEntryProcessorConstants.
+					KEY_EDITABLE_FRAGMENT_ENTRY_PROCESSOR,
+				JSONUtil.put(
+					"element-text",
+					JSONUtil.put(
+						"config",
+						JSONUtil.put(
+							"layout",
+							JSONUtil.put(
+								"externalReferenceCode",
+								layout.getExternalReferenceCode())
+						).put(
+							"mapperType", "link"
+						)))
+			).toString(),
+			fragmentEntryLink);
+
+		_publishLayouts();
+
+		layout = _layoutLocalService.getLayoutByUuidAndGroupId(
+			layout.getUuid(), _liveGroup.getGroupId(),
+			layout.isPrivateLayout());
+
+		_assertLayoutJSONObject(
+			layout.getExternalReferenceCode(), _liveGroup.getGroupId(),
+			_getEditableFragmentEntryProcessorLayoutJSONObject(
+				_fragmentEntryLinkLocalService.
+					getFragmentEntryLinkByUuidAndGroupId(
+						fragmentEntryLink.getUuid(), _liveGroup.getGroupId())),
+			layout.getLayoutId(), null);
+
+		Group group = _groupLocalService.getGroup(TestPropsValues.getGroupId());
+
+		layout = LayoutTestUtil.addTypeContentLayout(group);
+
+		fragmentEntryLink = _setEditableValues(
+			JSONUtil.put(
+				FragmentEntryProcessorConstants.
+					KEY_EDITABLE_FRAGMENT_ENTRY_PROCESSOR,
+				JSONUtil.put(
+					"element-text",
+					JSONUtil.put(
+						"config",
+						JSONUtil.put(
+							"layout",
+							JSONUtil.put(
+								"externalReferenceCode",
+								layout.getExternalReferenceCode()
+							).put(
+								"scopeExternalReferenceCode",
+								group.getExternalReferenceCode()
+							)
+						).put(
+							"mapperType", "link"
+						)))
+			).toString(),
+			fragmentEntryLink);
+
+		_publishLayouts();
+
+		_assertLayoutJSONObject(
+			layout.getExternalReferenceCode(), group.getGroupId(),
+			_getEditableFragmentEntryProcessorLayoutJSONObject(
+				_fragmentEntryLinkLocalService.
+					getFragmentEntryLinkByUuidAndGroupId(
+						fragmentEntryLink.getUuid(), _liveGroup.getGroupId())),
+			layout.getLayoutId(), group.getExternalReferenceCode());
 	}
 
 	@Test
-	@TestInfo("LPD-34189")
-	public void testLinkedLayoutMappingWithDeletedLayout() throws Exception {
+	@TestInfo({"LPD-34189", "LPD-67532"})
+	public void testEditableValuesWithLinkedLayoutMappingWithDeletedLayout()
+		throws Exception {
+
 		Layout layout = LayoutTestUtil.addTypeContentLayout(_stagingGroup);
 
 		FragmentEntryLink fragmentEntryLink =
 			_addLinkMappedToLayoutFragmentEntryLink(layout);
 
 		_assertLayoutJSONObject(
+			null, layout.getGroupId(),
 			_getEditableFragmentEntryProcessorLayoutJSONObject(
 				fragmentEntryLink),
-			layout);
+			layout.getLayoutId(), null);
 
 		_layoutLocalService.deleteLayout(layout.getPlid());
+
+		_publishLayouts();
+
+		_assertDeletedLayoutJSONObject(
+			_getEditableFragmentEntryProcessorLayoutJSONObject(
+				_fragmentEntryLinkLocalService.
+					getFragmentEntryLinkByUuidAndGroupId(
+						fragmentEntryLink.getUuid(), _liveGroup.getGroupId())));
+
+		fragmentEntryLink = _setEditableValues(
+			JSONUtil.put(
+				FragmentEntryProcessorConstants.
+					KEY_EDITABLE_FRAGMENT_ENTRY_PROCESSOR,
+				JSONUtil.put(
+					"element-text",
+					JSONUtil.put(
+						"config",
+						JSONUtil.put(
+							"layout",
+							JSONUtil.put(
+								"externalReferenceCode",
+								layout.getExternalReferenceCode())
+						).put(
+							"mapperType", "link"
+						)))
+			).toString(),
+			fragmentEntryLink);
 
 		_publishLayouts();
 
@@ -335,44 +555,133 @@ public class EditableValuesExportImportContentProcessorTest {
 	}
 
 	@Test
-	@TestInfo("LPD-34189")
-	public void testURLEditableValues() throws Exception {
+	@TestInfo({"LPD-34189", "LPD-67532"})
+	public void testEditableValuesWithURL() throws Exception {
 		Layout layout = LayoutTestUtil.addTypeContentLayout(_stagingGroup);
 
 		FragmentEntryLink fragmentEntryLink =
 			_addUrlMappedToLayoutFragmentEntryLink(layout);
 
 		_assertLayoutJSONObject(
+			null, _stagingGroup.getGroupId(),
 			_getFreeMarkerFragmentEntryProcessorLayoutJSONObject(
 				fragmentEntryLink),
-			layout);
+			layout.getLayoutId(), null);
 
 		_publishLayouts();
 
+		layout = _layoutLocalService.getLayoutByUuidAndGroupId(
+			layout.getUuid(), _liveGroup.getGroupId(),
+			layout.isPrivateLayout());
+
 		_assertLayoutJSONObject(
+			null, _liveGroup.getGroupId(),
 			_getFreeMarkerFragmentEntryProcessorLayoutJSONObject(
 				_fragmentEntryLinkLocalService.
 					getFragmentEntryLinkByUuidAndGroupId(
 						fragmentEntryLink.getUuid(), _liveGroup.getGroupId())),
-			_layoutLocalService.getLayoutByUuidAndGroupId(
-				layout.getUuid(), _liveGroup.getGroupId(),
-				layout.isPrivateLayout()));
+			layout.getLayoutId(), null);
+
+		layout = LayoutTestUtil.addTypeContentLayout(_stagingGroup);
+
+		fragmentEntryLink = _setEditableValues(
+			JSONUtil.put(
+				FragmentEntryProcessorConstants.
+					KEY_FREEMARKER_FRAGMENT_ENTRY_PROCESSOR,
+				JSONUtil.put(
+					"myURL",
+					JSONUtil.put(
+						"layout",
+						JSONUtil.put(
+							"externalReferenceCode",
+							layout.getExternalReferenceCode())))
+			).toString(),
+			fragmentEntryLink);
+
+		_publishLayouts();
+
+		layout = _layoutLocalService.getLayoutByUuidAndGroupId(
+			layout.getUuid(), _liveGroup.getGroupId(),
+			layout.isPrivateLayout());
+
+		_assertLayoutJSONObject(
+			layout.getExternalReferenceCode(), _liveGroup.getGroupId(),
+			_getFreeMarkerFragmentEntryProcessorLayoutJSONObject(
+				_fragmentEntryLinkLocalService.
+					getFragmentEntryLinkByUuidAndGroupId(
+						fragmentEntryLink.getUuid(), _liveGroup.getGroupId())),
+			layout.getLayoutId(), null);
+
+		Group group = _groupLocalService.getGroup(TestPropsValues.getGroupId());
+
+		layout = LayoutTestUtil.addTypeContentLayout(group);
+
+		fragmentEntryLink = _setEditableValues(
+			JSONUtil.put(
+				FragmentEntryProcessorConstants.
+					KEY_FREEMARKER_FRAGMENT_ENTRY_PROCESSOR,
+				JSONUtil.put(
+					"myURL",
+					JSONUtil.put(
+						"layout",
+						JSONUtil.put(
+							"externalReferenceCode",
+							layout.getExternalReferenceCode()
+						).put(
+							"scopeExternalReferenceCode",
+							group.getExternalReferenceCode()
+						)))
+			).toString(),
+			fragmentEntryLink);
+
+		_publishLayouts();
+
+		_assertLayoutJSONObject(
+			layout.getExternalReferenceCode(), group.getGroupId(),
+			_getFreeMarkerFragmentEntryProcessorLayoutJSONObject(
+				_fragmentEntryLinkLocalService.
+					getFragmentEntryLinkByUuidAndGroupId(
+						fragmentEntryLink.getUuid(), _liveGroup.getGroupId())),
+			layout.getLayoutId(), group.getExternalReferenceCode());
 	}
 
 	@Test
-	@TestInfo("LPD-34189")
-	public void testURLEditableValuesWithDeletedLayout() throws Exception {
+	@TestInfo({"LPD-34189", "LPD-67532"})
+	public void testEditableValuesWithURLWithDeletedLayout() throws Exception {
 		Layout layout = LayoutTestUtil.addTypeContentLayout(_stagingGroup);
 
 		FragmentEntryLink fragmentEntryLink =
 			_addUrlMappedToLayoutFragmentEntryLink(layout);
 
 		_assertLayoutJSONObject(
+			null, layout.getGroupId(),
 			_getFreeMarkerFragmentEntryProcessorLayoutJSONObject(
 				fragmentEntryLink),
-			layout);
+			layout.getLayoutId(), null);
 
 		_layoutLocalService.deleteLayout(layout.getPlid());
+
+		_publishLayouts();
+
+		_assertDeletedLayoutJSONObject(
+			_getFreeMarkerFragmentEntryProcessorLayoutJSONObject(
+				_fragmentEntryLinkLocalService.
+					getFragmentEntryLinkByUuidAndGroupId(
+						fragmentEntryLink.getUuid(), _liveGroup.getGroupId())));
+
+		fragmentEntryLink = _setEditableValues(
+			JSONUtil.put(
+				FragmentEntryProcessorConstants.
+					KEY_FREEMARKER_FRAGMENT_ENTRY_PROCESSOR,
+				JSONUtil.put(
+					"myURL",
+					JSONUtil.put(
+						"layout",
+						JSONUtil.put(
+							"externalReferenceCode",
+							layout.getExternalReferenceCode())))
+			).toString(),
+			fragmentEntryLink);
 
 		_publishLayouts();
 
@@ -479,9 +788,7 @@ public class EditableValuesExportImportContentProcessorTest {
 
 		ContentLayoutTestUtil.publishLayout(_draftLayout, _layout);
 
-		return _fragmentEntryLinkLocalService.getFragmentEntryLink(
-			_stagingGroup.getGroupId(),
-			fragmentEntryLink.getExternalReferenceCode(), _layout.getPlid());
+		return fragmentEntryLink;
 	}
 
 	private FragmentEntryLink _addUrlMappedToLayoutFragmentEntryLink(
@@ -531,14 +838,57 @@ public class EditableValuesExportImportContentProcessorTest {
 
 		ContentLayoutTestUtil.publishLayout(_draftLayout, _layout);
 
-		return _fragmentEntryLinkLocalService.getFragmentEntryLink(
-			_stagingGroup.getGroupId(),
-			fragmentEntryLink.getExternalReferenceCode(), _layout.getPlid());
+		return fragmentEntryLink;
 	}
 
 	private void _assertDeletedLayoutJSONObject(JSONObject layoutJSONObject) {
 		Assert.assertFalse(layoutJSONObject.has("groupId"));
 		Assert.assertFalse(layoutJSONObject.has("layoutId"));
+	}
+
+	private void _assertInfoItemFieldMappedEditableValues(
+		long classPK, String externalReferenceCode,
+		FragmentEntryLink fragmentEntryLink,
+		String scopeExternalReferenceCode) {
+
+		JSONObject editableValuesJSONObject =
+			fragmentEntryLink.getEditableValuesJSONObject();
+
+		JSONObject editableJSONObject = editableValuesJSONObject.getJSONObject(
+			FragmentEntryProcessorConstants.
+				KEY_EDITABLE_FRAGMENT_ENTRY_PROCESSOR);
+
+		JSONObject elementTextJSONObject = editableJSONObject.getJSONObject(
+			"element-text");
+
+		Assert.assertEquals(
+			JournalArticle.class.getName(),
+			elementTextJSONObject.getString("className"));
+		Assert.assertEquals(
+			externalReferenceCode,
+			elementTextJSONObject.getString("externalReferenceCode"));
+
+		if (classPK > 0) {
+			Assert.assertEquals(
+				_portal.getClassNameId(JournalArticle.class.getName()),
+				elementTextJSONObject.getLong("classNameId"));
+			Assert.assertEquals(
+				classPK, elementTextJSONObject.getLong("classPK"));
+		}
+		else {
+			Assert.assertFalse(elementTextJSONObject.has("classNameId"));
+			Assert.assertFalse(elementTextJSONObject.has("classPK"));
+		}
+
+		if (Validator.isNotNull(scopeExternalReferenceCode)) {
+			Assert.assertEquals(
+				scopeExternalReferenceCode,
+				elementTextJSONObject.getString("scopeExternalReferenceCode"));
+		}
+		else {
+			Assert.assertFalse(
+				elementTextJSONObject.has("scopeExternalReferenceCode"));
+		}
 	}
 
 	private void _assertItemSelectorClassPK(
@@ -556,10 +906,30 @@ public class EditableValuesExportImportContentProcessorTest {
 		Assert.assertEquals(classPK, itemSelectorJSONObject.getLong("classPK"));
 	}
 
-	private void _assertLayoutJSONObject(JSONObject jsonObject, Layout layout) {
-		Assert.assertEquals(layout.getGroupId(), jsonObject.getLong("groupId"));
-		Assert.assertEquals(
-			layout.getLayoutId(), jsonObject.getLong("layoutId"));
+	private void _assertLayoutJSONObject(
+		String externalReferenceCode, long groupId, JSONObject jsonObject,
+		long layoutId, String scopeExternalReferenceCode) {
+
+		if (Validator.isNotNull(externalReferenceCode)) {
+			Assert.assertEquals(
+				externalReferenceCode,
+				jsonObject.getString("externalReferenceCode"));
+		}
+		else {
+			Assert.assertFalse(jsonObject.has("externalReferenceCode"));
+		}
+
+		Assert.assertEquals(groupId, jsonObject.getLong("groupId"));
+		Assert.assertEquals(layoutId, jsonObject.getLong("layoutId"));
+
+		if (Validator.isNotNull(scopeExternalReferenceCode)) {
+			Assert.assertEquals(
+				scopeExternalReferenceCode,
+				jsonObject.getString("scopeExternalReferenceCode"));
+		}
+		else {
+			Assert.assertFalse(jsonObject.has("scopeExternalReferenceCode"));
+		}
 	}
 
 	private JSONObject _getEditableFragmentEntryProcessorLayoutJSONObject(
@@ -607,14 +977,31 @@ public class EditableValuesExportImportContentProcessorTest {
 
 		parameterMap.put(
 			PortletDataHandlerKeys.PORTLET_DATA,
-			new String[] {Boolean.TRUE.toString()});
+			new String[] {Boolean.FALSE.toString()});
 		parameterMap.put(
 			PortletDataHandlerKeys.PORTLET_DATA_ALL,
-			new String[] {Boolean.TRUE.toString()});
+			new String[] {Boolean.FALSE.toString()});
 
 		StagingUtil.publishLayouts(
 			TestPropsValues.getUserId(), _stagingGroup.getGroupId(),
-			_liveGroup.getGroupId(), false, parameterMap);
+			_liveGroup.getGroupId(), false,
+			new long[] {_layout.getLayoutId(), _draftLayout.getLayoutId()},
+			RandomTestUtil.randomString(), parameterMap);
+	}
+
+	private FragmentEntryLink _setEditableValues(
+			String editableValues, FragmentEntryLink fragmentEntryLink)
+		throws Exception {
+
+		fragmentEntryLink.setEditableValues(editableValues);
+
+		fragmentEntryLink =
+			_fragmentEntryLinkLocalService.updateFragmentEntryLink(
+				fragmentEntryLink);
+
+		ContentLayoutTestUtil.publishLayout(_draftLayout, _layout);
+
+		return fragmentEntryLink;
 	}
 
 	@Inject
@@ -643,6 +1030,9 @@ public class EditableValuesExportImportContentProcessorTest {
 
 	@Inject
 	private FragmentRendererRegistry _fragmentRendererRegistry;
+
+	@Inject
+	private GroupLocalService _groupLocalService;
 
 	@Inject
 	private JournalArticleLocalService _journalArticleLocalService;

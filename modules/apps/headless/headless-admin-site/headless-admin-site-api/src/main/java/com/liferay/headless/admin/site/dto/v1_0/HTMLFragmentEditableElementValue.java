@@ -11,7 +11,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import com.liferay.petra.function.UnsafeSupplier;
 import com.liferay.petra.string.StringBundler;
-import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLField;
 import com.liferay.portal.vulcan.graphql.annotation.GraphQLName;
@@ -59,27 +58,30 @@ public class HTMLFragmentEditableElementValue
 		description = "The fragment editable element's HTML. Can be inline or mapped to an external value."
 	)
 	@Valid
-	public Object getHtml() {
-		if (_htmlSupplier != null) {
-			html = _htmlSupplier.get();
+	public HTMLFragmentValue getHtmlFragmentValue() {
+		if (_htmlFragmentValueSupplier != null) {
+			htmlFragmentValue = _htmlFragmentValueSupplier.get();
 
-			_htmlSupplier = null;
+			_htmlFragmentValueSupplier = null;
 		}
 
-		return html;
+		return htmlFragmentValue;
 	}
 
-	public void setHtml(Object html) {
-		this.html = html;
+	public void setHtmlFragmentValue(HTMLFragmentValue htmlFragmentValue) {
+		this.htmlFragmentValue = htmlFragmentValue;
 
-		_htmlSupplier = null;
+		_htmlFragmentValueSupplier = null;
 	}
 
 	@JsonIgnore
-	public void setHtml(UnsafeSupplier<Object, Exception> htmlUnsafeSupplier) {
-		_htmlSupplier = () -> {
+	public void setHtmlFragmentValue(
+		UnsafeSupplier<HTMLFragmentValue, Exception>
+			htmlFragmentValueUnsafeSupplier) {
+
+		_htmlFragmentValueSupplier = () -> {
 			try {
-				return htmlUnsafeSupplier.get();
+				return htmlFragmentValueUnsafeSupplier.get();
 			}
 			catch (RuntimeException runtimeException) {
 				throw runtimeException;
@@ -94,10 +96,10 @@ public class HTMLFragmentEditableElementValue
 		description = "The fragment editable element's HTML. Can be inline or mapped to an external value."
 	)
 	@JsonProperty(access = JsonProperty.Access.READ_WRITE)
-	protected Object html;
+	protected HTMLFragmentValue htmlFragmentValue;
 
 	@JsonIgnore
-	private Supplier<Object> _htmlSupplier;
+	private Supplier<HTMLFragmentValue> _htmlFragmentValueSupplier;
 
 	@Override
 	public boolean equals(Object object) {
@@ -128,26 +130,16 @@ public class HTMLFragmentEditableElementValue
 
 		sb.append("{");
 
-		Object html = getHtml();
+		HTMLFragmentValue htmlFragmentValue = getHtmlFragmentValue();
 
-		if (html != null) {
+		if (htmlFragmentValue != null) {
 			if (sb.length() > 1) {
 				sb.append(", ");
 			}
 
-			sb.append("\"html\": ");
+			sb.append("\"htmlFragmentValue\": ");
 
-			if (html instanceof Map) {
-				sb.append(JSONFactoryUtil.createJSONObject((Map<?, ?>)html));
-			}
-			else if (html instanceof String) {
-				sb.append("\"");
-				sb.append(_escape((String)html));
-				sb.append("\"");
-			}
-			else {
-				sb.append(html);
-			}
+			sb.append(String.valueOf(htmlFragmentValue));
 		}
 
 		Type type = getType();

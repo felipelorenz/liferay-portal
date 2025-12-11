@@ -12,23 +12,14 @@ import RulesService from '../../../app/services/RulesService';
 import {CACHE_KEYS} from '../../../app/utils/cache';
 import useCache from '../../../app/utils/useCache';
 import useConditionValues from '../../../app/utils/useConditionValues';
+import {Condition as ConditionType, RuleError} from '../../../types/Rule';
 import RuleBuilderItem from './RuleBuilderItem';
 import RuleSelect from './RuleSelect';
 
-export interface Condition {
-	field?: 'user' | 'role' | 'segment' | string;
-	id: string;
-	options?: {
-		type: 'equal' | 'not-equal';
-		value?: string;
-	};
-	type: 'user' | 'form' | undefined;
-}
-
 interface ConditionProps {
-	condition: Condition;
+	condition: ConditionType;
 	inputFragmentItems: {label: string; value: string}[];
-	onConditionChange: (condition: Condition) => void;
+	onConditionChange: (condition: ConditionType) => void;
 	onDeleteCondition: () => void;
 	showDeleteButton: boolean;
 	wrapperRef?: ComponentProps<typeof RuleBuilderItem>['wrapperRef'];
@@ -128,6 +119,12 @@ export default function Condition({
 
 	const completeCondition = !!condition.options?.value;
 
+	const onErrorChange = (error: RuleError | null) => {
+		if (condition.error?.element.id !== error?.element.id) {
+			onConditionChange({...condition, error});
+		}
+	};
+
 	return (
 		<RuleBuilderItem
 			aria-label={
@@ -149,6 +146,7 @@ export default function Condition({
 					'select-item-for-the-condition'
 				)}
 				items={CONDITION_TYPE_ITEMS}
+				onErrorChange={onErrorChange}
 				onSelectionChange={(type) =>
 					onConditionChange({...condition, type})
 				}
@@ -160,6 +158,7 @@ export default function Condition({
 				<UserTypeSelectors
 					condition={condition}
 					onConditionChange={onConditionChange}
+					onErrorChange={onErrorChange}
 					sendMessage={sendMessage}
 				/>
 			) : null}
@@ -169,6 +168,7 @@ export default function Condition({
 					condition={condition}
 					inputFragmentItems={inputFragmentItems}
 					onConditionChange={onConditionChange}
+					onErrorChange={onErrorChange}
 					sendMessage={sendMessage}
 				/>
 			) : null}
@@ -180,13 +180,21 @@ function FormFragmentTypeSelectors({
 	condition,
 	inputFragmentItems,
 	onConditionChange,
+	onErrorChange,
 	sendMessage,
 }: {
-	condition: Condition;
+	condition: ConditionType;
 	inputFragmentItems: {label: string; value: string}[];
-	onConditionChange: (condition: Condition) => void;
+	onConditionChange: (condition: ConditionType) => void;
+	onErrorChange: (error: RuleError | null) => void;
 	sendMessage: (message: string) => void;
 }) {
+	const selectedKey = inputFragmentItems.some(
+		(item) => item.value === condition.field
+	)
+		? condition.field
+		: undefined;
+
 	return (
 		<>
 			<RuleSelect
@@ -195,6 +203,7 @@ function FormFragmentTypeSelectors({
 					Liferay.Language.get('fragment')
 				)}
 				items={inputFragmentItems}
+				onErrorChange={onErrorChange}
 				onSelectionChange={(selectedFragment) => {
 					onConditionChange({
 						...condition,
@@ -202,7 +211,7 @@ function FormFragmentTypeSelectors({
 						options: undefined,
 					});
 				}}
-				selectedKey={condition.field}
+				selectedKey={selectedKey}
 			/>
 
 			{condition.field ? (
@@ -212,6 +221,7 @@ function FormFragmentTypeSelectors({
 						Liferay.Language.get('type')
 					)}
 					items={FORM_FRAGMENT_CONDITION_ITEMS}
+					onErrorChange={onErrorChange}
 					onSelectionChange={(type) => {
 						onConditionChange({
 							...condition,
@@ -236,6 +246,7 @@ function FormFragmentTypeSelectors({
 							value: 'value',
 						},
 					]}
+					onErrorChange={onErrorChange}
 					onSelectionChange={() => {}}
 					selectedKey="value"
 				/>
@@ -254,6 +265,7 @@ function FormFragmentTypeSelectors({
 							value: 'false',
 						},
 					]}
+					onErrorChange={onErrorChange}
 					onSelectionChange={(value) => {
 						onConditionChange({
 							...condition,
@@ -277,10 +289,12 @@ function FormFragmentTypeSelectors({
 function UserTypeSelectors({
 	condition,
 	onConditionChange,
+	onErrorChange,
 	sendMessage,
 }: {
-	condition: Condition;
-	onConditionChange: (condition: Condition) => void;
+	condition: ConditionType;
+	onConditionChange: (condition: ConditionType) => void;
+	onErrorChange: (error: RuleError | null) => void;
 	sendMessage: (message: string) => void;
 }) {
 	const ValueSelectorComponent: FC<SelectorProps> | null =
@@ -296,6 +310,7 @@ function UserTypeSelectors({
 					Liferay.Language.get('condition')
 				)}
 				items={USER_CONDITION_ITEMS}
+				onErrorChange={onErrorChange}
 				onSelectionChange={(selectedCondition) => {
 					onConditionChange({
 						...condition,
@@ -307,6 +322,7 @@ function UserTypeSelectors({
 
 			{ValueSelectorComponent ? (
 				<ValueSelectorComponent
+					onErrorChange={onErrorChange}
 					onValueChanged={(value) => {
 						onConditionChange({
 							...condition,
@@ -328,11 +344,12 @@ function UserTypeSelectors({
 }
 
 interface SelectorProps {
+	onErrorChange: (error: RuleError | null) => void;
 	onValueChanged: (value: string) => void;
 	value: string | undefined;
 }
 
-function RolesSelector({onValueChanged, value}: SelectorProps) {
+function RolesSelector({onErrorChange, onValueChanged, value}: SelectorProps) {
 	const roles = useCache({
 		fetcher: () => RulesService.getRoles(),
 		key: [CACHE_KEYS.roles],
@@ -352,6 +369,7 @@ function RolesSelector({onValueChanged, value}: SelectorProps) {
 				label: role.name,
 				value: role.roleId,
 			}))}
+			onErrorChange={onErrorChange}
 			onSelectionChange={(value: React.Key) =>
 				onValueChanged(value as string)
 			}
@@ -360,7 +378,7 @@ function RolesSelector({onValueChanged, value}: SelectorProps) {
 	);
 }
 
-function UserSelector({onValueChanged, value}: SelectorProps) {
+function UserSelector({onErrorChange, onValueChanged, value}: SelectorProps) {
 	const users = useCache({
 		fetcher: () => RulesService.getUsers(),
 		key: [CACHE_KEYS.users],
@@ -380,6 +398,7 @@ function UserSelector({onValueChanged, value}: SelectorProps) {
 				label: user.screenName,
 				value: user.userId,
 			}))}
+			onErrorChange={onErrorChange}
 			onSelectionChange={(value: React.Key) =>
 				onValueChanged(value as string)
 			}
@@ -388,7 +407,11 @@ function UserSelector({onValueChanged, value}: SelectorProps) {
 	);
 }
 
-function SegmentsSelector({onValueChanged, value}: SelectorProps) {
+function SegmentsSelector({
+	onErrorChange,
+	onValueChanged,
+	value,
+}: SelectorProps) {
 	return (
 		<RuleSelect
 			aria-label={sub(
@@ -401,6 +424,7 @@ function SegmentsSelector({onValueChanged, value}: SelectorProps) {
 					value: segmentsEntry.segmentsEntryId,
 				})
 			)}
+			onErrorChange={onErrorChange}
 			onSelectionChange={(value: React.Key) =>
 				onValueChanged(value as string)
 			}
@@ -411,7 +435,7 @@ function SegmentsSelector({onValueChanged, value}: SelectorProps) {
 
 function convertConditionValueToOptions(
 	field: keyof typeof CONDITION_VALUES
-): Partial<Condition> {
+): Partial<ConditionType> {
 	if (field === CONDITION_VALUES.not_user) {
 		return {
 			field: CONDITION_VALUES.user,
@@ -448,7 +472,7 @@ function convertConditionValueToOptions(
 }
 
 export function convertOptionsToConditionValue(
-	condition: Condition
+	condition: ConditionType
 ): keyof typeof CONDITION_VALUES | undefined {
 	if (condition.field === CONDITION_VALUES.user) {
 		if (condition.options?.type === 'equal') {

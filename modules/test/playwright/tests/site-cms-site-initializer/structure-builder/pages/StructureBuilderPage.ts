@@ -92,18 +92,21 @@ export class StructureBuilderPage {
 		}).toPass();
 	}
 
-	async addField(type: FieldType) {
-		const hasFields = !(await this.page
-			.getByText('No Fields Yet')
-			.isVisible());
-
+	async addField(type: FieldType, parent?: Field) {
 		let trigger: Locator;
 
-		if (hasFields) {
-			trigger = this.page.getByTitle('Add Field');
+		if (parent) {
+			await this.selectFields([parent]);
+
+			const treeItem = this.page
+				.locator('.treeview-item')
+				.getByLabel(parent.label, {exact: true})
+				.nth(parent.nth || 0);
+
+			trigger = treeItem.getByTitle('Add Field');
 		}
 		else {
-			trigger = this.page.getByText('Add Field');
+			trigger = this.page.getByTitle('Add Field').first();
 		}
 
 		await clickAndExpectToBeVisible({
@@ -328,12 +331,14 @@ export class StructureBuilderPage {
 	}
 
 	async createStructureFromData({
+		autoDelete = true,
 		erc = getRandomString(),
 		label,
 		name = `StructureName${getRandomInt()}`,
 		page,
 		publish = true,
 	}: {
+		autoDelete?: boolean;
 		erc?: string;
 		label: string;
 		name?: string;
@@ -350,7 +355,7 @@ export class StructureBuilderPage {
 			name,
 		});
 
-		const id = await page.saveStructure();
+		const id = await page.saveStructure({autoDelete});
 
 		if (publish) {
 			await page.publishStructure();
@@ -476,7 +481,9 @@ export class StructureBuilderPage {
 		return await response.json();
 	}
 
-	async saveStructure() {
+	async saveStructure(
+		{autoDelete}: {autoDelete?: boolean} = {autoDelete: true}
+	) {
 		const save = async () => {
 			await this.saveButton.click();
 
@@ -497,10 +504,12 @@ export class StructureBuilderPage {
 
 		// Add ids to ApiHelpers data so structures are cleaned after each test
 
-		this.dataApiHelpers.data.push({
-			id,
-			type: 'objectDefinition',
-		});
+		if (autoDelete) {
+			this.dataApiHelpers.data.push({
+				id,
+				type: 'objectDefinition',
+			});
+		}
 
 		return id;
 	}

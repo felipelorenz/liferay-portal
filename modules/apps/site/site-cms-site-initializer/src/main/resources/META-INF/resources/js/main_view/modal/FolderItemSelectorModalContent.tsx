@@ -26,6 +26,7 @@ export type TFolderItemSelectorModalContent = {
 	itemData: ItemData;
 	loadData: () => {};
 	objectEntryFolderExternalReferenceCode: string | undefined;
+	rootObjectEntryFolderExternalReferenceCode: string;
 };
 
 export type Action = 'copy' | 'move';
@@ -33,6 +34,11 @@ export type Action = 'copy' | 'move';
 type Folder = {
 	id: number;
 	title: string;
+};
+
+type Space = {
+	name: string;
+	scopeId: number;
 };
 
 const SPACES_URL = `${window.location.origin}/o/headless-asset-library/v1.0/asset-libraries?filter=type eq 'Space'`;
@@ -50,8 +56,8 @@ const FDS_DEFAULT_PROPS: Partial<IFrontendDataSetProps> = {
 	selectionType: 'single',
 };
 
-const getSpaceFoldersURL = (scopeId: number) => {
-	return `${window.location.origin}/o/headless-object/v1.0/scopes/${scopeId}/object-entry-folders`;
+const getSpaceFoldersURL = (cmsSection: string, scopeId: number) => {
+	return `${window.location.origin}/o/search/v1.0/search?emptySearch=true&entryClassNames=${OBJECT_ENTRY_FOLDER_CLASS_NAME}&filter=(cmsSection eq '${cmsSection}' or title eq '${cmsSection}') and (status in (0, 2, 3))&nestedFields=description,embedded,file.thumbnailURL&scope=${scopeId}`;
 };
 
 const displayInfoToast = (
@@ -79,13 +85,29 @@ const displaySuccessToast = (message: string, ...args: string[]) => {
 };
 
 const displayToast = (
+	action: Action,
 	error: any,
 	folder: Folder,
 	itemData: ItemData,
 	message: string
 ) => {
 	if (error) {
-		displayErrorToast(error);
+		let errorMessage = error;
+
+		if (error?.status === 'BAD_REQUEST') {
+			errorMessage = sub(
+				action === 'copy'
+					? Liferay.Language.get(
+							'x-could-not-be-copied.-please-ensure-the-structure-it-is-using-exists-in-the-destination-space'
+						)
+					: Liferay.Language.get(
+							'x-could-not-be-moved.-please-ensure-the-structure-it-is-using-exists-in-the-destination-space'
+						),
+				itemData.title
+			);
+		}
+
+		displayErrorToast(errorMessage);
 	}
 	else {
 		displaySuccessToast(
@@ -118,12 +140,18 @@ function executeFolderAction(
 			: FolderService.moveFolder(itemData.embedded.id, folder.id);
 	}
 
-	promise.then(({error}: {error: any}) => {
-		if (!error) {
+	promise.then((result: any) => {
+		if (!result.error) {
 			loadData();
 		}
 
-		displayToast(error, folder, itemData, SUCCESS_MESSAGES[action]);
+		displayToast(
+			action,
+			result.error,
+			folder,
+			itemData,
+			SUCCESS_MESSAGES[action]
+		);
 	});
 }
 
@@ -141,12 +169,18 @@ function executeAssetAction(
 			'{objectEntryFolderId}',
 			String(folder.id)
 		)
-	).then(({error}: {error: any}) => {
-		if (!error) {
+	).then((result: any) => {
+		if (!result.error) {
 			loadData();
 		}
 
-		displayToast(error, folder, itemData, SUCCESS_MESSAGES[action]);
+		displayToast(
+			action,
+			result.error,
+			folder,
+			itemData,
+			SUCCESS_MESSAGES[action]
+		);
 	});
 }
 
@@ -173,23 +207,38 @@ function FolderItemSelectorModalContent({
 	itemData,
 	loadData,
 	objectEntryFolderExternalReferenceCode,
+	rootObjectEntryFolderExternalReferenceCode,
 }: TFolderItemSelectorModalContent) {
 	const [selectedItemType, setSelectedItemType] = useState<
 		'folder' | 'space'
 	>(objectEntryFolderExternalReferenceCode ? 'folder' : 'space');
+
+	const objectFolderExternalReferenceCode =
+		itemData.entryClassName === OBJECT_ENTRY_FOLDER_CLASS_NAME
+			? ''
+			: itemData.embedded.systemProperties?.objectDefinitionBrief
+					?.objectFolderExternalReferenceCode;
+
+	const cmsSection =
+		objectFolderExternalReferenceCode === 'L_CMS_CONTENT_STRUCTURES' ||
+		rootObjectEntryFolderExternalReferenceCode === 'L_CONTENTS'
+			? 'contents'
+			: 'files';
 	const [url, setURL] = useState<string>(
 		objectEntryFolderExternalReferenceCode
-			? getSpaceFoldersURL(itemData.embedded.scopeId)
+			? getSpaceFoldersURL(cmsSection, itemData.embedded.scopeId)
 			: SPACES_URL
 	);
 	const [schemaKey, setSchemaKey] = useState(0);
+	const [currentSpace, setCurrentSpace] = useState<Space | undefined>();
 
 	const {observer, onOpenChange, open} = useModal();
 
-	function onSpaceClick({scopeId}: {scopeId: number}) {
+	function handleSpaceClick(space: Space) {
+		setCurrentSpace(space);
 		setSchemaKey((prev) => prev + 1);
 		setSelectedItemType('folder');
-		setURL(getSpaceFoldersURL(scopeId));
+		setURL(getSpaceFoldersURL(cmsSection, space.scopeId));
 	}
 
 	const setItemComponentProps = ({item, props}: {item: any; props: any}) => {
@@ -203,7 +252,8 @@ function FolderItemSelectorModalContent({
 			return {
 				...props,
 				onClick: () => {
-					onSpaceClick({
+					handleSpaceClick({
+						name: assetLibrary!.name,
 						scopeId: assetLibrary!.groupId,
 					});
 				},
@@ -287,7 +337,7 @@ function FolderItemSelectorModalContent({
 	return (
 		<>
 			{open && (
-				<ItemSelectorModal
+				<ItemSelectorModal<Folder>
 					apiURL={url}
 					breadcrumbs={
 						objectEntryFolderExternalReferenceCode
@@ -296,15 +346,30 @@ function FolderItemSelectorModalContent({
 									{
 										label: Liferay.Language.get('spaces'),
 										onClick: () => {
+											setCurrentSpace(undefined);
+											setSchemaKey((prev) => prev + 1);
 											setSelectedItemType('space');
 											setURL(SPACES_URL);
 										},
 									},
+									...(currentSpace
+										? [
+												{
+													label: currentSpace.name,
+													onClick: () => {
+														handleSpaceClick(
+															currentSpace
+														);
+													},
+												},
+											]
+										: []),
 								]
 					}
+					breadcrumbsLabel={false}
 					fdsProps={{
 						...FDS_DEFAULT_PROPS,
-						id: `itemSelectorModal-users-${itemData.id}`,
+						id: `itemSelectorModal-users-${selectedItemType === 'folder' ? itemData.embedded.id : itemData.id}`,
 						views: [
 							{
 								contentRenderer: 'cards',
@@ -358,15 +423,14 @@ function FolderItemSelectorModalContent({
 							},
 						] as IView[],
 					}}
-					itemTypeLabel={Liferay.Language.get('folders')}
 					items={[]}
 					key={schemaKey}
 					locator={
 						selectedItemType === 'folder'
 							? {
-									id: 'id',
+									id: 'embedded.id',
 									label: 'title',
-									value: 'id',
+									value: 'embedded.id',
 								}
 							: {
 									id: 'id',
@@ -390,13 +454,30 @@ function FolderItemSelectorModalContent({
 						</Alert>
 					}
 					observer={observer}
-					onItemsChange={(items: Folder[]) => {
+					onItemsChange={(items: any[]) => {
 						if (items.length) {
-							handleOnItemsChange(items[0]);
+							handleOnItemsChange({
+								id:
+									selectedItemType === 'folder'
+										? items[0].embedded.id
+										: items[0].id,
+								title: items[0].title,
+							});
 						}
 					}}
 					onOpenChange={onOpenChange}
 					open={open}
+					title={
+						action === 'copy'
+							? sub(
+									Liferay.Language.get('copy-x-to'),
+									itemData.title
+								)
+							: sub(
+									Liferay.Language.get('move-x-to'),
+									itemData.title
+								)
+					}
 				/>
 			)}
 		</>

@@ -3,10 +3,8 @@
  * SPDX-License-Identifier: LGPL-2.1-or-later OR LicenseRef-Liferay-DXP-EULA-2.0.0-2023-06
  */
 
-import {
-	ACTION_TYPE_ITEMS,
-	Action,
-} from '../../plugins/page_rules/components/Action';
+import {ACTION_TYPE_ITEMS} from '../../plugins/page_rules/components/Action';
+import {Action} from '../../types/Rule';
 
 type Item = {label: string; value: string};
 
@@ -68,5 +66,5 @@ function getType(type?: Action['type']) {
 		return '';
 	}
 
-	return ACTION_TYPE_ITEMS.find(({value}) => value === type)?.label;
+	return ACTION_TYPE_ITEMS[type].label;
 }

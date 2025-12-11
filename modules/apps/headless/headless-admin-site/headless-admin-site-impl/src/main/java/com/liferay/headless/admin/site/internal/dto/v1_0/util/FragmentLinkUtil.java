@@ -15,7 +15,6 @@ import com.liferay.info.item.InfoItemServiceRegistry;
 import com.liferay.portal.kernel.exception.PortalException;
 import com.liferay.portal.kernel.json.JSONFactoryUtil;
 import com.liferay.portal.kernel.json.JSONObject;
-import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.Validator;
 
@@ -111,7 +110,7 @@ public class FragmentLinkUtil {
 				"target", TargetUtil.toInternalValue(target.getValue()));
 		}
 
-		return JSONUtil.put("link", jsonObject);
+		return jsonObject;
 	}
 
 	private static FragmentLinkMappedValue _toFragmentLinkMappedValue(
@@ -138,6 +137,8 @@ public class FragmentLinkUtil {
 					setItemReference(() -> fragmentMappedValueItemReference);
 				}
 			});
+		fragmentLinkMappedValue.setType(
+			() -> FragmentLinkValue.Type.FRAGMENT_MAPPED_VALUE);
 
 		return fragmentLinkMappedValue;
 	}
@@ -158,6 +159,8 @@ public class FragmentLinkUtil {
 		fragmentLinkInlineValue.setValue_i18n(
 			() -> LocalizedValueUtil.toLocalizedValues(
 				jsonObject.getJSONObject("href")));
+		fragmentLinkInlineValue.setType(
+			() -> FragmentLinkValue.Type.FRAGMENT_INLINE_VALUE);
 
 		return fragmentLinkInlineValue;
 	}

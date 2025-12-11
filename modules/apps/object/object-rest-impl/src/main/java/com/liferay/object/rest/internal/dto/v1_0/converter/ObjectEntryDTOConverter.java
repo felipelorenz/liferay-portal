@@ -67,7 +67,6 @@ import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.dao.orm.QueryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
-import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
 import com.liferay.portal.kernel.json.JSONFactory;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
@@ -261,7 +260,8 @@ public class ObjectEntryDTOConverter
 			serviceBuilderObjectEntry);
 
 		if (GetterUtil.getBoolean(
-				dtoConverterContext.getAttribute("simplifiedObjectEntry"))) {
+				dtoConverterContext.getAttribute("simplifiedObjectEntry")) &&
+			!serviceBuilderObjectEntry.isRootDescendantNode()) {
 
 			return objectEntry;
 		}
@@ -302,15 +302,7 @@ public class ObjectEntryDTOConverter
 				objectEntryVersion, ObjectEntryVersionModel::getModifiedDate,
 				serviceBuilderObjectEntry, ObjectEntryModel::getModifiedDate));
 		objectEntry.setDefaultLanguageId(
-			() -> {
-				if (FeatureFlagManagerUtil.isEnabled(
-						objectDefinition.getCompanyId(), "LPD-32050")) {
-
-					return serviceBuilderObjectEntry.getDefaultLanguageId();
-				}
-
-				return null;
-			});
+			serviceBuilderObjectEntry::getDefaultLanguageId);
 		objectEntry.setDisplayDate(
 			() -> _getAttribute(
 				objectEntryVersion, ObjectEntryVersionModel::getDisplayDate,

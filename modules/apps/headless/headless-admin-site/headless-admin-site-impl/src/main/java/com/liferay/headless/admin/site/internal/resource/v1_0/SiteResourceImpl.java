@@ -9,6 +9,7 @@ import com.liferay.google.places.constants.GooglePlacesWebKeys;
 import com.liferay.headless.admin.site.dto.v1_0.Site;
 import com.liferay.headless.admin.site.resource.v1_0.SiteResource;
 import com.liferay.layout.util.LayoutServiceContextHelper;
+import com.liferay.petra.function.UnsafeFunction;
 import com.liferay.petra.lang.SafeCloseable;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.events.ServicePreAction;
@@ -44,6 +45,7 @@ import com.liferay.portal.kernel.util.LinkedHashMapBuilder;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.PropsKeys;
+import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.UnicodeProperties;
 import com.liferay.portal.kernel.util.UnicodePropertiesBuilder;
 import com.liferay.portal.kernel.util.Validator;
@@ -61,10 +63,13 @@ import com.liferay.site.initializer.SiteInitializerRegistry;
 import com.liferay.site.initializer.SiteInitializerSerializer;
 import com.liferay.sites.kernel.util.Sites;
 
+import jakarta.ws.rs.NotSupportedException;
 import jakarta.ws.rs.core.Response;
 
 import java.io.File;
+import java.io.Serializable;
 
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -85,20 +90,7 @@ import org.osgi.service.component.annotations.ServiceScope;
 public class SiteResourceImpl extends BaseSiteResourceImpl {
 
 	@Override
-	public void deleteSite(Long siteId) throws Exception {
-		if (!FeatureFlagManagerUtil.isEnabled(
-				contextCompany.getCompanyId(), "LPD-41306")) {
-
-			throw new UnsupportedOperationException();
-		}
-
-		_groupService.deleteGroup(siteId);
-	}
-
-	@Override
-	public void deleteSiteByExternalReferenceCode(String externalReferenceCode)
-		throws Exception {
-
+	public void deleteSite(String externalReferenceCode) throws Exception {
 		if (!FeatureFlagManagerUtil.isEnabled(
 				contextCompany.getCompanyId(), "LPD-41306")) {
 
@@ -118,22 +110,7 @@ public class SiteResourceImpl extends BaseSiteResourceImpl {
 	}
 
 	@Override
-	public Site getSite(Long siteId) {
-		if (!FeatureFlagManagerUtil.isEnabled(
-				contextCompany.getCompanyId(), "LPD-41306")) {
-
-			throw new UnsupportedOperationException();
-		}
-
-		Group group = _groupLocalService.fetchGroup(siteId);
-
-		return _toSite(group);
-	}
-
-	@Override
-	public Site getSiteByExternalReferenceCode(String externalReferenceCode)
-		throws Exception {
-
+	public Site getSite(String externalReferenceCode) throws Exception {
 		if (!FeatureFlagManagerUtil.isEnabled(
 				contextCompany.getCompanyId(), "LPD-41306")) {
 
@@ -147,8 +124,7 @@ public class SiteResourceImpl extends BaseSiteResourceImpl {
 	}
 
 	@Override
-	public Response getSiteByExternalReferenceCodeSiteInitializer(
-			String externalReferenceCode)
+	public Response getSiteSiteInitializer(String externalReferenceCode)
 		throws Exception {
 
 		if (!FeatureFlagManagerUtil.isEnabled(
@@ -261,25 +237,35 @@ public class SiteResourceImpl extends BaseSiteResourceImpl {
 
 		Site site = multipartBody.getValueAsInstance("site", Site.class);
 
-		return putSiteByExternalReferenceCode(
+		return putSiteSiteInitializer(
 			site.getExternalReferenceCode(), multipartBody);
 	}
 
 	@Override
-	public Site putSite(Site site) throws Exception {
+	public Site putSite(String siteExternalReferenceCode, Site site)
+		throws Exception {
+
 		if (!FeatureFlagManagerUtil.isEnabled(
 				contextCompany.getCompanyId(), "LPD-41306")) {
 
 			throw new UnsupportedOperationException();
 		}
 
-		String externalReferenceCode = site.getExternalReferenceCode();
+		if (site.getExternalReferenceCode() == null) {
+			site.setExternalReferenceCode(() -> siteExternalReferenceCode);
+		}
+
+		if (!Objects.equals(
+				siteExternalReferenceCode, site.getExternalReferenceCode())) {
+
+			throw new UnsupportedOperationException();
+		}
 
 		Group group = _groupLocalService.fetchGroupByExternalReferenceCode(
-			externalReferenceCode, contextCompany.getCompanyId());
+			siteExternalReferenceCode, contextCompany.getCompanyId());
 
 		if (group == null) {
-			group = _addGroup(externalReferenceCode, site);
+			group = _addGroup(siteExternalReferenceCode, site);
 		}
 		else {
 			group = _updateGroup(group, site);
@@ -289,7 +275,7 @@ public class SiteResourceImpl extends BaseSiteResourceImpl {
 	}
 
 	@Override
-	public Site putSiteByExternalReferenceCode(
+	public Site putSiteSiteInitializer(
 			String externalReferenceCode, MultipartBody multipartBody)
 		throws Exception {
 
@@ -373,6 +359,40 @@ public class SiteResourceImpl extends BaseSiteResourceImpl {
 		Group finalGroup = group;
 
 		return _toSite(finalGroup);
+	}
+
+	@Override
+	public void update(
+			Collection<Site> sites, Map<String, Serializable> parameters)
+		throws Exception {
+
+		UnsafeFunction<Site, Site, Exception> unsafeFunction = null;
+
+		String updateStrategy = (String)parameters.getOrDefault(
+			"updateStrategy", "UPDATE");
+
+		if (StringUtil.equalsIgnoreCase(updateStrategy, "UPDATE")) {
+			unsafeFunction = site -> putSite(
+				site.getExternalReferenceCode(), site);
+		}
+
+		if (unsafeFunction == null) {
+			throw new NotSupportedException(
+				"Update strategy \"" + updateStrategy +
+					"\" is not supported for Site");
+		}
+
+		if (contextBatchUnsafeBiConsumer != null) {
+			contextBatchUnsafeBiConsumer.accept(sites, unsafeFunction);
+		}
+		else if (contextBatchUnsafeConsumer != null) {
+			contextBatchUnsafeConsumer.accept(sites, unsafeFunction::apply);
+		}
+		else {
+			for (Site site : sites) {
+				unsafeFunction.apply(site);
+			}
+		}
 	}
 
 	private Group _addGroup(String externalReferenceCode, Site site)
@@ -459,15 +479,13 @@ public class SiteResourceImpl extends BaseSiteResourceImpl {
 
 		Group group = _groupService.addGroup(
 			externalReferenceCode,
-			_getParentGroupId(
-				null, site.getParentSiteExternalReferenceCode(),
-				site.getParentSiteKey()),
+			_getParentGroupId(null, site.getParentSiteExternalReferenceCode()),
 			GroupConstants.DEFAULT_LIVE_GROUP_ID, _getNameMap(site),
 			_getDescriptionMap(site), _getType(site.getMembershipType()),
 			_getTypeSettings(site.getTypeSettings(), null),
 			_isManualMembership(site.getManualMembership()),
 			_getMembershipRestriction(site.getMembershipRestriction()),
-			site.getFriendlyUrlPath(), true, false, _isActive(site.getActive()),
+			_getFriendlyUrlPath(site), true, false, _isActive(site.getActive()),
 			serviceContext);
 
 		LiveUsers.joinGroup(
@@ -511,6 +529,18 @@ public class SiteResourceImpl extends BaseSiteResourceImpl {
 		).build();
 	}
 
+	private String _getFriendlyUrlPath(Site site) {
+		String friendlyUrlPath = site.getFriendlyUrlPath();
+
+		if (Validator.isNotNull(friendlyUrlPath) &&
+			!friendlyUrlPath.startsWith(StringPool.SLASH)) {
+
+			friendlyUrlPath = StringPool.SLASH + friendlyUrlPath;
+		}
+
+		return friendlyUrlPath;
+	}
+
 	private int _getMembershipRestriction(Integer membershipRestriction) {
 		if (membershipRestriction == null) {
 			return GroupConstants.DEFAULT_MEMBERSHIP_RESTRICTION;
@@ -530,25 +560,18 @@ public class SiteResourceImpl extends BaseSiteResourceImpl {
 	}
 
 	private long _getParentGroupId(
-		Group group, String parentSiteExternalReferenceCode,
-		String parentSiteKey) {
+		Group group, String parentSiteExternalReferenceCode) {
 
-		if (Validator.isNull(parentSiteExternalReferenceCode) &&
-			Validator.isNull(parentSiteKey)) {
-
+		if (Validator.isNull(parentSiteExternalReferenceCode)) {
 			return GroupConstants.DEFAULT_PARENT_GROUP_ID;
 		}
 
-		Group parentGroup = _groupLocalService.loadFetchGroup(
-			contextCompany.getCompanyId(), parentSiteKey);
-
-		if (parentGroup == null) {
-			parentGroup = _groupLocalService.fetchGroupByExternalReferenceCode(
+		Group parentGroup =
+			_groupLocalService.fetchGroupByExternalReferenceCode(
 				parentSiteExternalReferenceCode, contextCompany.getCompanyId());
 
-			if (parentGroup == null) {
-				return GroupConstants.DEFAULT_PARENT_GROUP_ID;
-			}
+		if (parentGroup == null) {
+			return GroupConstants.DEFAULT_PARENT_GROUP_ID;
 		}
 
 		if (!LazyReferencingThreadLocal.isEnabled()) {
@@ -606,9 +629,10 @@ public class SiteResourceImpl extends BaseSiteResourceImpl {
 	}
 
 	private int _getType(Site.MembershipType membershipType) {
-		if ((membershipType == null) ||
-			membershipType.equals(Site.MembershipType.OPEN)) {
-
+		if (membershipType == null) {
+			return GroupConstants.TYPE_SITE_RESTRICTED;
+		}
+		else if (membershipType.equals(Site.MembershipType.OPEN)) {
 			return GroupConstants.TYPE_SITE_OPEN;
 		}
 		else if (membershipType.equals(Site.MembershipType.PRIVATE)) {
@@ -760,15 +784,14 @@ public class SiteResourceImpl extends BaseSiteResourceImpl {
 			Group updatedGroup = _groupLocalService.updateGroup(
 				group.getGroupId(),
 				_getParentGroupId(
-					group, site.getParentSiteExternalReferenceCode(),
-					site.getParentSiteKey()),
+					group, site.getParentSiteExternalReferenceCode()),
 				_getNameMap(site), _getDescriptionMap(site),
 				_getType(site.getMembershipType()),
 				_getTypeSettings(
 					site.getTypeSettings(), group.getTypeSettingsProperties()),
 				_isManualMembership(site.getManualMembership()),
 				_getMembershipRestriction(site.getMembershipRestriction()),
-				site.getFriendlyUrlPath(), false, _isActive(site.getActive()),
+				_getFriendlyUrlPath(site), false, _isActive(site.getActive()),
 				_getServiceContext());
 
 			LiveUsers.joinGroup(

@@ -48,15 +48,15 @@ import java.util.function.Supplier;
 @JsonSubTypes(
 	{
 		@JsonSubTypes.Type(
-			name = "Inline", value = TextInlineFragmentValue.class
+			name = "Inline", value = TextFragmentInlineValue.class
 		),
 		@JsonSubTypes.Type(
-			name = "Mapped", value = TextMappedFragmentValue.class
+			name = "Mapped", value = TextFragmentMappedValue.class
 		)
 	}
 )
 @JsonTypeInfo(
-	include = JsonTypeInfo.As.PROPERTY, property = "type",
+	include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type",
 	use = JsonTypeInfo.Id.NAME, visible = true
 )
 @XmlRootElement(name = "TextFragmentValue")

@@ -81,7 +81,6 @@ import com.liferay.portal.kernel.util.MimeTypesUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.TempFileEntryUtil;
 import com.liferay.portal.kernel.util.WebKeys;
-import com.liferay.portal.test.rule.FeatureFlag;
 import com.liferay.portal.test.rule.Inject;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
 import com.liferay.portal.test.rule.PermissionCheckerMethodTestRule;
@@ -370,7 +369,6 @@ public class FragmentEntryInputTemplateNodeContextHelperTest {
 		}
 	}
 
-	@FeatureFlag("LPD-32050")
 	@Test
 	public void testToInputTemplateNodeLocalizedInputValue() throws Exception {
 		ObjectDefinition objectDefinition =
@@ -672,7 +670,7 @@ public class FragmentEntryInputTemplateNodeContextHelperTest {
 				null, TestPropsValues.getUserId(),
 				Collections.singletonMap(
 					LocaleUtil.US, RandomTestUtil.randomString()),
-				false, _listTypeEntries);
+				false, _listTypeEntries, new ServiceContext());
 
 		ObjectField myRichTextObjectField = ObjectFieldUtil.createObjectField(
 			ObjectFieldConstants.BUSINESS_TYPE_RICH_TEXT,
@@ -749,7 +747,7 @@ public class FragmentEntryInputTemplateNodeContextHelperTest {
 		objectDefinition =
 			_objectDefinitionLocalService.addCustomObjectDefinition(
 				null, TestPropsValues.getUserId(), 0, null, false, true, false,
-				true, true, true, false, false, false, null,
+				true, true, false, false, false, null,
 				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),
 				"CustomObjectDefinition", null, "control_panel.sites",
 				LocalizedMapUtil.getLocalizedMap(RandomTestUtil.randomString()),

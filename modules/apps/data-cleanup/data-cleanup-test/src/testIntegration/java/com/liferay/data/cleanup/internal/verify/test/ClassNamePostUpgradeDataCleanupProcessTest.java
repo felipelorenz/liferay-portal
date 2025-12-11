@@ -7,24 +7,21 @@ package com.liferay.data.cleanup.internal.verify.test;
 
 import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.object.model.ObjectDefinition;
-import com.liferay.osgi.util.BundleUtil;
 import com.liferay.petra.function.UnsafeConsumer;
 import com.liferay.petra.function.UnsafeRunnable;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.model.ClassName;
+import com.liferay.portal.kernel.module.util.SystemBundleUtil;
 import com.liferay.portal.kernel.service.ClassNameLocalService;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
-import com.liferay.portal.lpkg.deployer.LPKGDeployer;
 import com.liferay.portal.test.log.LogCapture;
 import com.liferay.portal.test.rule.Inject;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Assert;
@@ -32,8 +29,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.FrameworkUtil;
 
 /**
  * @author Luis Ortiz
@@ -146,8 +141,11 @@ public class ClassNamePostUpgradeDataCleanupProcessTest
 				Assert.assertTrue(
 					messages.toString(),
 					messages.contains(
-						"Class name " + classNameValue +
-							" has been deleted because it is not in use"));
+						StringBundler.concat(
+							"Table ", dbInspector.normalizeName("ClassName_"),
+							", 1 row deleted because \"", classNameValue,
+							"\" is not defined in any deployed module and is ",
+							"not in use")));
 
 				ClassName className = _classNameLocalService.fetchClassName(
 					classNameValue);
@@ -162,69 +160,6 @@ public class ClassNamePostUpgradeDataCleanupProcessTest
 			},
 			() -> classNameAtomicReference.set(
 				_classNameLocalService.addClassName(classNameValue)));
-	}
-
-	@Test
-	public void testNotFoundLiferayClassNameUsedInResourcePermissionIsNotDeleted()
-		throws Exception {
-
-		AtomicReference<ClassName> classNameAtomicReference =
-			new AtomicReference<>();
-		String classNameValue =
-			"com.liferay.test." + RandomTestUtil.randomString();
-		long resourcePermissionId = RandomTestUtil.nextLong();
-
-		test(
-			logCapture -> {
-				List<String> messages = logCapture.getMessages();
-
-				Assert.assertTrue(
-					messages.toString(),
-					messages.contains(
-						StringBundler.concat(
-							"Class name ", classNameValue,
-							" has not been found but is referenced in the ",
-							"next tables: ",
-							dbInspector.normalizeName("ResourcePermission"))));
-
-				ClassName className = _classNameLocalService.fetchClassName(
-					classNameValue);
-
-				Assert.assertEquals(classNameValue, className.getValue());
-			},
-			() -> {
-				if (classNameAtomicReference.get() != null) {
-					_classNameLocalService.deleteClassName(
-						classNameAtomicReference.get());
-				}
-
-				try (PreparedStatement preparedStatement =
-						connection.prepareStatement(
-							"delete from ResourcePermission where " +
-								"resourcePermissionId = ?")) {
-
-					preparedStatement.setLong(1, resourcePermissionId);
-					preparedStatement.executeUpdate();
-				}
-			},
-			() -> {
-				ClassName className = _classNameLocalService.addClassName(
-					classNameValue);
-
-				classNameAtomicReference.set(className);
-
-				try (PreparedStatement preparedStatement =
-						connection.prepareStatement(
-							"insert into ResourcePermission (mvccVersion, " +
-								"ctCollectionId, resourcePermissionId, name) " +
-									"values (0, 0, ?, ?)")) {
-
-					preparedStatement.setLong(1, resourcePermissionId);
-					preparedStatement.setString(2, classNameValue);
-
-					preparedStatement.executeUpdate();
-				}
-			});
 	}
 
 	@Test
@@ -246,8 +181,8 @@ public class ClassNamePostUpgradeDataCleanupProcessTest
 					messages.contains(
 						StringBundler.concat(
 							"Class name ", classNameValue,
-							" has not been found but is referenced in the ",
-							"next tables: ",
+							" is not defined in any deployed module but is ",
+							"referenced in the next tables: ",
 							dbInspector.normalizeName("Address"))));
 
 				ClassName className = _classNameLocalService.fetchClassName(
@@ -308,10 +243,13 @@ public class ClassNamePostUpgradeDataCleanupProcessTest
 				Bundle bundle = bundleAtomicReference.get();
 
 				if (bundle != null) {
-					_installBundle(bundle);
+					installBundle(bundle, SystemBundleUtil.getBundleContext());
 				}
 			},
-			() -> bundleAtomicReference.set(_uninstallBundle()));
+			() -> bundleAtomicReference.set(
+				uninstallBundle(
+					SystemBundleUtil.getBundleContext(),
+					"com.liferay.dynamic.data.mapping.service")));
 	}
 
 	@Override
@@ -350,53 +288,7 @@ public class ClassNamePostUpgradeDataCleanupProcessTest
 		}
 	}
 
-	private void _installBundle(Bundle bundle) throws Exception {
-		Bundle currentBundle = FrameworkUtil.getBundle(
-			ClassNamePostUpgradeDataCleanupProcessTest.class);
-
-		BundleContext bundleContext = currentBundle.getBundleContext();
-
-		BundleUtil.installBundle(
-			bundleContext, _lpkgDeployer, bundle.getLocation(), 1);
-
-		List<Bundle> bundlesToRefresh = new ArrayList<>();
-
-		bundlesToRefresh.add(bundle);
-
-		BundleUtil.refreshBundles(bundleContext, bundlesToRefresh);
-	}
-
-	private Bundle _uninstallBundle() throws Exception {
-		Bundle currentBundle = FrameworkUtil.getBundle(
-			ClassNamePostUpgradeDataCleanupProcessTest.class);
-
-		BundleContext bundleContext = currentBundle.getBundleContext();
-
-		for (Bundle bundle : bundleContext.getBundles()) {
-			if (Objects.equals(
-					bundle.getSymbolicName(),
-					"com.liferay.dynamic.data.mapping.service") &&
-				(bundle.getState() == Bundle.ACTIVE)) {
-
-				bundle.uninstall();
-
-				List<Bundle> bundlesToRefresh = new ArrayList<>();
-
-				bundlesToRefresh.add(bundle);
-
-				BundleUtil.refreshBundles(bundleContext, bundlesToRefresh);
-
-				return bundle;
-			}
-		}
-
-		return null;
-	}
-
 	@Inject
 	private ClassNameLocalService _classNameLocalService;
-
-	@Inject
-	private LPKGDeployer _lpkgDeployer;
 
 }

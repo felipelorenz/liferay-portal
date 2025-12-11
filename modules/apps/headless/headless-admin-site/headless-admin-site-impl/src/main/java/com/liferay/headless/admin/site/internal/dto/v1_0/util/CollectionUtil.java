@@ -79,6 +79,8 @@ public class CollectionUtil {
 		ClassNameReference classNameReference = new ClassNameReference();
 
 		classNameReference.setClassName(() -> key);
+		classNameReference.setCollectionType(
+			() -> CollectionReference.CollectionType.COLLECTION_PROVIDER);
 
 		return classNameReference;
 	}
@@ -208,7 +210,7 @@ public class CollectionUtil {
 		throws Exception {
 
 		LogUtil.logOptionalReference(
-			collectionItemExternalReference.getClassName(),
+			AssetListEntry.class.getName(),
 			collectionItemExternalReference.getExternalReferenceCode(),
 			collectionItemExternalReference.getScope(), groupId);
 
@@ -233,6 +235,8 @@ public class CollectionUtil {
 			new CollectionItemExternalReference();
 
 		if (assetListEntry != null) {
+			collectionItemExternalReference.setCollectionType(
+				() -> CollectionReference.CollectionType.COLLECTION);
 			collectionItemExternalReference.setExternalReferenceCode(
 				assetListEntry::getExternalReferenceCode);
 			collectionItemExternalReference.setScope(
@@ -249,6 +253,8 @@ public class CollectionUtil {
 			return null;
 		}
 
+		collectionItemExternalReference.setCollectionType(
+			() -> CollectionReference.CollectionType.COLLECTION);
 		collectionItemExternalReference.setExternalReferenceCode(
 			() -> externalReferenceCode);
 		collectionItemExternalReference.setScope(

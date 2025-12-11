@@ -23,15 +23,9 @@ public interface ExportImportVulcanBatchEngineTaskItemDelegate<T>
 
 	public interface ExportImportDescriptor {
 
-		public default String getLabelLanguageKey() {
-			return null;
-		}
+		public String getLabelLanguageKey();
 
 		public String getModelClassName();
-
-		public default String getModelName() {
-			return getModelClassName();
-		}
 
 		public default List<String> getNestedFields() {
 			return null;
@@ -57,6 +51,10 @@ public interface ExportImportVulcanBatchEngineTaskItemDelegate<T>
 			String externalReferenceCode) {
 
 			return true;
+		}
+
+		public default boolean isHidden() {
+			return false;
 		}
 
 	}

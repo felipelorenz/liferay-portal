@@ -10,6 +10,8 @@ import com.liferay.change.tracking.constants.CTConstants;
 import com.liferay.change.tracking.model.CTCollectionModel;
 import com.liferay.change.tracking.service.CTCollectionLocalService;
 import com.liferay.configuration.admin.constants.ConfigurationAdminPortletKeys;
+import com.liferay.data.cleanup.DataCleanup;
+import com.liferay.data.cleanup.util.DataCleanupUtil;
 import com.liferay.document.library.kernel.document.conversion.DocumentConversion;
 import com.liferay.document.library.kernel.model.DLProcessorConstants;
 import com.liferay.document.library.kernel.processor.AudioProcessor;
@@ -31,7 +33,6 @@ import com.liferay.portal.kernel.cache.MultiVMPool;
 import com.liferay.portal.kernel.cache.SingleVMPool;
 import com.liferay.portal.kernel.change.tracking.CTCollectionThreadLocal;
 import com.liferay.portal.kernel.cluster.ClusterExecutorUtil;
-import com.liferay.portal.kernel.cluster.ClusterMasterExecutorUtil;
 import com.liferay.portal.kernel.cluster.ClusterRequest;
 import com.liferay.portal.kernel.dao.orm.ActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.DynamicQuery;
@@ -124,8 +125,10 @@ import java.lang.reflect.InvocationHandler;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -282,6 +285,10 @@ public class EditServerMVCActionCommand extends BaseMVCActionCommand {
 		else if (cmd.equals("verifyMembershipPolicies")) {
 			_verifyMembershipPolicies();
 		}
+		else {
+			_executeCleanup(cmd, DataCleanupUtil.getModuleDataCleanups());
+			_executeCleanup(cmd, DataCleanupUtil.getSystemDataCleanups());
+		}
 
 		sendRedirect(actionRequest, actionResponse, redirect);
 	}
@@ -289,38 +296,26 @@ public class EditServerMVCActionCommand extends BaseMVCActionCommand {
 	private static void _resetLogLevels(
 		Map<String, String> logLevels, Map<String, String> customLogSettings) {
 
+		Map<String, String> priorities = Log4JUtil.getPriorities();
+
+		Set<Map.Entry<String, String>> set = logLevels.entrySet();
+
+		Iterator<Map.Entry<String, String>> iterator = set.iterator();
+
+		while (iterator.hasNext()) {
+			Map.Entry<String, String> entry = iterator.next();
+
+			if (Objects.equals(
+					entry.getValue(), priorities.get(entry.getKey()))) {
+
+				iterator.remove();
+			}
+		}
+
 		for (Map.Entry<String, String> logLevel : logLevels.entrySet()) {
 			Log4JUtil.setLevel(
 				logLevel.getKey(), logLevel.getValue(),
 				customLogSettings.containsKey(logLevel.getKey()));
-		}
-	}
-
-	private static void _updateLogLevels(Map<String, String> logLevels) {
-		for (Map.Entry<String, String> logLevelEntry : logLevels.entrySet()) {
-			Log4JUtil.setLevel(
-				logLevelEntry.getKey(), logLevelEntry.getValue(), true);
-		}
-
-		if (!ClusterExecutorUtil.isEnabled()) {
-			return;
-		}
-
-		if (ClusterMasterExecutorUtil.isMaster()) {
-			ClusterRequest clusterRequest =
-				ClusterRequest.createMulticastRequest(
-					new MethodHandler(
-						_resetLogLevelsMethodKey, Log4JUtil.getPriorities(),
-						Log4JUtil.getCustomLogSettings()),
-					true);
-
-			clusterRequest.setFireAndForget(true);
-
-			ClusterExecutorUtil.execute(clusterRequest);
-		}
-		else {
-			ClusterMasterExecutorUtil.executeOnMaster(
-				new MethodHandler(_updateLogLevelsMethodKey, logLevels));
 		}
 	}
 
@@ -619,6 +614,18 @@ public class EditServerMVCActionCommand extends BaseMVCActionCommand {
 			});
 	}
 
+	private void _executeCleanup(String cmd, List<DataCleanup> dataCleanups)
+		throws Exception {
+
+		for (DataCleanup dataCleanup : dataCleanups) {
+			if (cmd.equals(dataCleanup.getLabel())) {
+				dataCleanup.cleanup();
+
+				CacheRegistryUtil.clear();
+			}
+		}
+	}
+
 	private void _gc() throws Exception {
 		Runtime runtime = Runtime.getRuntime();
 
@@ -802,6 +809,27 @@ public class EditServerMVCActionCommand extends BaseMVCActionCommand {
 		_updateLogLevels(logLevels);
 	}
 
+	private void _updateLogLevels(Map<String, String> logLevels) {
+		for (Map.Entry<String, String> logLevelEntry : logLevels.entrySet()) {
+			Log4JUtil.setLevel(
+				logLevelEntry.getKey(), logLevelEntry.getValue(), true);
+		}
+
+		if (!ClusterExecutorUtil.isEnabled()) {
+			return;
+		}
+
+		ClusterRequest clusterRequest = ClusterRequest.createMulticastRequest(
+			new MethodHandler(
+				_resetLogLevelsMethodKey, Log4JUtil.getPriorities(),
+				Log4JUtil.getCustomLogSettings()),
+			true);
+
+		clusterRequest.setFireAndForget(true);
+
+		ClusterExecutorUtil.execute(clusterRequest);
+	}
+
 	private void _updatePortalProperties(ActionRequest actionRequest) {
 		Enumeration<String> enumeration = actionRequest.getParameterNames();
 
@@ -855,8 +883,6 @@ public class EditServerMVCActionCommand extends BaseMVCActionCommand {
 	private static final MethodKey _resetLogLevelsMethodKey = new MethodKey(
 		EditServerMVCActionCommand.class, "_resetLogLevels", Map.class,
 		Map.class);
-	private static final MethodKey _updateLogLevelsMethodKey = new MethodKey(
-		EditServerMVCActionCommand.class, "_updateLogLevels", Map.class);
 
 	@Reference(target = "(type=" + DLProcessorConstants.AUDIO_PROCESSOR + ")")
 	private DLProcessor _audioDLProcessor;

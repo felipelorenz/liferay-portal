@@ -5,6 +5,9 @@
 
 package com.liferay.ai.hub.site.initializer.internal;
 
+import com.liferay.batch.engine.unit.BatchEngineUnitThreadLocal;
+import com.liferay.object.admin.rest.dto.v1_0.ObjectDefinition;
+import com.liferay.object.admin.rest.resource.v1_0.ObjectDefinitionResource;
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.feature.flag.FeatureFlagManagerUtil;
@@ -14,6 +17,7 @@ import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.security.auth.PrincipalThreadLocal;
 import com.liferay.portal.kernel.service.CompanyLocalService;
 import com.liferay.portal.kernel.service.GroupLocalService;
+import com.liferay.portal.kernel.service.UserLocalService;
 import com.liferay.portal.kernel.util.Localization;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.workflow.constants.WorkflowDefinitionConstants;
@@ -25,6 +29,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.osgi.framework.FrameworkUtil;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
@@ -62,7 +67,8 @@ public class AIHubSiteInitializer implements SiteInitializer {
 	@Override
 	public void initialize(long groupId) throws InitializationException {
 		try {
-			_initialize(groupId);
+			_deployObjectDefinition();
+			_deployWorkflowDefinitions(groupId);
 		}
 		catch (InitializationException initializationException) {
 			throw initializationException;
@@ -75,6 +81,32 @@ public class AIHubSiteInitializer implements SiteInitializer {
 	@Override
 	public boolean isActive(long companyId) {
 		return FeatureFlagManagerUtil.isEnabled(companyId, "LPD-62272");
+	}
+
+	private void _deployObjectDefinition() throws Exception {
+		ObjectDefinitionResource.Builder builder =
+			_objectDefinitionResourceFactory.create();
+
+		ObjectDefinitionResource objectDefinitionResource = builder.user(
+			_userLocalService.getUser(PrincipalThreadLocal.getUserId())
+		).build();
+
+		try {
+			BatchEngineUnitThreadLocal.setFileName(
+				String.valueOf(
+					FrameworkUtil.getBundle(AIHubSiteInitializer.class)));
+
+			objectDefinitionResource.putObjectDefinitionByExternalReferenceCode(
+				"L_MCP_SERVER",
+				ObjectDefinition.toDTO(
+					StringUtil.read(
+						AIHubSiteInitializer.class.getResourceAsStream(
+							"dependencies/mcp-server-object-" +
+								"definition.json"))));
+		}
+		finally {
+			BatchEngineUnitThreadLocal.setFileName(StringPool.BLANK);
+		}
 	}
 
 	private void _deployWorkflowDefinition(
@@ -124,7 +156,7 @@ public class AIHubSiteInitializer implements SiteInitializer {
 			workflowDefinitionName, json.getBytes());
 	}
 
-	private void _initialize(long groupId) throws Exception {
+	private void _deployWorkflowDefinitions(long groupId) throws Exception {
 		Group group = _groupLocalService.getGroup(groupId);
 
 		Company company = _companyLocalService.getCompany(group.getCompanyId());
@@ -142,6 +174,22 @@ public class AIHubSiteInitializer implements SiteInitializer {
 				"unchanged. Output only the rewritten text, with no ",
 				"explanations or commentary."),
 			"This is the text whose tone was changed to be {{tone}}: {{text}}");
+		_deployWorkflowDefinition(
+			company,
+			WorkflowDefinitionConstants.
+				EXTERNAL_REFERENCE_CODE_CHAT_MESSAGE_PIPELINE,
+			WorkflowDefinitionConstants.NAME_CHAT_MESSAGE_PIPELINE,
+			"chatMessageHandler",
+			StringBundler.concat(
+				"You are a highly helpful and context-aware chat assistant. ",
+				"The context you are aware is the content and the title, they ",
+				"can be present or not and they will be passed during the ",
+				"conversation because they are dynamically updated. Maintain ",
+				"a friendly and professional conversational tone, and use the ",
+				"chat history to maintain flow."),
+			"This is the content: \\\"{{content}}\\\" and title: " +
+				"\\\"{{title}}\\\", reply to this message: " +
+					"\\\"{{userMessage}}\\\"");
 		_deployWorkflowDefinition(
 			company,
 			WorkflowDefinitionConstants.
@@ -209,6 +257,12 @@ public class AIHubSiteInitializer implements SiteInitializer {
 
 	@Reference
 	private Localization _localization;
+
+	@Reference
+	private ObjectDefinitionResource.Factory _objectDefinitionResourceFactory;
+
+	@Reference
+	private UserLocalService _userLocalService;
 
 	@Reference
 	private WorkflowDefinitionManager _workflowDefinitionManager;

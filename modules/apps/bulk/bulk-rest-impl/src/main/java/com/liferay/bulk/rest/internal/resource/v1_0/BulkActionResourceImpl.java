@@ -317,8 +317,6 @@ public class BulkActionResourceImpl extends BaseBulkActionResourceImpl {
 			throw new ValidationException("Filter is null");
 		}
 
-		List<BulkActionItem> bulkActionItems = new ArrayList<>();
-
 		DynamicServletRequest dynamicServletRequest = new DynamicServletRequest(
 			contextHttpServletRequest);
 
@@ -348,12 +346,14 @@ public class BulkActionResourceImpl extends BaseBulkActionResourceImpl {
 			null, true, null, null, search, filter, pagination,
 			new Sort[] {sort});
 
-		for (SearchResult searchResult : searchPage.getItems()) {
-			JSONObject jsonObject = _jsonFactory.createJSONObject(
-				String.valueOf(searchResult.getEmbedded()));
+		List<BulkActionItem> bulkActionItems = transform(
+			searchPage.getItems(),
+			searchResult -> {
+				JSONObject jsonObject = _jsonFactory.createJSONObject(
+					String.valueOf(searchResult.getEmbedded()));
 
-			bulkActionItems.add(_toBulkActionItem(jsonObject.getLong("id")));
-		}
+				return _toBulkActionItem(jsonObject.getLong("id"));
+			});
 
 		if (StringUtil.equalsIgnoreCase(sort.getFieldName(), "usages")) {
 			bulkActionItems = _sortBulkActionItems(bulkActionItems, sort);
@@ -366,15 +366,12 @@ public class BulkActionResourceImpl extends BaseBulkActionResourceImpl {
 		List<BulkActionItem> bulkActionItems1, Pagination pagination,
 		String search, Sort sort) {
 
-		List<BulkActionItem> bulkActionItems2 = new ArrayList<>();
+		List<BulkActionItem> bulkActionItems2 = transform(
+			bulkActionItems1,
+			bulkActionItem -> _toBulkActionItem(
+				GetterUtil.getLong(bulkActionItem.getClassPK())));
 
 		long totalCount = bulkActionItems1.size();
-
-		for (BulkActionItem bulkActionItem : bulkActionItems1) {
-			bulkActionItems2.add(
-				_toBulkActionItem(
-					GetterUtil.getLong(bulkActionItem.getClassPK())));
-		}
 
 		if (Validator.isNotNull(search)) {
 			bulkActionItems2 = ListUtil.filter(
@@ -404,6 +401,9 @@ public class BulkActionResourceImpl extends BaseBulkActionResourceImpl {
 		}
 		else if (BulkAction.Type.PERMISSION_BULK_ACTION.equals(type)) {
 			return _permissionObjectBulkSelectionAction;
+		}
+		else if (BulkAction.Type.RESET_PERMISSION_BULK_ACTION.equals(type)) {
+			return _resetPermissionObjectBulkSelectionAction;
 		}
 		else if (BulkAction.Type.TAXONOMY_CATEGORY_BULK_ACTION.equals(type)) {
 			return _editObjectCategoriesBulkSelectionAction;
@@ -453,6 +453,24 @@ public class BulkActionResourceImpl extends BaseBulkActionResourceImpl {
 				"toRemoveTagNames", keywordBulkAction.getKeywordsToRemove()
 			).build();
 		}
+		else if (BulkAction.Type.PERMISSION_BULK_ACTION.equals(type)) {
+			PermissionBulkAction permissionBulkAction =
+				(PermissionBulkAction)bulkAction;
+
+			return hashMapWrapper.put(
+				"permissions",
+				() -> _getPermissions(
+					_jsonFactory.createJSONObject(
+						GetterUtil.get(
+							permissionBulkAction.getConfiguration(), "{}")),
+					permissionBulkAction.getPermissions())
+			).put(
+				"roleKey", permissionBulkAction.getRoleKey()
+			).build();
+		}
+		else if (BulkAction.Type.RESET_PERMISSION_BULK_ACTION.equals(type)) {
+			return hashMapWrapper.build();
+		}
 		else if (BulkAction.Type.TAXONOMY_CATEGORY_BULK_ACTION.equals(type)) {
 			TaxonomyCategoryBulkAction taxonomyCategoryBulkAction =
 				(TaxonomyCategoryBulkAction)bulkAction;
@@ -466,21 +484,6 @@ public class BulkActionResourceImpl extends BaseBulkActionResourceImpl {
 			).put(
 				"toRemoveCategoryIds",
 				taxonomyCategoryBulkAction.getTaxonomyCategoryIdsToRemove()
-			).build();
-		}
-		else if (BulkAction.Type.PERMISSION_BULK_ACTION.equals(type)) {
-			return hashMapWrapper.put(
-				"permissions",
-				() -> {
-					PermissionBulkAction permissionBulkAction =
-						(PermissionBulkAction)bulkAction;
-
-					return _getPermissions(
-						_jsonFactory.createJSONObject(
-							GetterUtil.get(
-								permissionBulkAction.getConfiguration(), "{}")),
-						permissionBulkAction.getPermissions());
-				}
 			).build();
 		}
 
@@ -569,19 +572,19 @@ public class BulkActionResourceImpl extends BaseBulkActionResourceImpl {
 		Map<String, Role> roles = new HashMap<>();
 
 		return HashMapBuilder.put(
-			cmsBasicDocumentObjectDefinition.getClassName(),
-			() -> _getPermissions(
-				cmsBasicDocumentObjectDefinition.getClassName(),
-				configurationJSONObject.getJSONObject(
-					ObjectEntryFolderConstants.EXTERNAL_REFERENCE_CODE_FILES),
-				roles)
-		).put(
-			cmsBasicWebContentObjectDefinition.getClassName(),
+			ObjectEntryFolderConstants.EXTERNAL_REFERENCE_CODE_CONTENTS,
 			() -> _getPermissions(
 				cmsBasicWebContentObjectDefinition.getClassName(),
 				configurationJSONObject.getJSONObject(
 					ObjectEntryFolderConstants.
 						EXTERNAL_REFERENCE_CODE_CONTENTS),
+				roles)
+		).put(
+			ObjectEntryFolderConstants.EXTERNAL_REFERENCE_CODE_FILES,
+			() -> _getPermissions(
+				cmsBasicDocumentObjectDefinition.getClassName(),
+				configurationJSONObject.getJSONObject(
+					ObjectEntryFolderConstants.EXTERNAL_REFERENCE_CODE_FILES),
 				roles)
 		).put(
 			ObjectEntryFolder.class.getName(),
@@ -863,6 +866,10 @@ public class BulkActionResourceImpl extends BaseBulkActionResourceImpl {
 
 	@Reference
 	private Portal _portal;
+
+	@Reference(target = "(bulk.selection.action.key=reset.permission.object)")
+	private BulkSelectionAction<Object>
+		_resetPermissionObjectBulkSelectionAction;
 
 	@Reference
 	private RoleLocalService _roleLocalService;

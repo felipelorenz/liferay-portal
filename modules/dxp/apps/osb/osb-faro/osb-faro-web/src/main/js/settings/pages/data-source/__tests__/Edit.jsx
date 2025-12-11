@@ -1,13 +1,11 @@
 import * as data from 'test/data';
 import mockStore from 'test/mock-store';
 import React from 'react';
-import {DataSource, User} from 'shared/util/records';
+import {DataSource} from 'shared/util/records';
 import {Edit} from '../Edit';
 import {Provider} from 'react-redux';
 import {render} from '@testing-library/react';
-import {Routes, toRoute} from 'shared/util/router';
 import {StaticRouter} from 'react-router';
-import {UserRoleNames} from 'shared/util/constants';
 
 jest.unmock('react-dom');
 
@@ -18,21 +16,13 @@ jest.mock('react-router-dom', () => ({
 	})
 }));
 
-jest.useRealTimers();
+jest.mock('shared/hooks/useRequest', () => ({
+	useRequest: jest.fn
+}));
 
 const csvProps = {
 	groupId: '23',
 	id: '23'
-};
-
-const salesforceProps = {
-	currentUser: new User({roleName: UserRoleNames.Administrator}),
-	dataSource: data.getImmutableMock(
-		DataSource,
-		data.mockSalesforceDataSource
-	),
-	groupId: '23',
-	id: 'test'
 };
 
 describe('Edit', () => {
@@ -49,26 +39,5 @@ describe('Edit', () => {
 		);
 
 		expect(getByText('Configure CSV')).toBeInTheDocument();
-	});
-
-	it('should render a Salesforce data-source page', async () => {
-		const {getByText} = render(
-			<Provider store={mockStore()}>
-				<StaticRouter
-					location={toRoute(
-						Routes.SETTINGS_DATA_SOURCE,
-						salesforceProps
-					)}
-				>
-					<Edit {...salesforceProps} />
-				</StaticRouter>
-			</Provider>
-		);
-
-		expect(
-			getByText(
-				'To configure your Salesforce data source, go to your Salesforce environment to update this app connection.'
-			)
-		).toBeInTheDocument();
 	});
 });

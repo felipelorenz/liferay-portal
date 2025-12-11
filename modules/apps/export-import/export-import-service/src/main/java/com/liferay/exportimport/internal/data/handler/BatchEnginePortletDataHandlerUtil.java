@@ -108,7 +108,8 @@ public class BatchEnginePortletDataHandlerUtil {
 			).put(
 				"modelClassName", exportImportDescriptor.getModelClassName()
 			).put(
-				"modelName", exportImportDescriptor.getModelName()
+				"modelNameLanguageKey",
+				exportImportDescriptor.getLabelLanguageKey()
 			).putAll(
 				exportImportDescriptor.getParameters(portletDataContext)
 			).build();
@@ -174,7 +175,8 @@ public class BatchEnginePortletDataHandlerUtil {
 			).put(
 				"modelClassName", exportImportDescriptor.getModelClassName()
 			).put(
-				"modelName", exportImportDescriptor.getModelName()
+				"modelNameLanguageKey",
+				exportImportDescriptor.getLabelLanguageKey()
 			).putAll(
 				exportImportDescriptor.getParameters(portletDataContext)
 			).build();
@@ -194,9 +196,7 @@ public class BatchEnginePortletDataHandlerUtil {
 	private static boolean _isCompanyScoped(
 		Group group, StagingGroupHelper stagingGroupHelper) {
 
-		if ((group == null) || group.isCompany() ||
-			stagingGroupHelper.isCompanyGroup(group)) {
-
+		if ((group == null) || stagingGroupHelper.isCompanyGroup(group)) {
 			return true;
 		}
 

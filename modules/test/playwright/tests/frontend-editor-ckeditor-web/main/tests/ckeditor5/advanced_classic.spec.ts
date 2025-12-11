@@ -148,6 +148,43 @@ test(
 );
 
 test(
+	'Select image by modal URL input',
+	{tag: '@LPD-11235'},
+	async ({classicPage}) => {
+		await classicPage.toolbar.container
+			.getByRole('button', {name: 'Image'})
+			.click();
+
+		const itemSelectorFrame = classicPage.itemSelectorFrame;
+
+		itemSelectorFrame.getByRole('link', {name: 'URL'}).click();
+
+		const imageURLInput = itemSelectorFrame.getByLabel('URL', {
+			exact: true,
+		});
+
+		await expect(imageURLInput).toBeEnabled();
+
+		const addButton = itemSelectorFrame.getByRole('button', {
+			exact: true,
+			name: 'Add',
+		});
+
+		await expect(addButton).toBeDisabled();
+
+		await imageURLInput.fill('/documents/d/guest/tree-png');
+
+		await expect(addButton).toBeEnabled();
+
+		await addButton.click();
+
+		await expect(
+			classicPage.editable.locator('img[src*="tree-png"]')
+		).toBeVisible();
+	}
+);
+
+test(
 	'Select video by modal URL input',
 	{tag: '@LPD-11235'},
 	async ({classicPage}) => {
@@ -256,5 +293,36 @@ test(
 				name: 'Top banana importers 1998 (',
 			})
 		).toBeVisible();
+	}
+);
+
+test(
+	'Form input value correctly syncs with the editor value',
+	{tag: '@LPD-71706'},
+	async ({classicPage, page}) => {
+		const hiddenInput = page.locator(
+			'input[name*="advancedClassicEditor"]'
+		);
+
+		await test.step('Check that the initial value is set', async () => {
+			await expect(hiddenInput).toHaveValue(
+				/Lorem ipsum dolor sit amet, consectetur adipiscing elit/
+			);
+		});
+
+		await test.step('Check that after making changes, the value is updated', async () => {
+			await classicPage.editable.focus();
+			await classicPage.editable.pressSequentially('New content');
+
+			await expect(hiddenInput).toHaveValue(/New content/);
+		});
+
+		await test.step('Check that after clearing the editor, the value is updated', async () => {
+			await classicPage.editable.focus();
+			await classicPage.editable.press('ControlOrMeta+a');
+			await classicPage.editable.press('Backspace');
+
+			await expect(hiddenInput).toHaveValue('');
+		});
 	}
 );

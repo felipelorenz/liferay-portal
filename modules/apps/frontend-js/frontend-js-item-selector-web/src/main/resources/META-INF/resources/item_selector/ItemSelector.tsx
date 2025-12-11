@@ -180,6 +180,11 @@ export interface IBaseItemSelectorProps<T> {
 	onItemsChange?: InternalDispatch<T[]>;
 
 	/**
+	 * A flag to refetch the data when the menu is active.
+	 */
+	refetchOnActive?: boolean;
+
+	/**
 	 * The current value of the input (controlled).
 	 */
 	value?: string;
@@ -222,6 +227,7 @@ function ItemSelector<T extends Record<string, any>>({
 	defaultValue,
 	defaultItems,
 	displaySelectedItems = true,
+	refetchOnActive = false,
 	...otherProps
 }: IItemSelectorProps<T>) {
 	useEffect(() => {
@@ -254,7 +260,11 @@ function ItemSelector<T extends Record<string, any>>({
 
 	const [networkStatus, setNetworkStatus] = useState(NETWORK_STATUS_UNUSED);
 
-	const {loadMore, resource: sourceItems = []} = useResource({
+	const {
+		loadMore,
+		refetch,
+		resource: sourceItems = [],
+	} = useResource({
 		fetch: async (link) => {
 			const result = await fetch(link);
 
@@ -288,7 +298,9 @@ function ItemSelector<T extends Record<string, any>>({
 			return {cursor, items};
 		},
 		fetchDelay: 500,
-		fetchPolicy: 'cache-first' as FetchPolicy.CacheFirst,
+		fetchPolicy: refetchOnActive
+			? ('cache-and-network' as FetchPolicy.CacheAndNetwork)
+			: ('cache-first' as FetchPolicy.CacheFirst),
 		link: getNextPageURL({apiURL, page: 1}),
 		onNetworkStatusChange: setNetworkStatus,
 		variables: {search: value},
@@ -334,10 +346,19 @@ function ItemSelector<T extends Record<string, any>>({
 
 	let itemSelectorComponent;
 
+	const handleActiveChange = (newActive: boolean) => {
+		if (newActive && refetchOnActive && newActive !== active) {
+			refetch();
+		}
+
+		setActive(newActive);
+	};
+
 	if (multiSelect && displaySelectedItems) {
 		itemSelectorComponent = (
 			<ClayMultiSelect
 				{...(otherProps as any)}
+				active={active}
 				items={items}
 				locator={{
 					id: (item: T) => {
@@ -378,6 +399,7 @@ function ItemSelector<T extends Record<string, any>>({
 					loading: Liferay.Language.get('loading...'),
 					notFound: Liferay.Language.get('no-results-found'),
 				}}
+				onActiveChange={handleActiveChange}
 				onChange={setValue}
 				onItemsChange={setItems}
 				onLoadMore={async () => loadMore()}
@@ -408,7 +430,7 @@ function ItemSelector<T extends Record<string, any>>({
 					loading: Liferay.Language.get('loading...'),
 					notFound: Liferay.Language.get('no-results-found'),
 				}}
-				onActiveChange={setActive}
+				onActiveChange={handleActiveChange}
 				onChange={(value: string) => {
 					if (!value.length) {
 						setItems([]);

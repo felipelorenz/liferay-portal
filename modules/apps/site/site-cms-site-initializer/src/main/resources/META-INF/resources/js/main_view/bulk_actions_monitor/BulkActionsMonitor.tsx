@@ -27,11 +27,7 @@ import BulkActionsMonitorItemList from './components/BulkActionsMonitorItemList'
 import {BulkActionTaskStarter} from './services/BulkActionTaskStarter';
 import {INTERVAL_TASK_POLLING_MS, URL_TASKS_REPORT} from './util/constants';
 
-function BulkActionsMonitor({
-	bulkActionTaskClassNameId: classNameId,
-}: {
-	bulkActionTaskClassNameId: number;
-}) {
+function BulkActionsMonitor() {
 	const [active, setActive] = useState<boolean>(false);
 	const [processingTasks, setProcessingTask] = useState(0);
 	const [tasks, setTasks] = useState<IBulkActionTask[]>([]);
@@ -109,10 +105,7 @@ function BulkActionsMonitor({
 			bulkActionDTO: IBulkActionTaskStarterDTO<keyof IBulkActionTaskType>
 		) => {
 			const bulkAction: IBulkActionTaskStarter =
-				new BulkActionTaskStarter({
-					classNameId,
-					...bulkActionDTO,
-				});
+				new BulkActionTaskStarter(bulkActionDTO);
 
 			try {
 				const response = await AssetBulkActionTaskService.createTask(
@@ -138,7 +131,7 @@ function BulkActionsMonitor({
 				}
 			}
 		},
-		[classNameId, pollProcessingTasks]
+		[pollProcessingTasks]
 	);
 
 	useEffect(() => {
@@ -202,10 +195,7 @@ function BulkActionsMonitor({
 			}
 		>
 			<>
-				<BulkActionsMonitorItemList
-					classNameId={classNameId}
-					items={tasks}
-				/>
+				<BulkActionsMonitorItemList items={tasks} />
 
 				{tasksLoading ? (
 					<div className="task-status-loading">
@@ -213,14 +203,16 @@ function BulkActionsMonitor({
 					</div>
 				) : null}
 
-				<ClayLink
-					block
-					className="btn btn-block btn-secondary task-status-view-all text-3"
-					displayType="secondary"
-					href={URL_TASKS_REPORT}
-				>
-					{Liferay.Language.get('view-all-tasks')}
-				</ClayLink>
+				<div className="p-1">
+					<ClayLink
+						block
+						className="btn btn-block btn-secondary task-status-view-all text-3"
+						displayType="secondary"
+						href={URL_TASKS_REPORT}
+					>
+						{Liferay.Language.get('view-all-tasks')}
+					</ClayLink>
+				</div>
 			</>
 		</DropDown>
 	) : null;

@@ -7,13 +7,16 @@ import {SidebarCategory} from '@liferay/object-js-components-web';
 import {ILearnResourceContext} from 'frontend-js-components-web';
 import React, {ElementType} from 'react';
 
+import {DEFAULT_VALUE_SUPPORTED_BUSINESS_TYPES} from '../../../../utils/constants';
 import {ObjectFieldErrors} from '../../ObjectFieldFormBase';
 import {DefaultValueContainer} from './DefaultValueContainer';
 import {ReadOnlyContainer} from './ReadOnlyContainer';
 
 interface AdvancedTabProps {
+	ckEditor5Config?: object;
 	containerWrapper: ElementType;
 	creationLanguageId: Liferay.Language.Locale;
+	decimalSeparator: string;
 	errors: ObjectFieldErrors;
 	isDefaultStorageType: boolean;
 	isRootDescendantNode: boolean;
@@ -27,8 +30,10 @@ interface AdvancedTabProps {
 }
 
 export function AdvancedTab({
+	ckEditor5Config,
 	containerWrapper: ContainerWrapper,
 	creationLanguageId,
+	decimalSeparator,
 	errors,
 	isDefaultStorageType,
 	isRootDescendantNode,
@@ -47,6 +52,13 @@ export function AdvancedTab({
 		(values.businessType === 'Relationship' && isRootDescendantNode) ||
 		values.required ||
 		values.system;
+	const hasDefaultValue =
+		(Liferay.FeatureFlags['LPD-46451'] &&
+			values.businessType &&
+			DEFAULT_VALUE_SUPPORTED_BUSINESS_TYPES.includes(
+				values.businessType
+			)) ||
+		values.businessType === 'Picklist';
 
 	return (
 		<>
@@ -71,7 +83,7 @@ export function AdvancedTab({
 				</ContainerWrapper>
 			)}
 
-			{values.businessType === 'Picklist' && (
+			{hasDefaultValue && (
 				<ContainerWrapper
 					collapsable
 					defaultExpanded
@@ -81,7 +93,9 @@ export function AdvancedTab({
 					title={Liferay.Language.get('default-value')}
 				>
 					<DefaultValueContainer
+						ckEditor5Config={ckEditor5Config}
 						creationLanguageId={creationLanguageId}
+						decimalSeparator={decimalSeparator}
 						errors={errors}
 						learnResources={learnResources}
 						modelBuilder={modelBuilder}

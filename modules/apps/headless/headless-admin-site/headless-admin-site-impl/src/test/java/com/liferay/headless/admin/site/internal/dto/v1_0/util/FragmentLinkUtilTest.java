@@ -8,6 +8,7 @@ package com.liferay.headless.admin.site.internal.dto.v1_0.util;
 import com.liferay.headless.admin.site.dto.v1_0.FragmentLink;
 import com.liferay.headless.admin.site.dto.v1_0.FragmentLinkInlineValue;
 import com.liferay.headless.admin.site.dto.v1_0.FragmentLinkMappedValue;
+import com.liferay.headless.admin.site.dto.v1_0.FragmentLinkValue;
 import com.liferay.headless.admin.site.dto.v1_0.FragmentMappedValueItemContextReference;
 import com.liferay.headless.admin.site.dto.v1_0.FragmentMappedValueItemExternalReference;
 import com.liferay.headless.admin.site.dto.v1_0.FragmentMappedValueItemReference;
@@ -563,12 +564,9 @@ public class FragmentLinkUtilTest {
 
 		Assert.assertEquals(
 			JSONUtil.put(
-				"link",
-				JSONUtil.put(
-					"href", jsonObject
-				).put(
-					"target", "_blank"
-				)
+				"href", jsonObject
+			).put(
+				"target", "_blank"
 			).toString(),
 			FragmentLinkUtil.toJSONObject(
 				_COMPANY_ID,
@@ -588,12 +586,9 @@ public class FragmentLinkUtilTest {
 	public void testToJSONObjectMappedField() throws PortalException {
 		Assert.assertEquals(
 			JSONUtil.put(
-				"link",
-				JSONUtil.put(
-					"mappedField", "FileEntry_fileName"
-				).put(
-					"target", "_blank"
-				)
+				"mappedField", "FileEntry_fileName"
+			).put(
+				"target", "_blank"
 			).toString(),
 			FragmentLinkUtil.toJSONObject(
 				_COMPANY_ID,
@@ -628,20 +623,17 @@ public class FragmentLinkUtilTest {
 
 		Assert.assertEquals(
 			JSONUtil.put(
-				"link",
-				JSONUtil.put(
-					"className", JournalArticle.class.getName()
-				).put(
-					"classNameId", _CLASS_NAME_ID
-				).put(
-					"classPK", classPK
-				).put(
-					"externalReferenceCode", journalArticleExternalReferenceCode
-				).put(
-					"fieldId", "JournalArticle_title"
-				).put(
-					"target", "_blank"
-				)
+				"className", JournalArticle.class.getName()
+			).put(
+				"classNameId", _CLASS_NAME_ID
+			).put(
+				"classPK", classPK
+			).put(
+				"externalReferenceCode", journalArticleExternalReferenceCode
+			).put(
+				"fieldId", "JournalArticle_title"
+			).put(
+				"target", "_blank"
 			).toString(),
 			FragmentLinkUtil.toJSONObject(
 				_COMPANY_ID,
@@ -698,23 +690,20 @@ public class FragmentLinkUtilTest {
 
 		Assert.assertEquals(
 			JSONUtil.put(
-				"link",
-				JSONUtil.put(
-					"className", JournalArticle.class.getName()
-				).put(
-					"classNameId", _CLASS_NAME_ID
-				).put(
-					"classPK", classPK
-				).put(
-					"externalReferenceCode", journalArticleExternalReferenceCode
-				).put(
-					"fieldId", "JournalArticle_title"
-				).put(
-					"scopeExternalReferenceCode",
-					journalArticleScopeExternalReferenceCode
-				).put(
-					"target", "_blank"
-				)
+				"className", JournalArticle.class.getName()
+			).put(
+				"classNameId", _CLASS_NAME_ID
+			).put(
+				"classPK", classPK
+			).put(
+				"externalReferenceCode", journalArticleExternalReferenceCode
+			).put(
+				"fieldId", "JournalArticle_title"
+			).put(
+				"scopeExternalReferenceCode",
+				journalArticleScopeExternalReferenceCode
+			).put(
+				"target", "_blank"
 			).toString(),
 			FragmentLinkUtil.toJSONObject(
 				_COMPANY_ID,
@@ -777,25 +766,22 @@ public class FragmentLinkUtilTest {
 
 		Assert.assertEquals(
 			JSONUtil.put(
-				"link",
+				"layout",
 				JSONUtil.put(
-					"layout",
-					JSONUtil.put(
-						"externalReferenceCode", layoutExternalReferenceCode
-					).put(
-						"groupId", _SCOPE_GROUP_ID
-					).put(
-						"layoutId", layoutId
-					).put(
-						"layoutUuid", layoutUuid
-					).put(
-						"privateLayout", true
-					).put(
-						"title", title
-					)
+					"externalReferenceCode", layoutExternalReferenceCode
 				).put(
-					"target", "_blank"
+					"groupId", _SCOPE_GROUP_ID
+				).put(
+					"layoutId", layoutId
+				).put(
+					"layoutUuid", layoutUuid
+				).put(
+					"privateLayout", true
+				).put(
+					"title", title
 				)
+			).put(
+				"target", "_blank"
 			).toString(),
 			FragmentLinkUtil.toJSONObject(
 				_COMPANY_ID,
@@ -857,28 +843,25 @@ public class FragmentLinkUtilTest {
 
 		Assert.assertEquals(
 			JSONUtil.put(
-				"link",
+				"layout",
 				JSONUtil.put(
-					"layout",
-					JSONUtil.put(
-						"externalReferenceCode", layoutExternalReferenceCode
-					).put(
-						"groupId", _ITEM_GROUP_ID
-					).put(
-						"layoutId", layoutId
-					).put(
-						"layoutUuid", layoutUuid
-					).put(
-						"privateLayout", true
-					).put(
-						"scopeExternalReferenceCode",
-						_ITEM_GROUP_EXTERNAL_REFERENCE_CODE
-					).put(
-						"title", title
-					)
+					"externalReferenceCode", layoutExternalReferenceCode
 				).put(
-					"target", "_blank"
+					"groupId", _ITEM_GROUP_ID
+				).put(
+					"layoutId", layoutId
+				).put(
+					"layoutUuid", layoutUuid
+				).put(
+					"privateLayout", true
+				).put(
+					"scopeExternalReferenceCode",
+					_ITEM_GROUP_EXTERNAL_REFERENCE_CODE
+				).put(
+					"title", title
 				)
+			).put(
+				"target", "_blank"
 			).toString(),
 			FragmentLinkUtil.toJSONObject(
 				_COMPANY_ID,
@@ -906,18 +889,15 @@ public class FragmentLinkUtilTest {
 
 		Assert.assertEquals(
 			JSONUtil.put(
-				"link",
-				JSONUtil.put(
-					"className", JournalArticle.class.getName()
-				).put(
-					"classNameId", _CLASS_NAME_ID
-				).put(
-					"externalReferenceCode", journalArticleExternalReferenceCode
-				).put(
-					"fieldId", "JournalArticle_title"
-				).put(
-					"target", "_blank"
-				)
+				"className", JournalArticle.class.getName()
+			).put(
+				"classNameId", _CLASS_NAME_ID
+			).put(
+				"externalReferenceCode", journalArticleExternalReferenceCode
+			).put(
+				"fieldId", "JournalArticle_title"
+			).put(
+				"target", "_blank"
 			).toString(),
 			FragmentLinkUtil.toJSONObject(
 				_COMPANY_ID,
@@ -946,21 +926,18 @@ public class FragmentLinkUtilTest {
 
 		Assert.assertEquals(
 			JSONUtil.put(
-				"link",
-				JSONUtil.put(
-					"className", JournalArticle.class.getName()
-				).put(
-					"classNameId", _CLASS_NAME_ID
-				).put(
-					"externalReferenceCode", journalArticleExternalReferenceCode
-				).put(
-					"fieldId", "JournalArticle_title"
-				).put(
-					"scopeExternalReferenceCode",
-					_ITEM_GROUP_EXTERNAL_REFERENCE_CODE
-				).put(
-					"target", "_blank"
-				)
+				"className", JournalArticle.class.getName()
+			).put(
+				"classNameId", _CLASS_NAME_ID
+			).put(
+				"externalReferenceCode", journalArticleExternalReferenceCode
+			).put(
+				"fieldId", "JournalArticle_title"
+			).put(
+				"scopeExternalReferenceCode",
+				_ITEM_GROUP_EXTERNAL_REFERENCE_CODE
+			).put(
+				"target", "_blank"
 			).toString(),
 			FragmentLinkUtil.toJSONObject(
 				_COMPANY_ID,
@@ -985,14 +962,11 @@ public class FragmentLinkUtilTest {
 
 		Assert.assertEquals(
 			JSONUtil.put(
-				"link",
+				"layout",
 				JSONUtil.put(
-					"layout",
-					JSONUtil.put(
-						"externalReferenceCode", layoutExternalReferenceCode)
-				).put(
-					"target", "_blank"
-				)
+					"externalReferenceCode", layoutExternalReferenceCode)
+			).put(
+				"target", "_blank"
 			).toString(),
 			FragmentLinkUtil.toJSONObject(
 				_COMPANY_ID,
@@ -1018,18 +992,15 @@ public class FragmentLinkUtilTest {
 
 		Assert.assertEquals(
 			JSONUtil.put(
-				"link",
+				"layout",
 				JSONUtil.put(
-					"layout",
-					JSONUtil.put(
-						"externalReferenceCode", layoutExternalReferenceCode
-					).put(
-						"scopeExternalReferenceCode",
-						_ITEM_GROUP_EXTERNAL_REFERENCE_CODE
-					)
+					"externalReferenceCode", layoutExternalReferenceCode
 				).put(
-					"target", "_blank"
+					"scopeExternalReferenceCode",
+					_ITEM_GROUP_EXTERNAL_REFERENCE_CODE
 				)
+			).put(
+				"target", "_blank"
 			).toString(),
 			FragmentLinkUtil.toJSONObject(
 				_COMPANY_ID,
@@ -1061,6 +1032,12 @@ public class FragmentLinkUtilTest {
 			group.getType()
 		).thenReturn(
 			type
+		);
+
+		Mockito.when(
+			group.isDepot()
+		).thenReturn(
+			GroupConstants.TYPE_DEPOT == type
 		);
 
 		_groupLocalServiceUtilMockedStatic.when(
@@ -1115,7 +1092,8 @@ public class FragmentLinkUtilTest {
 
 		return new FragmentLinkInlineValue() {
 			{
-				setValue_i18n(localizedValues);
+				setType(() -> Type.FRAGMENT_INLINE_VALUE);
+				setValue_i18n(() -> localizedValues);
 			}
 		};
 	}
@@ -1134,7 +1112,10 @@ public class FragmentLinkUtilTest {
 			() -> _getFragmentMappedValueItemReference(
 				className, externalReferenceCode, scope));
 
-		fragmentLinkMappedValue.setMapping(mapping);
+		fragmentLinkMappedValue.setMapping(() -> mapping);
+
+		fragmentLinkMappedValue.setType(
+			() -> FragmentLinkValue.Type.FRAGMENT_MAPPED_VALUE);
 
 		return fragmentLinkMappedValue;
 	}
@@ -1147,6 +1128,10 @@ public class FragmentLinkUtilTest {
 			return new FragmentMappedValueItemContextReference() {
 				{
 					setContextSource(() -> ContextSource.DISPLAY_PAGE_ITEM);
+					setType(
+						() ->
+							FragmentMappedValueItemReference.Type.
+								CONTEXT_REFERENCE);
 				}
 			};
 		}
@@ -1162,6 +1147,10 @@ public class FragmentLinkUtilTest {
 		if (scope != null) {
 			fragmentMappedValueItemExternalReference.setScope(scope);
 		}
+
+		fragmentMappedValueItemExternalReference.setType(
+			() ->
+				FragmentMappedValueItemReference.Type.ITEM_EXTERNAL_REFERENCE);
 
 		return fragmentMappedValueItemExternalReference;
 	}

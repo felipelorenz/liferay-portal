@@ -62,7 +62,7 @@ definition {
 				key_facetType = "Price Range Facet",
 				key_termValue = "$ 500.00 - $ 999.99",
 				locator1 = "Search#FACET_TERM_FREQUENCIES",
-				value1 = 2);
+				value1 = 3);
 
 			AssertElementNotPresent(
 				key_facetType = "Price Range Facet",
@@ -296,7 +296,7 @@ definition {
 			}
 
 			AssertElementPresent(
-				key_productCount = 49,
+				key_productCount = 50,
 				locator1 = "CommerceFrontStore#FS_PRODUCT_COUNT");
 		}
 
@@ -322,7 +322,7 @@ definition {
 			}
 
 			AssertElementPresent(
-				key_productCount = 49,
+				key_productCount = 50,
 				locator1 = "CommerceFrontStore#FS_PRODUCT_COUNT");
 		}
 
@@ -348,7 +348,7 @@ definition {
 			}
 
 			AssertElementPresent(
-				key_productCount = 49,
+				key_productCount = 50,
 				locator1 = "CommerceFrontStore#FS_PRODUCT_COUNT");
 		}
 	}
@@ -843,7 +843,7 @@ definition {
 		}
 
 		task ("And the term count of the other values doesn't change either") {
-			for (var priceRangeValueAndCount : list "$ 0.00 - $ 49.99:(21),$ 100.00 - $ 199.99:(10),$ 200.00 - $ 499.99:(4),$ 500.00 - $ 999.99:(2)") {
+			for (var priceRangeValueAndCount : list "$ 0.00 - $ 49.99:(21),$ 100.00 - $ 199.99:(10),$ 200.00 - $ 499.99:(4),$ 500.00 - $ 999.99:(3)") {
 				var priceRangeValue = StringUtil.extractFirst(${priceRangeValueAndCount}, ":");
 				var priceRangeCount = StringUtil.extractLast(${priceRangeValueAndCount}, ":");
 
@@ -860,7 +860,7 @@ definition {
 		}
 
 		task ("Then the term count of all values doesn't change") {
-			for (var priceRangeValueAndCount : list "$ 0.00 - $ 49.99:(21),$ 50.00 - $ 99.99:(12),$ 100.00 - $ 199.99:(10),$ 200.00 - $ 499.99:(4),$ 500.00 - $ 999.99:(2)") {
+			for (var priceRangeValueAndCount : list "$ 0.00 - $ 49.99:(21),$ 50.00 - $ 99.99:(12),$ 100.00 - $ 199.99:(10),$ 200.00 - $ 499.99:(4),$ 500.00 - $ 999.99:(3)") {
 				var priceRangeValue = StringUtil.extractFirst(${priceRangeValueAndCount}, ":");
 				var priceRangeCount = StringUtil.extractLast(${priceRangeValueAndCount}, ":");
 

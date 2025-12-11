@@ -30,16 +30,18 @@ import deleteAssetEntriesBulkAction, {
 	executeBulkDeleteAction,
 } from './actions/deleteAssetEntriesBulkAction';
 import deleteItemAction from './actions/deleteItemAction';
+import executeResetPermissionBulkAction from './actions/executeResetPermissionBulkAction';
 import multipleFilesUploadAction from './actions/multipleFilesUploadAction';
 import openFolderItemSelectorAction from './actions/openFolderItemSelectorAction';
 import shareAction from './actions/shareAction';
-import {triggerAssetBulkAction} from './actions/triggerAssetBulkAction';
+import {triggerAssetDownloadBulkAction} from './actions/triggerAssetDownloadBulkAction';
 import AuthorRenderer from './cell_renderers/AuthorRenderer';
 import SimpleActionLinkRenderer from './cell_renderers/SimpleActionLinkRenderer';
 import SpaceRendererWithCache from './cell_renderers/SpaceRendererWithCache';
 import TypeRenderer from './cell_renderers/TypeRenderer';
 import addOnClickToCreationMenuItems from './utils/addOnClickToCreationMenuItems';
 import transformViewsItemsProps from './utils/transformViewsItemProps';
+import GalleryView from './views/GalleryView';
 
 const ACTIONS = {
 	createAsset: createAssetAction,
@@ -80,6 +82,35 @@ export default function AssetsFDSPropsTransformer({
 	itemsActions?: any[];
 	views: IView[];
 }) {
+	let mergedViews = views;
+
+	if (additionalProps.galleryViewEnabled) {
+		const galleryViewRenderer: IView = {
+			component: (props: any) => GalleryView({...props, additionalProps}),
+			default: true,
+			label: Liferay.Language.get('gallery'),
+			name: 'gallery',
+			schema: {
+				description: 'description',
+				image: 'imageURL',
+				link: '',
+				sticker: '',
+				symbol: '',
+				title: 'embedded.title',
+			},
+			thumbnail: 'gallery',
+		};
+
+		const nonDefaultViews = views.map((view) => {
+			return {
+				...view,
+				default: false,
+			};
+		});
+
+		mergedViews = [...nonDefaultViews, galleryViewRenderer];
+	}
+
 	return {
 		...otherProps,
 		creationMenu: {
@@ -223,7 +254,9 @@ export default function AssetsFDSPropsTransformer({
 					additionalProps.assetLibraries,
 					itemData,
 					loadData,
-					additionalProps.objectEntryFolderExternalReferenceCode
+					additionalProps.objectEntryFolderExternalReferenceCode,
+					additionalProps.rootObjectEntryFolderExternalReferenceCode ||
+						additionalProps.parentObjectEntryFolderExternalReferenceCode
 				);
 			}
 			else if (
@@ -404,10 +437,23 @@ export default function AssetsFDSPropsTransformer({
 				}
 			}
 			else if (action?.data?.id === 'download') {
-				triggerAssetBulkAction({
+				triggerAssetDownloadBulkAction({
 					apiURL: otherProps.apiURL,
 					selectedData,
 					type: 'DownloadBulkAction',
+				});
+			}
+			else if (action?.data?.id === 'edit-permissions-by-role') {
+				permissionsBulkAction({
+					apiURL: otherProps.apiURL,
+					className: OBJECT_ENTRY_FOLDER_CLASS_NAME,
+					defaultPermissionAdditionalProps:
+						additionalProps.defaultPermissionAdditionalProps || {},
+					section:
+						additionalProps.rootObjectEntryFolderExternalReferenceCode ||
+						additionalProps.parentObjectEntryFolderExternalReferenceCode,
+					selectedData,
+					singleRoleMode: true,
 				});
 			}
 			else if (action?.data?.id === 'permissions') {
@@ -422,6 +468,16 @@ export default function AssetsFDSPropsTransformer({
 					selectedData,
 				});
 			}
+			else if (action?.data?.id === 'reset-to-default-permissions') {
+				openResetAssetPermissionModal({
+					loadData: () => {
+						executeResetPermissionBulkAction({
+							apiURL: otherProps.apiURL,
+							selectedData,
+						});
+					},
+				});
+			}
 		},
 		views: transformViewsItemsProps({
 			fileMimeTypeCssClasses: additionalProps.fileMimeTypeCssClasses,
@@ -429,7 +485,7 @@ export default function AssetsFDSPropsTransformer({
 			objectDefinitionCssClasses:
 				additionalProps.objectDefinitionCssClasses,
 			objectDefinitionIcons: additionalProps.objectDefinitionIcons,
-			views,
+			views: mergedViews,
 		}),
 	};
 }
