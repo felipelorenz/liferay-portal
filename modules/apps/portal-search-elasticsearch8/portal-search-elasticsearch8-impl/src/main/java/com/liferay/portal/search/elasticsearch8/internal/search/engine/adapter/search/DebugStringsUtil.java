@@ -5,6 +5,8 @@
 
 package com.liferay.portal.search.elasticsearch8.internal.search.engine.adapter.search;
 
+import co.elastic.clients.elasticsearch.core.SearchRequest;
+
 import com.liferay.petra.string.StringBundler;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.log.Log;
@@ -44,10 +46,10 @@ public class DebugStringsUtil {
 	}
 
 	public static String getSearchRequestString(
-		SearchSourceBuilder searchSourceBuilder) {
+		SearchRequest.Builder builder) {
 
 		try {
-			return searchSourceBuilder.toString();
+			return builder.toString(); //TODO check
 		}
 		catch (ElasticsearchException elasticsearchException) {
 			if (_log.isDebugEnabled()) {
