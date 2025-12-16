@@ -8,7 +8,7 @@ package com.liferay.portal.search.elasticsearch8.internal.search.engine.adapter.
 import com.liferay.portal.search.document.DocumentBuilder;
 import com.liferay.portal.search.document.DocumentBuilderFactory;
 import com.liferay.portal.search.elasticsearch8.internal.connection.ElasticsearchClientResolver;
-import com.liferay.portal.search.elasticsearch8.internal.document.DocumentFieldsTranslator;
+import com.liferay.portal.search.elasticsearch8.internal.document.FieldsTranslator;
 import com.liferay.portal.search.engine.adapter.document.GetDocumentRequest;
 import com.liferay.portal.search.engine.adapter.document.GetDocumentResponse;
 import com.liferay.portal.search.geolocation.GeoBuilders;
@@ -49,12 +49,12 @@ public class GetDocumentRequestExecutorImpl
 		getDocumentResponse.setSource(getResponse.getSourceAsString());
 		getDocumentResponse.setVersion(getResponse.getVersion());
 
-		DocumentFieldsTranslator documentFieldsTranslator =
-			new DocumentFieldsTranslator(_geoBuilders);
+		FieldsTranslator fieldsTranslator =
+			new FieldsTranslator(_geoBuilders);
 
 		DocumentBuilder documentBuilder = _documentBuilderFactory.builder();
 
-		documentFieldsTranslator.translate(
+		fieldsTranslator.translate(
 			documentBuilder, getResponse.getSourceAsMap());
 
 		getDocumentResponse.setDocument(documentBuilder.build());

@@ -38,9 +38,9 @@ import org.elasticsearch.common.geo.GeoPoint;
 /**
  * @author Bryan Engler
  */
-public class DocumentFieldsTranslator {
+public class FieldsTranslator {
 
-	public DocumentFieldsTranslator(GeoBuilders geoBuilders) {
+	public FieldsTranslator(GeoBuilders geoBuilders) {
 		_geoBuilders = geoBuilders;
 	}
 
