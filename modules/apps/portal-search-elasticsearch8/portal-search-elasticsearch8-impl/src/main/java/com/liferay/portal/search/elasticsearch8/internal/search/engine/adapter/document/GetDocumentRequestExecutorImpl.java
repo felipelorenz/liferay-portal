@@ -34,7 +34,7 @@ public class GetDocumentRequestExecutorImpl
 	public GetDocumentResponse execute(GetDocumentRequest getDocumentRequest) {
 		GetResponse<JsonData> getResponse = _getGetResponse(
 			getDocumentRequest,
-			_elasticsearchBulkableDocumentRequestTranslator.translate(
+			_elasticsearchDocumentRequestTranslator.translate(
 				getDocumentRequest));
 
 		GetDocumentResponse getDocumentResponse = new GetDocumentResponse(
@@ -78,12 +78,12 @@ public class GetDocumentRequestExecutorImpl
 	@Reference
 	private DocumentBuilderFactory _documentBuilderFactory;
 
-	@Reference(target = "(search.engine.impl=Elasticsearch)")
-	private ElasticsearchBulkableDocumentRequestTranslator
-		_elasticsearchBulkableDocumentRequestTranslator;
-
 	@Reference
 	private ElasticsearchClientResolver _elasticsearchClientResolver;
+
+	@Reference(target = "(search.engine.impl=Elasticsearch)")
+	private ElasticsearchDocumentRequestTranslator
+		_elasticsearchDocumentRequestTranslator;
 
 	@Reference
 	private GeoBuilders _geoBuilders;
