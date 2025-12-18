@@ -5,17 +5,16 @@
 
 package com.liferay.portal.search.elasticsearch8.internal.search.engine.adapter.ccr;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch.ccr.ElasticsearchCcrClient;
+import co.elastic.clients.elasticsearch.ccr.PauseFollowRequest;
+import co.elastic.clients.elasticsearch.ccr.PauseFollowResponse;
+
 import com.liferay.portal.search.elasticsearch8.internal.connection.ElasticsearchClientResolver;
 import com.liferay.portal.search.engine.adapter.ccr.PauseFollowCCRRequest;
 import com.liferay.portal.search.engine.adapter.ccr.PauseFollowCCRResponse;
 
 import java.io.IOException;
-
-import org.elasticsearch.client.CcrClient;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.ccr.PauseFollowRequest;
-import org.elasticsearch.client.core.AcknowledgedResponse;
 
 /**
  * @author Bryan Engler
@@ -34,27 +33,26 @@ public class PauseFollowCCRRequestExecutor {
 		PauseFollowRequest pauseFollowRequest = _createPauseFollowRequest(
 			pauseFollowCCRRequest);
 
-		AcknowledgedResponse acknowledgedResponse = getAcknowledgedResponse(
+		PauseFollowResponse acknowledgedResponse = getAcknowledgedResponse(
 			pauseFollowRequest, pauseFollowCCRRequest);
 
-		return new PauseFollowCCRResponse(
-			acknowledgedResponse.isAcknowledged());
+		return new PauseFollowCCRResponse(acknowledgedResponse.acknowledged());
 	}
 
-	protected AcknowledgedResponse getAcknowledgedResponse(
+	protected PauseFollowResponse getAcknowledgedResponse(
 		PauseFollowRequest pauseFollowRequest,
 		PauseFollowCCRRequest pauseFollowCCRRequest) {
 
-		RestHighLevelClient restHighLevelClient =
-			_elasticsearchClientResolver.getRestHighLevelClient(
+		ElasticsearchClient elasticsearchClient =
+			_elasticsearchClientResolver.getElasticsearchClient(
 				pauseFollowCCRRequest.getConnectionId(),
 				pauseFollowCCRRequest.isPreferLocalCluster());
 
-		CcrClient ccrClient = restHighLevelClient.ccr();
+		ElasticsearchCcrClient elasticsearchCcrClient =
+			elasticsearchClient.ccr();
 
 		try {
-			return ccrClient.pauseFollow(
-				pauseFollowRequest, RequestOptions.DEFAULT);
+			return elasticsearchCcrClient.pauseFollow(pauseFollowRequest);
 		}
 		catch (IOException ioException) {
 			throw new RuntimeException(ioException);
@@ -64,7 +62,11 @@ public class PauseFollowCCRRequestExecutor {
 	private PauseFollowRequest _createPauseFollowRequest(
 		PauseFollowCCRRequest pauseFollowCCRRequest) {
 
-		return new PauseFollowRequest(pauseFollowCCRRequest.getIndexName());
+		PauseFollowRequest.Builder builder = new PauseFollowRequest.Builder();
+
+		builder.index(pauseFollowCCRRequest.getIndexName());
+
+		return builder.build();
 	}
 
 	private final ElasticsearchClientResolver _elasticsearchClientResolver;

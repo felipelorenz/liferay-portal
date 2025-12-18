@@ -5,17 +5,16 @@
 
 package com.liferay.portal.search.elasticsearch8.internal.search.engine.adapter.ccr;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch.ccr.ElasticsearchCcrClient;
+import co.elastic.clients.elasticsearch.ccr.UnfollowRequest;
+import co.elastic.clients.elasticsearch.ccr.UnfollowResponse;
+
 import com.liferay.portal.search.elasticsearch8.internal.connection.ElasticsearchClientResolver;
 import com.liferay.portal.search.engine.adapter.ccr.UnfollowCCRRequest;
 import com.liferay.portal.search.engine.adapter.ccr.UnfollowCCRResponse;
 
 import java.io.IOException;
-
-import org.elasticsearch.client.CcrClient;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.ccr.UnfollowRequest;
-import org.elasticsearch.client.core.AcknowledgedResponse;
 
 /**
  * @author Bryan Engler
@@ -32,25 +31,26 @@ public class UnfollowCCRRequestExecutor {
 		UnfollowRequest unfollowRequest = _createUnfollowRequest(
 			unfollowCCRRequest);
 
-		AcknowledgedResponse acknowledgedResponse = getAcknowledgedResponse(
+		UnfollowResponse acknowledgedResponse = getAcknowledgedResponse(
 			unfollowRequest, unfollowCCRRequest);
 
-		return new UnfollowCCRResponse(acknowledgedResponse.isAcknowledged());
+		return new UnfollowCCRResponse(acknowledgedResponse.acknowledged());
 	}
 
-	protected AcknowledgedResponse getAcknowledgedResponse(
+	protected UnfollowResponse getAcknowledgedResponse(
 		UnfollowRequest unfollowRequest,
 		UnfollowCCRRequest unfollowCCRRequest) {
 
-		RestHighLevelClient restHighLevelClient =
-			_elasticsearchClientResolver.getRestHighLevelClient(
+		ElasticsearchClient elasticsearchClient =
+			_elasticsearchClientResolver.getElasticsearchClient(
 				unfollowCCRRequest.getConnectionId(),
 				unfollowCCRRequest.isPreferLocalCluster());
 
-		CcrClient ccrClient = restHighLevelClient.ccr();
+		ElasticsearchCcrClient elasticsearchCcrClient =
+			elasticsearchClient.ccr();
 
 		try {
-			return ccrClient.unfollow(unfollowRequest, RequestOptions.DEFAULT);
+			return elasticsearchCcrClient.unfollow(unfollowRequest);
 		}
 		catch (IOException ioException) {
 			throw new RuntimeException(ioException);
@@ -60,7 +60,11 @@ public class UnfollowCCRRequestExecutor {
 	private UnfollowRequest _createUnfollowRequest(
 		UnfollowCCRRequest unfollowCCRRequest) {
 
-		return new UnfollowRequest(unfollowCCRRequest.getIndexName());
+		UnfollowRequest.Builder builder = new UnfollowRequest.Builder();
+
+		builder.index(unfollowCCRRequest.getIndexName());
+
+		return builder.build();
 	}
 
 	private final ElasticsearchClientResolver _elasticsearchClientResolver;
