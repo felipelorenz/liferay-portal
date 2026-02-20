@@ -1510,6 +1510,9 @@ public class BundleSiteInitializer implements SiteInitializer {
 		).put(
 			"classNameIds", StringUtil.merge(classNameIdStrings, ",")
 		).put(
+			"classTypeIds" + assetRendererFactoryName,
+			assetListJSONObject.getString("assetEntrySubtypeId")
+		).put(
 			"groupIds", String.valueOf(serviceContext.getScopeGroupId())
 		).build();
 
