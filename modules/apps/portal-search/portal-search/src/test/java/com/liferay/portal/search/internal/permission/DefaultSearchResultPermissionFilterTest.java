@@ -171,9 +171,9 @@ public class DefaultSearchResultPermissionFilterTest {
 		SearchContext searchContext = _getSearchContext(10);
 
 		_assertResultsCount(
-			searchContext, defaultSearchResultPermissionFilter, 9, false);
+			defaultSearchResultPermissionFilter, 9, searchContext, false);
 		_assertResultsCount(
-			searchContext, defaultSearchResultPermissionFilter, 0, true);
+			defaultSearchResultPermissionFilter, 0, searchContext, true);
 
 		ResourcePermissionLocalServiceUtil.setService(null);
 	}
@@ -203,9 +203,9 @@ public class DefaultSearchResultPermissionFilterTest {
 	}
 
 	private void _assertResultsCount(
-		SearchContext searchContext,
 		DefaultSearchResultPermissionFilter defaultSearchResultPermissionFilter,
-		int expectedResultsCount, boolean serviceTrackerContainsKey) {
+		int expectedResultsCount, SearchContext searchContext,
+		boolean serviceTrackerContainsKey) {
 
 		Mockito.when(
 			_serviceTrackerMap.containsKey(Mockito.anyString())
