@@ -11,7 +11,6 @@ import com.liferay.portal.configuration.persistence.upgrade.ConfigurationUpgrade
 import com.liferay.portal.events.StartupHelperUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.model.Release;
 import com.liferay.portal.kernel.service.ReleaseLocalService;
 import com.liferay.portal.kernel.util.PropsValues;
 import com.liferay.portal.search.elasticsearch8.internal.configuration.ElasticsearchConfigurationObserver;
@@ -71,16 +70,30 @@ public class SidecarManager implements ElasticsearchConfigurationObserver {
 	}
 
 	protected void applyConfigurations() {
-		if (StartupHelperUtil.isUpgrading() &&
-			_isUpgradeNeeded()) {
+		if (StartupHelperUtil.isUpgrading() && !_upgraded) {
+			synchronized (_upgradeLock) {
+				if (!_upgraded && _isUpgradeNeeded()) {
+					try {
+						ElasticsearchUpgradeProcessUtil.doUpgrade(
+							_configurationAdmin,
+							_configurationUpgradeStepFactory);
 
-			try {
-				ElasticsearchUpgradeProcessUtil.doUpgrade(
-					_configurationAdmin, _configurationUpgradeStepFactory);
-			}
-			catch (Exception exception) {
-				_log.error(
-					"Unable to upgrade Elasticsearch configuration", exception);
+						releaseLocalService.updateRelease(
+							_bundleContext.getBundle(
+							).getSymbolicName(),
+							"1.0.0", "0.0.1");
+
+						_upgraded = true;
+					}
+					catch (Exception exception) {
+						_log.error(
+							"Unable to upgrade Elasticsearch configuration",
+							exception);
+					}
+				}
+				else {
+					_upgraded = true;
+				}
 			}
 		}
 
@@ -166,23 +179,14 @@ public class SidecarManager implements ElasticsearchConfigurationObserver {
 	@Reference
 	protected ReleaseLocalService releaseLocalService;
 
-	@Reference
-	private ConfigurationAdmin _configurationAdmin;
-
-	@Reference
-	private ConfigurationUpgradeStepFactory _configurationUpgradeStepFactory;
-
 	private boolean _isUpgradeNeeded() {
 		Bundle bundle = _bundleContext.getBundle();
 
-		Release release = releaseLocalService.fetchRelease(
-			bundle.getSymbolicName());
+		String releaseVersion = releaseLocalService.fetchRelease(
+			bundle.getSymbolicName()
+		).getSchemaVersion();
 
-		if ((release != null) && (!release.getSchemaVersion().equals("0.0.1"))) {
-			return false;
-		}
-
-		return true;
+		return releaseVersion.equals("0.0.1");
 	}
 
 	private Path _resolveHomePath(Path path) {
@@ -211,7 +215,16 @@ public class SidecarManager implements ElasticsearchConfigurationObserver {
 	private static final Log _log = LogFactoryUtil.getLog(SidecarManager.class);
 
 	private BundleContext _bundleContext;
+
+	@Reference
+	private ConfigurationAdmin _configurationAdmin;
+
+	@Reference
+	private ConfigurationUpgradeStepFactory _configurationUpgradeStepFactory;
+
 	private Sidecar _sidecar;
 	private boolean _startupSuccessful;
+	private volatile boolean _upgraded;
+	private final Object _upgradeLock = new Object();
 
 }
