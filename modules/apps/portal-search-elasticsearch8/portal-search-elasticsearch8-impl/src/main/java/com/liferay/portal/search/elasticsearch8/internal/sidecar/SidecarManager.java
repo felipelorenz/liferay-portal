@@ -12,7 +12,9 @@ import com.liferay.portal.events.StartupHelperUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.service.ReleaseLocalService;
+import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.PropsValues;
+import com.liferay.portal.search.elasticsearch8.configuration.ElasticsearchConfiguration;
 import com.liferay.portal.search.elasticsearch8.internal.configuration.ElasticsearchConfigurationObserver;
 import com.liferay.portal.search.elasticsearch8.internal.configuration.ElasticsearchConfigurationWrapper;
 import com.liferay.portal.search.elasticsearch8.internal.connection.ElasticsearchConnection;
@@ -32,6 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -197,6 +200,26 @@ public class SidecarManager implements ElasticsearchConfigurationObserver {
 		}
 
 		try {
+			Configuration[] elasticsearch8configurations =
+				_configurationAdmin.listConfigurations(
+					String.format(
+						"(service.pid=%s)",
+						ElasticsearchConfiguration.class.getName()));
+
+			if (ArrayUtil.isNotEmpty(elasticsearch8configurations)) {
+				return;
+			}
+
+			Configuration[] elasticsearch7configurations =
+				_configurationAdmin.listConfigurations(
+					String.format(
+						"(service.pid=%s)",
+						_CLASS_NAME_ELASTICSEARCH7_CONFIGURATION));
+
+			if (ArrayUtil.isEmpty(elasticsearch7configurations)) {
+				return;
+			}
+
 			ElasticsearchUpgradeProcessUtil.doUpgrade(
 				_configurationAdmin, _configurationUpgradeStepFactory);
 
@@ -210,6 +233,10 @@ public class SidecarManager implements ElasticsearchConfigurationObserver {
 				"Unable to upgrade Elasticsearch configuration", exception);
 		}
 	}
+
+	private static final String _CLASS_NAME_ELASTICSEARCH7_CONFIGURATION =
+		"com.liferay.portal.search.elasticsearch7.configuration." +
+			"ElasticsearchConfiguration";
 
 	private static final Log _log = LogFactoryUtil.getLog(SidecarManager.class);
 
