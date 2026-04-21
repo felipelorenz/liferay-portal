@@ -28,6 +28,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.cm.ConfigurationAdmin;
@@ -66,37 +68,14 @@ public class SidecarManager implements ElasticsearchConfigurationObserver {
 
 		elasticsearchConfigurationWrapper.register(this);
 
+		if (StartupHelperUtil.isUpgrading()) {
+			_upgradeConfiguration();
+		}
+
 		applyConfigurations();
 	}
 
 	protected void applyConfigurations() {
-		if (StartupHelperUtil.isUpgrading() && !_upgraded) {
-			synchronized (_upgradeLock) {
-				if (!_upgraded && _isUpgradeNeeded()) {
-					try {
-						ElasticsearchUpgradeProcessUtil.doUpgrade(
-							_configurationAdmin,
-							_configurationUpgradeStepFactory);
-
-						releaseLocalService.updateRelease(
-							_bundleContext.getBundle(
-							).getSymbolicName(),
-							"1.0.0", "0.0.1");
-
-						_upgraded = true;
-					}
-					catch (Exception exception) {
-						_log.error(
-							"Unable to upgrade Elasticsearch configuration",
-							exception);
-					}
-				}
-				else {
-					_upgraded = true;
-				}
-			}
-		}
-
 		File processFile = _bundleContext.getDataFile("sidecar.process");
 
 		if (elasticsearchConfigurationWrapper.productionModeEnabled()) {
@@ -179,16 +158,6 @@ public class SidecarManager implements ElasticsearchConfigurationObserver {
 	@Reference
 	protected ReleaseLocalService releaseLocalService;
 
-	private boolean _isUpgradeNeeded() {
-		Bundle bundle = _bundleContext.getBundle();
-
-		String releaseVersion = releaseLocalService.fetchRelease(
-			bundle.getSymbolicName()
-		).getSchemaVersion();
-
-		return releaseVersion.equals("0.0.1");
-	}
-
 	private Path _resolveHomePath(Path path) {
 		String sidecarHome = elasticsearchConfigurationWrapper.sidecarHome();
 
@@ -212,6 +181,36 @@ public class SidecarManager implements ElasticsearchConfigurationObserver {
 		return relativeSidecarHomePath;
 	}
 
+	private void _upgradeConfiguration() {
+		if (!_upgraded.compareAndSet(false, true)) {
+			return;
+		}
+
+		Bundle bundle = _bundleContext.getBundle();
+
+		String releaseVersion = releaseLocalService.fetchRelease(
+			bundle.getSymbolicName()
+		).getSchemaVersion();
+
+		if (!releaseVersion.equals("0.0.1")) {
+			return;
+		}
+
+		try {
+			ElasticsearchUpgradeProcessUtil.doUpgrade(
+				_configurationAdmin, _configurationUpgradeStepFactory);
+
+			releaseLocalService.updateRelease(
+				_bundleContext.getBundle(
+				).getSymbolicName(),
+				"1.0.0", "0.0.1");
+		}
+		catch (Exception exception) {
+			_log.error(
+				"Unable to upgrade Elasticsearch configuration", exception);
+		}
+	}
+
 	private static final Log _log = LogFactoryUtil.getLog(SidecarManager.class);
 
 	private BundleContext _bundleContext;
@@ -224,7 +223,6 @@ public class SidecarManager implements ElasticsearchConfigurationObserver {
 
 	private Sidecar _sidecar;
 	private boolean _startupSuccessful;
-	private volatile boolean _upgraded;
-	private final Object _upgradeLock = new Object();
+	private final AtomicBoolean _upgraded = new AtomicBoolean();
 
 }
