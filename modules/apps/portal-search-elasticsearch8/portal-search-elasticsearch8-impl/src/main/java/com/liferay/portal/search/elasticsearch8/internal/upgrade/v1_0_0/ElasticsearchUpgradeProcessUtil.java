@@ -22,13 +22,14 @@ import com.liferay.portal.search.elasticsearch8.configuration.ElasticsearchConne
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceReference;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
+import org.osgi.util.tracker.ServiceTracker;
 
 /**
  * @author Joshua Cords
@@ -138,32 +139,47 @@ public class ElasticsearchUpgradeProcessUtil {
 				return;
 			}
 
-			ServiceReference<ConfigurationUpgradeStepFactory> serviceReference =
-				bundleContext.getServiceReference(
-					ConfigurationUpgradeStepFactory.class);
+			ServiceTracker
+				<ConfigurationUpgradeStepFactory,
+				 ConfigurationUpgradeStepFactory> serviceTracker =
+					new ServiceTracker<>(
+						bundleContext, ConfigurationUpgradeStepFactory.class,
+						null);
 
-			if (serviceReference == null) {
-				if (_log.isWarnEnabled()) {
-					_log.warn(
-						"Skipping Elasticsearch configuration upgrade " +
-							"because ConfigurationUpgradeStepFactory is not " +
-								"yet available");
-				}
+			serviceTracker.open();
+
+			ConfigurationUpgradeStepFactory configurationUpgradeStepFactory;
+
+			try {
+				configurationUpgradeStepFactory = serviceTracker.waitForService(
+					TimeUnit.SECONDS.toMillis(10));
+			}
+			finally {
+				serviceTracker.close();
+			}
+
+			if (configurationUpgradeStepFactory == null) {
+				_log.error(
+					"ConfigurationUpgradeStepFactory was not available " +
+						"within 10 seconds; aborting Elasticsearch " +
+							"configuration upgrade");
 
 				return;
 			}
 
-			try {
-				runUpgradeSteps(
-					configurationAdmin,
-					bundleContext.getService(serviceReference));
-			}
-			finally {
-				bundleContext.ungetService(serviceReference);
-			}
+			runUpgradeSteps(
+				configurationAdmin, configurationUpgradeStepFactory);
 
 			ReleaseLocalServiceUtil.updateRelease(
 				bundle.getSymbolicName(), "1.0.0", "0.0.1");
+		}
+		catch (InterruptedException interruptedException) {
+			Thread.currentThread(
+			).interrupt();
+
+			_log.error(
+				"Interrupted while waiting for ConfigurationUpgradeStepFactory",
+				interruptedException);
 		}
 		catch (Exception exception) {
 			_log.error(
