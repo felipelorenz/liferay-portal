@@ -54,6 +54,59 @@ public class ElasticsearchUpgradeProcessUtil {
 			configurationAdmin, configurationUpgradeStepFactory);
 	}
 
+	public static void updateProperties(Dictionary<String, Object> properties) {
+		properties.remove("discoveryZenPingUnicastHostsPort");
+
+		Object embeddedHttpPort = properties.remove("embeddedHttpPort");
+		String sidecarHttpPort = GetterUtil.getString(
+			properties.get("sidecarHttpPort"));
+
+		if ((embeddedHttpPort != null) &&
+			sidecarHttpPort.equals(StringPool.BLANK)) {
+
+			properties.put("sidecarHttpPort", String.valueOf(embeddedHttpPort));
+		}
+
+		String operationMode = GetterUtil.getString(
+			properties.remove("operationMode"));
+
+		if (StringUtil.equals(operationMode, "REMOTE")) {
+			if (_log.isWarnEnabled()) {
+				_log.warn("The operationMode property is no longer supported");
+			}
+
+			Object productionModeEnabled = properties.get(
+				"productionModeEnabled");
+
+			if (productionModeEnabled == null) {
+				properties.put("productionModeEnabled", Boolean.TRUE);
+			}
+			else if (!GetterUtil.getBoolean(productionModeEnabled) &&
+					 _log.isWarnEnabled()) {
+
+				_log.warn(
+					"Preserving existing value of property " +
+						"\"productionModeEnabled\" over property " +
+							"\"operationMode\" with value \"REMOTE\"");
+			}
+		}
+
+		Object trackTotalHits = properties.remove("trackTotalHits");
+
+		if ((trackTotalHits != null) &&
+			!GetterUtil.getBoolean(trackTotalHits)) {
+
+			int indexMaxResultWindow = GetterUtil.getInteger(
+				properties.get("indexMaxResultWindow"));
+
+			if (indexMaxResultWindow > 0) {
+				properties.put("trackTotalHitsLimit", indexMaxResultWindow);
+			}
+		}
+
+		properties.remove("restClientLoggerLevel");
+	}
+
 	public static void upgrade(
 		BundleContext bundleContext, ConfigurationAdmin configurationAdmin) {
 
@@ -126,48 +179,6 @@ public class ElasticsearchUpgradeProcessUtil {
 		}
 	}
 
-	private static void _updateProperties(
-		Dictionary<String, Object> properties) {
-
-		properties.remove("discoveryZenPingUnicastHostsPort");
-
-		Object embeddedHttpPort = properties.remove("embeddedHttpPort");
-		String sidecarHttpPort = GetterUtil.getString(
-			properties.get("sidecarHttpPort"));
-
-		if ((embeddedHttpPort != null) &&
-			sidecarHttpPort.equals(StringPool.BLANK)) {
-
-			properties.put("sidecarHttpPort", String.valueOf(embeddedHttpPort));
-		}
-
-		String operationMode = GetterUtil.getString(
-			properties.remove("operationMode"));
-
-		if (StringUtil.equals(operationMode, "REMOTE")) {
-			if (_log.isWarnEnabled()) {
-				_log.warn("The operationMode property is no longer supported");
-			}
-
-			properties.put("productionModeEnabled", Boolean.TRUE);
-		}
-
-		Object trackTotalHits = properties.remove("trackTotalHits");
-
-		if ((trackTotalHits != null) &&
-			!GetterUtil.getBoolean(trackTotalHits)) {
-
-			int indexMaxResultWindow = GetterUtil.getInteger(
-				properties.get("indexMaxResultWindow"));
-
-			if (indexMaxResultWindow > 0) {
-				properties.put("trackTotalHitsLimit", indexMaxResultWindow);
-			}
-		}
-
-		properties.remove("restClientLoggerLevel");
-	}
-
 	private static void _upgradeElasticsearchConfiguration(
 			ConfigurationAdmin configurationAdmin,
 			ConfigurationUpgradeStepFactory configurationUpgradeStepFactory)
@@ -191,7 +202,7 @@ public class ElasticsearchUpgradeProcessUtil {
 						"to the configuration may be required.");
 		}
 
-		_updateProperties(elasticsearch7properties);
+		updateProperties(elasticsearch7properties);
 
 		UpgradeStep upgradeStep =
 			configurationUpgradeStepFactory.createUpgradeStep(
@@ -208,7 +219,7 @@ public class ElasticsearchUpgradeProcessUtil {
 		Dictionary<String, Object> elasticsearch8properties =
 			elasticsearch8configuration.getProperties();
 
-		_updateProperties(elasticsearch8properties);
+		updateProperties(elasticsearch8properties);
 
 		Enumeration<String> enumeration = elasticsearch7properties.keys();
 
