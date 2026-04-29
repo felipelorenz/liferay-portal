@@ -25,7 +25,7 @@ public class ElasticsearchConfigurationUpgradeProcess extends UpgradeProcess {
 
 	@Override
 	protected void doUpgrade() throws Exception {
-		ElasticsearchUpgradeProcessUtil.runUpgradeSteps(
+		ElasticsearchConfigurationUpgradeProcessUtil.runUpgradeSteps(
 			_configurationAdmin, _configurationUpgradeStepFactory);
 	}
 

@@ -17,7 +17,7 @@ import com.liferay.portal.search.elasticsearch8.internal.connection.Elasticsearc
 import com.liferay.portal.search.elasticsearch8.internal.connection.ElasticsearchConnectionManager;
 import com.liferay.portal.search.elasticsearch8.internal.connection.constants.ConnectionConstants;
 import com.liferay.portal.search.elasticsearch8.internal.sidecar.constants.SidecarConstants;
-import com.liferay.portal.search.elasticsearch8.internal.upgrade.v1_0_0.ElasticsearchUpgradeProcessUtil;
+import com.liferay.portal.search.elasticsearch8.internal.upgrade.v1_0_0.ElasticsearchConfigurationUpgradeProcessUtil;
 import com.liferay.portal.search.elasticsearch8.internal.util.ResourceUtil;
 
 import java.io.File;
@@ -64,7 +64,7 @@ public class SidecarManager implements ElasticsearchConfigurationObserver {
 		elasticsearchConfigurationWrapper.register(this);
 
 		if (StartupHelperUtil.isUpgrading()) {
-			ElasticsearchUpgradeProcessUtil.upgrade(
+			ElasticsearchConfigurationUpgradeProcessUtil.upgrade(
 				_bundleContext, _configurationAdmin);
 		}
 

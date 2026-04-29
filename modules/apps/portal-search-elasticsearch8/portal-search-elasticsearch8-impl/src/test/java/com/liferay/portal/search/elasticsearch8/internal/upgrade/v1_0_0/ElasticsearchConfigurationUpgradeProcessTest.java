@@ -32,7 +32,8 @@ public class ElasticsearchConfigurationUpgradeProcessTest {
 				"operationMode", "EMBEDDED"
 			).build();
 
-		ElasticsearchUpgradeProcessUtil.updateProperties(properties);
+		ElasticsearchConfigurationUpgradeProcessUtil.updateProperties(
+			properties);
 
 		Assert.assertNull(properties.get("operationMode"));
 		Assert.assertNull(properties.get("productionModeEnabled"));
@@ -45,7 +46,8 @@ public class ElasticsearchConfigurationUpgradeProcessTest {
 				"operationMode", "REMOTE"
 			).build();
 
-		ElasticsearchUpgradeProcessUtil.updateProperties(properties);
+		ElasticsearchConfigurationUpgradeProcessUtil.updateProperties(
+			properties);
 
 		Assert.assertNull(properties.get("operationMode"));
 		Assert.assertEquals(
@@ -61,7 +63,8 @@ public class ElasticsearchConfigurationUpgradeProcessTest {
 				"productionModeEnabled", Boolean.FALSE
 			).build();
 
-		ElasticsearchUpgradeProcessUtil.updateProperties(properties);
+		ElasticsearchConfigurationUpgradeProcessUtil.updateProperties(
+			properties);
 
 		Assert.assertNull(properties.get("operationMode"));
 		Assert.assertEquals(
@@ -77,7 +80,8 @@ public class ElasticsearchConfigurationUpgradeProcessTest {
 				"productionModeEnabled", Boolean.TRUE
 			).build();
 
-		ElasticsearchUpgradeProcessUtil.updateProperties(properties);
+		ElasticsearchConfigurationUpgradeProcessUtil.updateProperties(
+			properties);
 
 		Assert.assertNull(properties.get("operationMode"));
 		Assert.assertEquals(

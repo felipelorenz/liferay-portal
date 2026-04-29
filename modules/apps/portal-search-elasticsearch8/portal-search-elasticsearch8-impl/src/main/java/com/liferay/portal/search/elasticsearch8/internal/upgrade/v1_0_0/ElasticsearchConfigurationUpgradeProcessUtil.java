@@ -34,7 +34,7 @@ import org.osgi.util.tracker.ServiceTracker;
 /**
  * @author Joshua Cords
  */
-public class ElasticsearchUpgradeProcessUtil {
+public class ElasticsearchConfigurationUpgradeProcessUtil {
 
 	public static void runUpgradeSteps(
 			ConfigurationAdmin configurationAdmin,
@@ -287,7 +287,7 @@ public class ElasticsearchUpgradeProcessUtil {
 				"ElasticsearchConnectionConfiguration";
 
 	private static final Log _log = LogFactoryUtil.getLog(
-		ElasticsearchUpgradeProcessUtil.class);
+		ElasticsearchConfigurationUpgradeProcessUtil.class);
 
 	private static final AtomicBoolean _upgraded = new AtomicBoolean();
 
