@@ -64,7 +64,8 @@ public class SidecarManager implements ElasticsearchConfigurationObserver {
 		elasticsearchConfigurationWrapper.register(this);
 
 		if (StartupHelperUtil.isUpgrading()) {
-			_upgradeConfiguration();
+			ElasticsearchUpgradeProcessUtil.upgrade(
+				_bundleContext, _configurationAdmin);
 		}
 
 		applyConfigurations();
@@ -171,11 +172,6 @@ public class SidecarManager implements ElasticsearchConfigurationObserver {
 		}
 
 		return relativeSidecarHomePath;
-	}
-
-	private void _upgradeConfiguration() {
-		ElasticsearchUpgradeProcessUtil.upgrade(
-			_bundleContext, _configurationAdmin);
 	}
 
 	private static final Log _log = LogFactoryUtil.getLog(SidecarManager.class);
