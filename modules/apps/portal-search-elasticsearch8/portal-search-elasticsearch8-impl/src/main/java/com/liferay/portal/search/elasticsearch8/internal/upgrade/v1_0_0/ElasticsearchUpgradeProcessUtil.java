@@ -35,14 +35,6 @@ import org.osgi.service.cm.ConfigurationAdmin;
  */
 public class ElasticsearchUpgradeProcessUtil {
 
-	public static void doUpgrade(
-			ConfigurationAdmin configurationAdmin,
-			ConfigurationUpgradeStepFactory configurationUpgradeStepFactory)
-		throws Exception {
-
-		runUpgradeSteps(configurationAdmin, configurationUpgradeStepFactory);
-	}
-
 	public static void runUpgradeSteps(
 			ConfigurationAdmin configurationAdmin,
 			ConfigurationUpgradeStepFactory configurationUpgradeStepFactory)

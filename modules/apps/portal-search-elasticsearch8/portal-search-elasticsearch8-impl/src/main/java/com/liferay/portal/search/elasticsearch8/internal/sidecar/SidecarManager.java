@@ -7,14 +7,10 @@ package com.liferay.portal.search.elasticsearch8.internal.sidecar;
 
 import com.liferay.petra.process.ProcessExecutor;
 import com.liferay.petra.string.StringBundler;
-import com.liferay.portal.configuration.persistence.upgrade.ConfigurationUpgradeStepFactory;
 import com.liferay.portal.events.StartupHelperUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.service.ReleaseLocalService;
-import com.liferay.portal.kernel.util.ArrayUtil;
 import com.liferay.portal.kernel.util.PropsValues;
-import com.liferay.portal.search.elasticsearch8.configuration.ElasticsearchConfiguration;
 import com.liferay.portal.search.elasticsearch8.internal.configuration.ElasticsearchConfigurationObserver;
 import com.liferay.portal.search.elasticsearch8.internal.configuration.ElasticsearchConfigurationWrapper;
 import com.liferay.portal.search.elasticsearch8.internal.connection.ElasticsearchConnection;
@@ -30,11 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
-import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -158,9 +150,6 @@ public class SidecarManager implements ElasticsearchConfigurationObserver {
 	@Reference
 	protected ProcessExecutor processExecutor;
 
-	@Reference
-	protected ReleaseLocalService releaseLocalService;
-
 	private Path _resolveHomePath(Path path) {
 		String sidecarHome = elasticsearchConfigurationWrapper.sidecarHome();
 
@@ -185,58 +174,9 @@ public class SidecarManager implements ElasticsearchConfigurationObserver {
 	}
 
 	private void _upgradeConfiguration() {
-		if (!_upgraded.compareAndSet(false, true)) {
-			return;
-		}
-
-		Bundle bundle = _bundleContext.getBundle();
-
-		String releaseVersion = releaseLocalService.fetchRelease(
-			bundle.getSymbolicName()
-		).getSchemaVersion();
-
-		if (!releaseVersion.equals("0.0.1")) {
-			return;
-		}
-
-		try {
-			Configuration[] elasticsearch8configurations =
-				_configurationAdmin.listConfigurations(
-					String.format(
-						"(service.pid=%s)",
-						ElasticsearchConfiguration.class.getName()));
-
-			if (ArrayUtil.isNotEmpty(elasticsearch8configurations)) {
-				return;
-			}
-
-			Configuration[] elasticsearch7configurations =
-				_configurationAdmin.listConfigurations(
-					String.format(
-						"(service.pid=%s)",
-						_CLASS_NAME_ELASTICSEARCH7_CONFIGURATION));
-
-			if (ArrayUtil.isEmpty(elasticsearch7configurations)) {
-				return;
-			}
-
-			ElasticsearchUpgradeProcessUtil.doUpgrade(
-				_configurationAdmin, _configurationUpgradeStepFactory);
-
-			releaseLocalService.updateRelease(
-				_bundleContext.getBundle(
-				).getSymbolicName(),
-				"1.0.0", "0.0.1");
-		}
-		catch (Exception exception) {
-			_log.error(
-				"Unable to upgrade Elasticsearch configuration", exception);
-		}
+		ElasticsearchUpgradeProcessUtil.upgrade(
+			_bundleContext, _configurationAdmin);
 	}
-
-	private static final String _CLASS_NAME_ELASTICSEARCH7_CONFIGURATION =
-		"com.liferay.portal.search.elasticsearch7.configuration." +
-			"ElasticsearchConfiguration";
 
 	private static final Log _log = LogFactoryUtil.getLog(SidecarManager.class);
 
@@ -245,11 +185,7 @@ public class SidecarManager implements ElasticsearchConfigurationObserver {
 	@Reference
 	private ConfigurationAdmin _configurationAdmin;
 
-	@Reference
-	private ConfigurationUpgradeStepFactory _configurationUpgradeStepFactory;
-
 	private Sidecar _sidecar;
 	private boolean _startupSuccessful;
-	private final AtomicBoolean _upgraded = new AtomicBoolean();
 
 }
