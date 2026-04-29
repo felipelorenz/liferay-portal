@@ -174,12 +174,11 @@ public class ElasticsearchUpgradeProcessUtil {
 				bundle.getSymbolicName(), "1.0.0", "0.0.1");
 		}
 		catch (InterruptedException interruptedException) {
-			Thread.currentThread(
-			).interrupt();
+			Thread currentThread = Thread.currentThread();
 
-			_log.error(
-				"Interrupted while waiting for ConfigurationUpgradeStepFactory",
-				interruptedException);
+			currentThread.interrupt();
+
+			_log.error(interruptedException);
 		}
 		catch (Exception exception) {
 			_log.error(
