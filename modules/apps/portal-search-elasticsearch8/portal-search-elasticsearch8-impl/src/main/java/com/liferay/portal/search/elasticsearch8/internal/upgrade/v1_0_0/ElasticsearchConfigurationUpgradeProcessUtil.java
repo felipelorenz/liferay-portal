@@ -21,7 +21,6 @@ import com.liferay.portal.search.elasticsearch8.configuration.ElasticsearchConne
 
 import java.util.Dictionary;
 import java.util.Enumeration;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -112,9 +111,7 @@ public class ElasticsearchConfigurationUpgradeProcessUtil {
 		Release release = ReleaseLocalServiceUtil.fetchRelease(
 			bundle.getSymbolicName());
 
-		if ((release == null) ||
-			!Objects.equals(release.getSchemaVersion(), "0.0.1")) {
-
+		if (release != null) {
 			return;
 		}
 
@@ -170,8 +167,8 @@ public class ElasticsearchConfigurationUpgradeProcessUtil {
 			runUpgradeSteps(
 				configurationAdmin, configurationUpgradeStepFactory);
 
-			ReleaseLocalServiceUtil.updateRelease(
-				bundle.getSymbolicName(), "1.0.0", "0.0.1");
+			ReleaseLocalServiceUtil.addRelease(
+				bundle.getSymbolicName(), "1.0.0");
 		}
 		catch (InterruptedException interruptedException) {
 			Thread currentThread = Thread.currentThread();

@@ -19,6 +19,7 @@ import com.liferay.portal.search.elasticsearch8.internal.connection.constants.Co
 import com.liferay.portal.search.elasticsearch8.internal.sidecar.constants.SidecarConstants;
 import com.liferay.portal.search.elasticsearch8.internal.upgrade.v1_0_0.ElasticsearchConfigurationUpgradeProcessUtil;
 import com.liferay.portal.search.elasticsearch8.internal.util.ResourceUtil;
+import com.liferay.portal.tools.DBUpgrader;
 
 import java.io.File;
 
@@ -63,7 +64,10 @@ public class SidecarManager implements ElasticsearchConfigurationObserver {
 
 		elasticsearchConfigurationWrapper.register(this);
 
-		if (StartupHelperUtil.isUpgrading()) {
+		if (DBUpgrader.isUpgradeClient() ||
+			DBUpgrader.isUpgradeDatabaseAutoRunEnabled() ||
+			StartupHelperUtil.isUpgrading()) {
+
 			ElasticsearchConfigurationUpgradeProcessUtil.upgrade(
 				_bundleContext, _configurationAdmin);
 		}
