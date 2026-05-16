@@ -39,7 +39,8 @@ public class SXPBlueprintAndSXPElementUpgradeProcess extends UpgradeProcess {
 	protected UpgradeStep[] getPreUpgradeSteps() {
 		return new UpgradeStep[] {
 			UpgradeProcessFactory.addColumns(
-				"SXPElement", "fallbackDescription STRING null",
+				"SXPElement",
+				"fallbackDescription STRING null",
 				"fallbackTitle VARCHAR(500) null")
 		};
 	}
