@@ -72,6 +72,10 @@ public class AssetListFiltersUtil {
 		};
 	}
 
+	private static String _aliasMetadataName(String name) {
+		return _metadataCommonFieldNames.getOrDefault(name, name);
+	}
+
 	private static String _emptyToNull(String value) {
 		if (Validator.isNull(value)) {
 			return null;
@@ -244,6 +248,12 @@ public class AssetListFiltersUtil {
 
 		if (objectField == null) {
 			return null;
+		}
+
+		if (objectField.isMetadata()) {
+			return _toCommonFieldClause(
+				filterJSONObject, _aliasMetadataName(objectField.getName()),
+				locale);
 		}
 
 		NestedQuery nestedQuery = _toNestedQuery(
@@ -625,5 +635,11 @@ public class AssetListFiltersUtil {
 
 	private static final Set<String> _localizedCommonFieldNames =
 		SetUtil.fromArray(Field.DESCRIPTION, Field.TITLE);
+	private static final Map<String, String> _metadataCommonFieldNames =
+		HashMapBuilder.put(
+			"creator", Field.USER_NAME
+		).put(
+			"modifiedDate", Field.MODIFIED_DATE
+		).build();
 
 }
