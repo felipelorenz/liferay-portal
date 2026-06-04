@@ -18,6 +18,7 @@ import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.search.BooleanClause;
 import com.liferay.portal.kernel.search.BooleanClauseOccur;
 import com.liferay.portal.kernel.search.BooleanQuery;
+import com.liferay.portal.kernel.search.MatchAllQuery;
 import com.liferay.portal.kernel.search.MatchQuery;
 import com.liferay.portal.kernel.search.NestedQuery;
 import com.liferay.portal.kernel.search.Query;
@@ -90,9 +91,8 @@ public class AssetListFiltersUtilTest {
 			"userName", "alice");
 
 		_assertWildcardQuery(
-			_runAndAssertCommonFieldRow(
-				_buildCommonFieldFilter("not-contains", "userName", "Alice"),
-				BooleanClauseOccur.MUST_NOT),
+			_runAndAssertNegatedCommonFieldRow(
+				_buildCommonFieldFilter("not-contains", "userName", "Alice")),
 			"userName", "*alice*");
 
 		_assertTermQuery(
@@ -102,9 +102,8 @@ public class AssetListFiltersUtilTest {
 			"viewCount", "5");
 
 		_assertTermQuery(
-			_runAndAssertCommonFieldRow(
-				_buildCommonFieldFilter("not-eq", "status", "0"),
-				BooleanClauseOccur.MUST_NOT),
+			_runAndAssertNegatedCommonFieldRow(
+				_buildCommonFieldFilter("not-eq", "status", "0")),
 			"status", "0");
 
 		_assertTermRangeQuery(
@@ -120,9 +119,8 @@ public class AssetListFiltersUtilTest {
 			"modified", "20260115000000", "20260115235959", true, true);
 
 		_assertTermRangeQuery(
-			_runAndAssertCommonFieldRow(
-				_buildCommonFieldFilter("not-eq", "modified", "2026-01-15"),
-				BooleanClauseOccur.MUST_NOT),
+			_runAndAssertNegatedCommonFieldRow(
+				_buildCommonFieldFilter("not-eq", "modified", "2026-01-15")),
 			"modified", "20260115000000", "20260115235959", true, true);
 
 		_assertTermRangeQuery(
@@ -829,6 +827,57 @@ public class AssetListFiltersUtilTest {
 				JSONUtil.putAll(filterJSONObject), _COMPANY_ID, LocaleUtil.US);
 
 		return _assertCommonFieldRow(booleanClauses, 0, expectedValueOccur);
+	}
+
+	private Query _runAndAssertNegatedCommonFieldRow(
+		JSONObject filterJSONObject) {
+
+		BooleanClause[] booleanClauses =
+			AssetListFiltersUtil.getFiltersBooleanClauses(
+				JSONUtil.putAll(filterJSONObject), _COMPANY_ID, LocaleUtil.US);
+
+		Assert.assertEquals(
+			Arrays.toString(booleanClauses), 1, booleanClauses.length);
+
+		BooleanQuery outerBooleanQuery =
+			(BooleanQuery)booleanClauses[0].getClause();
+
+		BooleanClause<Query> rowBooleanClause = outerBooleanQuery.clauses(
+		).get(
+			0
+		);
+
+		Assert.assertEquals(
+			BooleanClauseOccur.MUST, rowBooleanClause.getBooleanClauseOccur());
+
+		BooleanQuery negatedBooleanQuery =
+			(BooleanQuery)rowBooleanClause.getClause();
+
+		List<BooleanClause<Query>> negatedBooleanClauses =
+			negatedBooleanQuery.clauses();
+
+		Assert.assertEquals(
+			negatedBooleanClauses.toString(), 2, negatedBooleanClauses.size());
+
+		Assert.assertTrue(
+			negatedBooleanClauses.get(
+				0
+			).getClause() instanceof MatchAllQuery);
+		Assert.assertEquals(
+			BooleanClauseOccur.MUST,
+			negatedBooleanClauses.get(
+				0
+			).getBooleanClauseOccur());
+
+		Assert.assertEquals(
+			BooleanClauseOccur.MUST_NOT,
+			negatedBooleanClauses.get(
+				1
+			).getBooleanClauseOccur());
+
+		return negatedBooleanClauses.get(
+			1
+		).getClause();
 	}
 
 	private Query _runAndAssertNestedRow(
