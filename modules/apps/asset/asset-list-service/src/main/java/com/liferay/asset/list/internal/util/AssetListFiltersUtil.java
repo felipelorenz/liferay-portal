@@ -18,6 +18,7 @@ import com.liferay.portal.kernel.search.BooleanClause;
 import com.liferay.portal.kernel.search.BooleanClauseOccur;
 import com.liferay.portal.kernel.search.BooleanQuery;
 import com.liferay.portal.kernel.search.Field;
+import com.liferay.portal.kernel.search.MatchAllQuery;
 import com.liferay.portal.kernel.search.MatchQuery;
 import com.liferay.portal.kernel.search.NestedQuery;
 import com.liferay.portal.kernel.search.Query;
@@ -290,10 +291,24 @@ public class AssetListFiltersUtil {
 			return null;
 		}
 
-		return new BooleanClause<>(
-			valueQuery,
-			_isNegatedOperator(operatorName) ? BooleanClauseOccur.MUST_NOT :
-				BooleanClauseOccur.MUST);
+		if (_isNegatedOperator(operatorName)) {
+
+			// A standalone MUST_NOT clause matches no documents, so anchor the
+			// negation with a positive MatchAllQuery. The nested path does not
+			// need this because its negation lives inside a positive
+			// NestedQuery.
+
+			BooleanQuery negatedBooleanQuery = new BooleanQuery();
+
+			negatedBooleanQuery.add(
+				new MatchAllQuery(), BooleanClauseOccur.MUST);
+			negatedBooleanQuery.add(valueQuery, BooleanClauseOccur.MUST_NOT);
+
+			return new BooleanClause<>(
+				negatedBooleanQuery, BooleanClauseOccur.MUST);
+		}
+
+		return new BooleanClause<>(valueQuery, BooleanClauseOccur.MUST);
 	}
 
 	private static Query _toCommonFieldRangeQuery(
