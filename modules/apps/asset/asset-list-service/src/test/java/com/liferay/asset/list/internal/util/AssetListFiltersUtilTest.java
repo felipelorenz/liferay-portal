@@ -72,28 +72,28 @@ public class AssetListFiltersUtilTest {
 
 	@Test
 	public void testHandlesCommonFieldOperators() {
-		_assertTermQuery(
+		_assertMatchQuery(
 			_runAndAssertCommonFieldRow(
 				_buildCommonFieldFilter("eq", "title", "Apple"),
 				BooleanClauseOccur.MUST),
-			"localized_title_en_US", "apple");
+			"localized_title_en_US", "Apple");
 
-		_assertWildcardQuery(
+		_assertMatchQuery(
 			_runAndAssertCommonFieldRow(
 				_buildCommonFieldFilter("contains", "title", "App"),
 				BooleanClauseOccur.MUST),
-			"localized_title_en_US", "*app*");
+			"localized_title_en_US", "App");
 
 		_assertTermQuery(
 			_runAndAssertCommonFieldRow(
 				_buildCommonFieldFilter("eq", "userName", "Alice"),
 				BooleanClauseOccur.MUST),
-			"userName", "alice");
+			"userName", "Alice");
 
 		_assertWildcardQuery(
 			_runAndAssertNegatedCommonFieldRow(
 				_buildCommonFieldFilter("not-contains", "userName", "Alice")),
-			"userName", "*alice*");
+			"userName", "*Alice*");
 
 		_assertTermQuery(
 			_runAndAssertCommonFieldRow(
@@ -536,7 +536,7 @@ public class AssetListFiltersUtilTest {
 			_runAndAssertCommonFieldRow(
 				_buildFilter("eq", "creator", "Alice"),
 				BooleanClauseOccur.MUST),
-			"userName", "alice");
+			"userName", "Alice");
 
 		_setUpMetadataObjectField(
 			"id", ObjectFieldConstants.BUSINESS_TYPE_LONG_INTEGER,
@@ -592,6 +592,17 @@ public class AssetListFiltersUtilTest {
 		Assert.assertFalse(query.toString(), query instanceof NestedQuery);
 
 		return query;
+	}
+
+	private void _assertMatchQuery(
+		Query query, String expectedField, String expectedValue) {
+
+		Assert.assertTrue(query.toString(), query instanceof MatchQuery);
+
+		MatchQuery matchQuery = (MatchQuery)query;
+
+		Assert.assertEquals(expectedField, matchQuery.getField());
+		Assert.assertEquals(expectedValue, matchQuery.getValue());
 	}
 
 	private Query _assertNestedRow(

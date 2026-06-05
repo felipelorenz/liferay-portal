@@ -285,7 +285,8 @@ public class AssetListFiltersUtil {
 			filterJSONObject.getString("operatorName"), "contains");
 
 		Query valueQuery = _toCommonFieldValueQuery(
-			filterJSONObject, field, operatorName, type);
+			filterJSONObject, field, operatorName, type,
+			_localizedCommonFieldNames.contains(propertyName));
 
 		if (valueQuery == null) {
 			return null;
@@ -374,7 +375,7 @@ public class AssetListFiltersUtil {
 
 	private static Query _toCommonFieldValueQuery(
 		JSONObject filterJSONObject, String field, String operatorName,
-		String type) {
+		String type, boolean localized) {
 
 		if (operatorName.equals("between") || operatorName.equals("gt") ||
 			operatorName.equals("ge") || operatorName.equals("lt") ||
@@ -402,16 +403,22 @@ public class AssetListFiltersUtil {
 			return new TermQuery(field, value);
 		}
 
+		// Localized fields (title, description) are indexed as analyzed text,
+		// so match them through the analyzer. Other text fields (userName,
+		// externalReferenceCode) are keywords matched exactly or by substring.
+
+		if (localized) {
+			return new MatchQuery(field, value);
+		}
+
 		if (operatorName.equals("contains") ||
 			operatorName.equals("not-contains")) {
 
 			return new WildcardQuery(
-				field,
-				StringPool.STAR + StringUtil.toLowerCase(value) +
-					StringPool.STAR);
+				field, StringPool.STAR + value + StringPool.STAR);
 		}
 
-		return new TermQuery(field, StringUtil.toLowerCase(value));
+		return new TermQuery(field, value);
 	}
 
 	private static NestedQuery _toNestedQuery(
