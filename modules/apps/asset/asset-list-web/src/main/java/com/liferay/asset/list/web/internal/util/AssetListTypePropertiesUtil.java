@@ -193,6 +193,10 @@ public class AssetListTypePropertiesUtil {
 	}
 
 	private static String _toFilterType(String businessType) {
+		if (businessType == null) {
+			return null;
+		}
+
 		if (businessType.equals(ObjectFieldConstants.BUSINESS_TYPE_BOOLEAN)) {
 			return "boolean";
 		}
