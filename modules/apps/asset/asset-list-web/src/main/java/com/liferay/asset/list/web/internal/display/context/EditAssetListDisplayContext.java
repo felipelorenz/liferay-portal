@@ -26,7 +26,7 @@ import com.liferay.asset.list.service.AssetListEntryLocalServiceUtil;
 import com.liferay.asset.list.service.AssetListEntrySegmentsEntryRelLocalServiceUtil;
 import com.liferay.asset.list.util.comparator.ClassNameModelResourceComparator;
 import com.liferay.asset.list.web.internal.constants.AssetListWebKeys;
-import com.liferay.asset.list.web.internal.portlet.action.GetTypePropertiesMVCResourceCommand;
+import com.liferay.asset.list.web.internal.util.AssetListTypePropertiesUtil;
 import com.liferay.asset.tags.item.selector.AssetTagsItemSelectorCriterion;
 import com.liferay.asset.tags.item.selector.AssetTagsItemSelectorReturnType;
 import com.liferay.asset.util.AssetRendererFactoryClassProvider;
@@ -1083,27 +1083,9 @@ public class EditAssetListDisplayContext {
 	}
 
 	public JSONArray getTypePropertiesJSONArray() {
-		long[] classNameIds = GetterUtil.getLongValues(
-			StringUtil.split(
-				_unicodeProperties.getProperty("classNameIds", null)));
-
-		List<Long> classTypeIdsList = new ArrayList<>();
-
-		for (String entryKey : _unicodeProperties.keySet()) {
-			if (!entryKey.startsWith("classTypeIds")) {
-				continue;
-			}
-
-			for (String classTypeId :
-					StringUtil.split(
-						_unicodeProperties.getProperty(entryKey))) {
-
-				classTypeIdsList.add(GetterUtil.getLong(classTypeId));
-			}
-		}
-
-		return GetTypePropertiesMVCResourceCommand.getTypePropertiesJSONArray(
-			classNameIds, ArrayUtil.toLongArray(classTypeIdsList));
+		return AssetListTypePropertiesUtil.getTypePropertiesJSONArray(
+			getClassNameIds(), getClassTypeIds(), _themeDisplay.getCompanyId(),
+			_themeDisplay.getLocale());
 	}
 
 	public String getTypePropertiesURL() {
