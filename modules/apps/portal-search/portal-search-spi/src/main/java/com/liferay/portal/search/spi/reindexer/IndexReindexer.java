@@ -5,6 +5,9 @@
 
 package com.liferay.portal.search.spi.reindexer;
 
+import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
+
 /**
  * @author Bryan Engler
  */
@@ -25,12 +28,44 @@ public interface IndexReindexer {
 	public default void reindex(long companyId, String executionMode)
 		throws Exception {
 
-		reindex(companyId, ExecutionMode.valueOf(executionMode.toUpperCase()));
+		reindex(companyId, ExecutionMode.create(executionMode));
 	}
 
 	public enum ExecutionMode {
 
-		CONCURRENT, FULL, SYNC
+		CONCURRENT("concurrent"), FULL("full"), SYNC("sync");
+
+		public static ExecutionMode create(String value) {
+			if (Validator.isBlank(value)) {
+				return FULL;
+			}
+
+			for (ExecutionMode executionMode : values()) {
+				if (StringUtil.equalsIgnoreCase(
+						executionMode.getValue(), value) ||
+					StringUtil.equalsIgnoreCase(executionMode.name(), value)) {
+
+					return executionMode;
+				}
+			}
+
+			return FULL;
+		}
+
+		public String getValue() {
+			return _value;
+		}
+
+		@Override
+		public String toString() {
+			return _value;
+		}
+
+		private ExecutionMode(String value) {
+			_value = value;
+		}
+
+		private final String _value;
 
 	}
 
