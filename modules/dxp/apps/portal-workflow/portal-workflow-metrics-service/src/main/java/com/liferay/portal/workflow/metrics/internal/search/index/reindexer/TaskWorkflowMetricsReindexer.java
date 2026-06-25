@@ -45,11 +45,6 @@ public class TaskWorkflowMetricsReindexer
 	implements IndexReindexer, WorkflowMetricsReindexer {
 
 	@Override
-	public String getIndexNameSuffix() {
-		return WorkflowMetricsIndexNameConstants.SUFFIX_TASK;
-	}
-
-	@Override
 	public String getKey() {
 		return "task";
 	}

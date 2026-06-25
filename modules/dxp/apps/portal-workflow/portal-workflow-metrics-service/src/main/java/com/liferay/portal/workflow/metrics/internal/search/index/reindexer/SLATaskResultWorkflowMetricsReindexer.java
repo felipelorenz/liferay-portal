@@ -47,11 +47,6 @@ public class SLATaskResultWorkflowMetricsReindexer
 	implements IndexReindexer, WorkflowMetricsReindexer {
 
 	@Override
-	public String getIndexNameSuffix() {
-		return WorkflowMetricsIndexNameConstants.SUFFIX_SLA_TASK_RESULT;
-	}
-
-	@Override
 	public String getKey() {
 		return "sla-task-result";
 	}

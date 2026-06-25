@@ -46,11 +46,6 @@ public class NodeWorkflowMetricsReindexer
 	implements IndexReindexer, WorkflowMetricsReindexer {
 
 	@Override
-	public String getIndexNameSuffix() {
-		return WorkflowMetricsIndexNameConstants.SUFFIX_NODE;
-	}
-
-	@Override
 	public String getKey() {
 		return "node";
 	}

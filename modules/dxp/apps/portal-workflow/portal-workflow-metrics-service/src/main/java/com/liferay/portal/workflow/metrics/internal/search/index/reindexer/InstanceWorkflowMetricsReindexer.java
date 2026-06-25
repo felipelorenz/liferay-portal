@@ -43,11 +43,6 @@ public class InstanceWorkflowMetricsReindexer
 	implements IndexReindexer, WorkflowMetricsReindexer {
 
 	@Override
-	public String getIndexNameSuffix() {
-		return WorkflowMetricsIndexNameConstants.SUFFIX_INSTANCE;
-	}
-
-	@Override
 	public String getKey() {
 		return "instance";
 	}

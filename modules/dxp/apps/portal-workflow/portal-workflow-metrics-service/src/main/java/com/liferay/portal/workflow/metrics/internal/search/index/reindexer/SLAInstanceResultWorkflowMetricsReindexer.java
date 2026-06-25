@@ -46,11 +46,6 @@ public class SLAInstanceResultWorkflowMetricsReindexer
 	implements IndexReindexer, WorkflowMetricsReindexer {
 
 	@Override
-	public String getIndexNameSuffix() {
-		return WorkflowMetricsIndexNameConstants.SUFFIX_SLA_INSTANCE_RESULT;
-	}
-
-	@Override
 	public String getKey() {
 		return "sla-instance-result";
 	}

@@ -42,11 +42,6 @@ public class TransitionWorkflowMetricsReindexer
 	implements IndexReindexer, WorkflowMetricsReindexer {
 
 	@Override
-	public String getIndexNameSuffix() {
-		return WorkflowMetricsIndexNameConstants.SUFFIX_TRANSITION;
-	}
-
-	@Override
 	public String getKey() {
 		return "transition";
 	}

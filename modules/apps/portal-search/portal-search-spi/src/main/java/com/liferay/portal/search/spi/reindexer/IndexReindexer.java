@@ -13,8 +13,6 @@ import com.liferay.portal.kernel.util.Validator;
  */
 public interface IndexReindexer {
 
-	public String getIndexNameSuffix();
-
 	/**
 	 * @deprecated As of Cavanaugh (7.4.x), portal-search-spi, replaced by {@link
 	 *             #reindex(long, ExecutionMode)}
