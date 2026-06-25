@@ -31,6 +31,7 @@ import com.liferay.portal.kernel.util.SetUtil;
 import com.liferay.portal.kernel.util.StringUtil;
 import com.liferay.portal.kernel.util.WebKeys;
 import com.liferay.portal.search.admin.web.internal.display.context.IndexActionsDisplayContext;
+import com.liferay.portal.search.admin.web.internal.reindexer.IndexReindexerCategoryRegistry;
 import com.liferay.portal.search.capabilities.SearchCapabilities;
 import com.liferay.portal.search.cluster.StatsInformation;
 import com.liferay.portal.search.cluster.StatsInformationFactory;
@@ -85,6 +86,12 @@ public class IndexActionsDisplayContextBuilder {
 		return indexActionsDisplayContext;
 	}
 
+	public void setIndexReindexerCategoryRegistry(
+		IndexReindexerCategoryRegistry indexReindexerCategoryRegistry) {
+
+		_indexReindexerCategoryRegistry = indexReindexerCategoryRegistry;
+	}
+
 	public void setIndexReindexerClassNames(
 		List<String> indexReindexerClassNames) {
 
@@ -121,14 +128,6 @@ public class IndexActionsDisplayContextBuilder {
 		).put(
 			"virtualInstances", _getVirtualInstancesJSONArray()
 		).build();
-	}
-
-	private String _getCategoryDisplayKey(String className) {
-		if (className.startsWith("com.liferay.portal.workflow.metrics.")) {
-			return "workflow";
-		}
-
-		return "search-tuning";
 	}
 
 	private Map<String, List<Object>> _getIndexersMap() {
@@ -219,7 +218,8 @@ public class IndexActionsDisplayContextBuilder {
 			for (String indexReindexerClassName : _indexReindexerClassNames) {
 				String categoryDisplayKey = _language.get(
 					_httpServletRequest,
-					_getCategoryDisplayKey(indexReindexerClassName));
+					_indexReindexerCategoryRegistry.getCategory(
+						indexReindexerClassName));
 
 				List<Object> indexReindexerNames =
 					indexReindexerNamesMap.computeIfAbsent(
@@ -335,6 +335,7 @@ public class IndexActionsDisplayContextBuilder {
 		IndexActionsDisplayContextBuilder.class);
 
 	private final HttpServletRequest _httpServletRequest;
+	private IndexReindexerCategoryRegistry _indexReindexerCategoryRegistry;
 	private List<String> _indexReindexerClassNames;
 	private final Language _language;
 	private final PermissionChecker _permissionChecker;
