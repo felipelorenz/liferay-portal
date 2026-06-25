@@ -40,11 +40,6 @@ public class ProcessWorkflowMetricsReindexer
 	implements IndexReindexer, WorkflowMetricsReindexer {
 
 	@Override
-	public String getIndexNameSuffix() {
-		return WorkflowMetricsIndexNameConstants.SUFFIX_PROCESS;
-	}
-
-	@Override
 	public String getKey() {
 		return "process";
 	}
