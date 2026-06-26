@@ -13,6 +13,7 @@ import com.liferay.portal.kernel.model.CompanyConstants;
 import com.liferay.portal.kernel.module.service.Snapshot;
 import com.liferay.portal.search.capabilities.SearchCapabilities;
 import com.liferay.portal.search.engine.adapter.SearchEngineAdapter;
+import com.liferay.portal.search.engine.adapter.index.RefreshIndexRequest;
 import com.liferay.portal.search.index.IndexNameBuilder;
 import com.liferay.portal.search.index.SyncReindexManager;
 import com.liferay.portal.search.spi.reindexer.IndexReindexer;
@@ -142,11 +143,14 @@ public class TaskWorkflowMetricsReindexer
 			SyncReindexManager syncReindexManager =
 				_syncReindexManagerSnapshot.get();
 
+			String indexName = WorkflowMetricsIndex.getIndexName(
+				_indexNameBuilder,
+				WorkflowMetricsIndexNameConstants.SUFFIX_TASK, companyId);
+
+			_searchEngineAdapter.execute(new RefreshIndexRequest(indexName));
+
 			syncReindexManager.deleteStaleDocuments(
-				WorkflowMetricsIndex.getIndexName(
-					_indexNameBuilder,
-					WorkflowMetricsIndexNameConstants.SUFFIX_TASK, companyId),
-				date, Collections.emptySet());
+				indexName, date, Collections.emptySet());
 		}
 	}
 

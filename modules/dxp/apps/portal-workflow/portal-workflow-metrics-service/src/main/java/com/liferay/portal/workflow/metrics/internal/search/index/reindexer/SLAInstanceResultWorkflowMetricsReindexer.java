@@ -17,6 +17,7 @@ import com.liferay.portal.search.engine.adapter.document.BulkDocumentRequest;
 import com.liferay.portal.search.engine.adapter.document.IndexDocumentRequest;
 import com.liferay.portal.search.engine.adapter.index.IndicesExistsIndexRequest;
 import com.liferay.portal.search.engine.adapter.index.IndicesExistsIndexResponse;
+import com.liferay.portal.search.engine.adapter.index.RefreshIndexRequest;
 import com.liferay.portal.search.engine.adapter.search.SearchSearchRequest;
 import com.liferay.portal.search.engine.adapter.search.SearchSearchResponse;
 import com.liferay.portal.search.hits.SearchHit;
@@ -108,13 +109,15 @@ public class SLAInstanceResultWorkflowMetricsReindexer
 			SyncReindexManager syncReindexManager =
 				_syncReindexManagerSnapshot.get();
 
+			String indexName = WorkflowMetricsIndex.getIndexName(
+				_indexNameBuilder,
+				WorkflowMetricsIndexNameConstants.SUFFIX_SLA_INSTANCE_RESULT,
+				companyId);
+
+			searchEngineAdapter.execute(new RefreshIndexRequest(indexName));
+
 			syncReindexManager.deleteStaleDocuments(
-				WorkflowMetricsIndex.getIndexName(
-					_indexNameBuilder,
-					WorkflowMetricsIndexNameConstants.
-						SUFFIX_SLA_INSTANCE_RESULT,
-					companyId),
-				date, Collections.emptySet());
+				indexName, date, Collections.emptySet());
 		}
 	}
 
