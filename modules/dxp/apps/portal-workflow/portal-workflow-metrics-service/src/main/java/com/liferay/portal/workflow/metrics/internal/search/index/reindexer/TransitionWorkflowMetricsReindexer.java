@@ -88,6 +88,18 @@ public class TransitionWorkflowMetricsReindexer
 
 			Thread.sleep(1000);
 		}
+		else {
+			WorkflowMetricsIndex workflowMetricsIndex =
+				WorkflowMetricsIndex.toWorkflowMetricsIndex(getKey());
+
+			workflowMetricsIndex.removeIndex(
+				_searchCapabilities, _searchEngineAdapter, _indexNameBuilder,
+				companyId);
+
+			workflowMetricsIndex.createIndex(
+				_searchCapabilities, _searchEngineAdapter, _indexNameBuilder,
+				companyId);
+		}
 
 		ActionableDynamicQuery actionableDynamicQuery =
 			_kaleoTransitionLocalService.getActionableDynamicQuery();
