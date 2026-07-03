@@ -93,6 +93,18 @@ public class SLATaskResultWorkflowMetricsReindexer
 
 			Thread.sleep(1000);
 		}
+		else {
+			WorkflowMetricsIndex workflowMetricsIndex =
+				WorkflowMetricsIndex.toWorkflowMetricsIndex(getKey());
+
+			workflowMetricsIndex.removeIndex(
+				_searchCapabilities, searchEngineAdapter, _indexNameBuilder,
+				companyId);
+
+			workflowMetricsIndex.createIndex(
+				_searchCapabilities, searchEngineAdapter, _indexNameBuilder,
+				companyId);
+		}
 
 		_createDefaultDocuments(companyId);
 
