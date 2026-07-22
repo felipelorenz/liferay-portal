@@ -32,11 +32,23 @@ import org.junit.runner.RunWith;
  * @author Rodrigo Guedes de Souza
  */
 @RunWith(Arquillian.class)
-public class WorkflowMetricsReindexerOrphanReproductionTest
+public class WorkflowMetricsIndexerOrphanTest
 	extends BaseWorkflowMetricsIndexerTestCase {
 
 	@Test
 	public void testFullReindexRemovesOrphan() throws Exception {
+		_assertReindexRemovesOrphan(IndexReindexer.ExecutionMode.FULL);
+	}
+
+	@Test
+	public void testSyncReindexRemovesOrphan() throws Exception {
+		_assertReindexRemovesOrphan(IndexReindexer.ExecutionMode.SYNC);
+	}
+
+	private void _assertReindexRemovesOrphan(
+			IndexReindexer.ExecutionMode executionMode)
+		throws Exception {
+
 		long companyId = TestPropsValues.getCompanyId();
 
 		String processIndexName =
@@ -55,40 +67,17 @@ public class WorkflowMetricsReindexerOrphanReproductionTest
 			"Orphan should be present right after seeding", 1,
 			_countOrphan(processIndexName, companyId));
 
-		workflowMetricsReindexer.reindex(companyId);
-
-		Assert.assertEquals(
-			"FULL reindex must remove the orphan", 0,
-			_countOrphan(processIndexName, companyId));
-	}
-
-	@Test
-	public void testSyncReindexRemovesOrphan() throws Exception {
-		long companyId = TestPropsValues.getCompanyId();
-
-		String processIndexName =
-			_indexNameBuilder.getIndexName(companyId) +
-				WorkflowMetricsIndexNameConstants.SUFFIX_PROCESS;
+		if (executionMode == IndexReindexer.ExecutionMode.SYNC) {
+			Thread.sleep(1100);
+		}
 
 		IndexReindexer indexReindexer =
-			(IndexReindexer)
-				_workflowMetricsReindexerRegistry.getWorkflowMetricsReindexer(
-					"process");
+			(IndexReindexer)workflowMetricsReindexer;
 
-		indexReindexer.reindex(companyId, IndexReindexer.ExecutionMode.FULL);
-
-		_indexOrphan(processIndexName, companyId);
+		indexReindexer.reindex(companyId, executionMode);
 
 		Assert.assertEquals(
-			"Orphan should be present right after seeding", 1,
-			_countOrphan(processIndexName, companyId));
-
-		Thread.sleep(1100);
-
-		indexReindexer.reindex(companyId, IndexReindexer.ExecutionMode.SYNC);
-
-		Assert.assertEquals(
-			"SYNC reindex must remove the orphan", 0,
+			executionMode + " reindex must remove the orphan", 0,
 			_countOrphan(processIndexName, companyId));
 	}
 
@@ -115,14 +104,14 @@ public class WorkflowMetricsReindexerOrphanReproductionTest
 	private void _indexOrphan(String indexName, long companyId) {
 		DocumentBuilder documentBuilder = DocumentBuilderFactory.builder();
 
-		documentBuilder.setLong(
+		documentBuilder.setValue(
+			"deleted", false
+		).setLong(
 			"companyId", companyId
 		).setLong(
 			"processId", _ORPHAN_PROCESS_ID
 		).setString(
 			"uid", "orphan-" + _ORPHAN_PROCESS_ID
-		).setValue(
-			"deleted", false
 		);
 
 		Document document = documentBuilder.build();
@@ -135,7 +124,7 @@ public class WorkflowMetricsReindexerOrphanReproductionTest
 		searchEngineAdapter.execute(indexDocumentRequest);
 	}
 
-	private static final long _ORPHAN_PROCESS_ID = 999999999;
+	private static final long _ORPHAN_PROCESS_ID = 999999999L;
 
 	@Inject
 	private IndexNameBuilder _indexNameBuilder;
