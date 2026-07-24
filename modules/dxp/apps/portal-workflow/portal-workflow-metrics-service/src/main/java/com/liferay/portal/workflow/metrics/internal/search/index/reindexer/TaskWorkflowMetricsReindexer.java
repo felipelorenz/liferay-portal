@@ -29,7 +29,10 @@ import org.osgi.service.component.annotations.Reference;
 /**
  * @author Rafael Praxedes
  */
-@Component(service = {IndexReindexer.class, WorkflowMetricsReindexer.class})
+@Component(
+	property = "workflow.metrics.reindexer.key=task",
+	service = {IndexReindexer.class, WorkflowMetricsReindexer.class}
+)
 public class TaskWorkflowMetricsReindexer extends BaseWorkflowMetricsReindexer {
 
 	@Override
@@ -90,9 +93,7 @@ public class TaskWorkflowMetricsReindexer extends BaseWorkflowMetricsReindexer {
 	protected void postReindex(long companyId, ExecutionMode executionMode)
 		throws Exception {
 
-		if (executionMode == ExecutionMode.FULL) {
-			_nodeWorkflowMetricsReindexer.reindex(companyId, executionMode);
-		}
+		_nodeWorkflowMetricsReindexer.reindex(companyId, executionMode);
 	}
 
 	@Reference
