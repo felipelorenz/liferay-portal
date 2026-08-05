@@ -41,6 +41,13 @@ public class TaskWorkflowMetricsReindexer extends BaseWorkflowMetricsReindexer {
 	}
 
 	@Override
+	protected void postReindex(long companyId, ExecutionMode executionMode)
+		throws Exception {
+
+		_nodeWorkflowMetricsReindexer.reindex(companyId, executionMode);
+	}
+
+	@Override
 	protected void reindexEntities(long companyId) throws Exception {
 		ActionableDynamicQuery actionableDynamicQuery =
 			_kaleoTaskInstanceTokenLocalService.getActionableDynamicQuery();
@@ -87,13 +94,6 @@ public class TaskWorkflowMetricsReindexer extends BaseWorkflowMetricsReindexer {
 			});
 
 		actionableDynamicQuery.performActions();
-	}
-
-	@Override
-	protected void postReindex(long companyId, ExecutionMode executionMode)
-		throws Exception {
-
-		_nodeWorkflowMetricsReindexer.reindex(companyId, executionMode);
 	}
 
 	@Reference
