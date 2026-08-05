@@ -385,6 +385,45 @@ public class AssetListFiltersUtilTest {
 	}
 
 	@Test
+	public void testFilterQueriesWithMetadataObjectFields() {
+		_setUpMetadataObjectField(
+			ObjectFieldConstants.BUSINESS_TYPE_DATE,
+			ObjectFieldConstants.DB_TYPE_DATE, "modifiedDate");
+
+		_assertTermRangeQuery(
+			"modified", true, true, "20260115000000", "20260115235959",
+			_assertCommonFieldRow(
+				BooleanClauseOccur.MUST,
+				_buildFilterJSONObject("eq", "modifiedDate", "2026-01-15")));
+
+		_setUpMetadataObjectField(
+			ObjectFieldConstants.BUSINESS_TYPE_TEXT,
+			ObjectFieldConstants.DB_TYPE_STRING, "creator");
+
+		_assertTermQuery(
+			"userName", "John Smith",
+			_assertCommonFieldRow(
+				BooleanClauseOccur.MUST,
+				_buildFilterJSONObject("eq", "creator", "John Smith")));
+
+		_setUpMetadataObjectField(
+			ObjectFieldConstants.BUSINESS_TYPE_LONG_INTEGER,
+			ObjectFieldConstants.DB_TYPE_LONG, "id");
+
+		BooleanClause[] booleanClauses =
+			AssetListFiltersUtil.getFiltersBooleanClauses(
+				_COMPANY_ID,
+				JSONUtil.putAll(
+					_buildFilterJSONObject(
+						"eq", "id",
+						String.valueOf(RandomTestUtil.randomLong()))),
+				LocaleUtil.US);
+
+		Assert.assertEquals(
+			Arrays.toString(booleanClauses), 0, booleanClauses.length);
+	}
+
+	@Test
 	public void testFilterQueriesWithNumericRangeOperators() {
 		String doubleFieldName = RandomTestUtil.randomString();
 
@@ -973,6 +1012,20 @@ public class AssetListFiltersUtilTest {
 		);
 
 		localizationUtil.setLocalization(localization);
+	}
+
+	private ObjectField _setUpMetadataObjectField(
+		String businessType, String dbType, String name) {
+
+		ObjectField objectField = _setUpObjectField(businessType, dbType, name);
+
+		Mockito.when(
+			objectField.isMetadata()
+		).thenReturn(
+			true
+		);
+
+		return objectField;
 	}
 
 	private ObjectField _setUpObjectField(

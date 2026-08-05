@@ -205,6 +205,10 @@ public class AssetListFiltersUtil {
 		return false;
 	}
 
+	private static String _resolveMetadataFieldName(String name) {
+		return _metadataCommonFieldNames.getOrDefault(name, name);
+	}
+
 	private static String _resolveRelativeDateValue(String value) {
 		if (!_relativeDateValues.contains(value)) {
 			return null;
@@ -418,6 +422,12 @@ public class AssetListFiltersUtil {
 
 		if (objectField == null) {
 			return null;
+		}
+
+		if (objectField.isMetadata()) {
+			return _toCommonFieldQuery(
+				jsonObject, locale,
+				_resolveMetadataFieldName(objectField.getName()));
 		}
 
 		return _toNestedQuery(jsonObject, locale, objectField);
@@ -643,6 +653,12 @@ public class AssetListFiltersUtil {
 		).build();
 	private static final Set<String> _localizedCommonFieldNames =
 		SetUtil.fromArray(Field.TITLE);
+	private static final Map<String, String> _metadataCommonFieldNames =
+		HashMapBuilder.put(
+			"creator", Field.USER_NAME
+		).put(
+			"modifiedDate", Field.MODIFIED_DATE
+		).build();
 	private static final Set<String> _relativeDateValues = SetUtil.fromArray(
 		"last-year", "next-month", "now", "past-24-hours", "past-day",
 		"past-month", "past-week", "past-year");
