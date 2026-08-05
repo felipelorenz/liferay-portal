@@ -98,15 +98,16 @@ public class AssetListFiltersUtilTest {
 				_buildCommonFieldFilter("contains", "title", "App")));
 
 		_assertTermQuery(
-			"userName", "Alice",
+			"userName", "john smith",
 			_assertCommonFieldRow(
 				BooleanClauseOccur.MUST,
-				_buildCommonFieldFilter("eq", "userName", "Alice")));
+				_buildCommonFieldFilter("eq", "userName", "John Smith")));
 		_assertWildcardQuery(
-			"userName", "*Alice*",
+			"userName", "*john smith*",
 			_assertCommonFieldRow(
 				BooleanClauseOccur.MUST_NOT,
-				_buildCommonFieldFilter("not-contains", "userName", "Alice")));
+				_buildCommonFieldFilter(
+					"not-contains", "userName", "John Smith")));
 
 		_assertTermQuery(
 			"viewCount", "5",
@@ -401,7 +402,7 @@ public class AssetListFiltersUtilTest {
 			ObjectFieldConstants.DB_TYPE_STRING, "creator");
 
 		_assertTermQuery(
-			"userName", "John Smith",
+			"userName", "john smith",
 			_assertCommonFieldRow(
 				BooleanClauseOccur.MUST,
 				_buildFilterJSONObject("eq", "creator", "John Smith")));
