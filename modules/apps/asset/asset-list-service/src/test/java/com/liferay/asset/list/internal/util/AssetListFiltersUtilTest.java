@@ -85,6 +85,80 @@ public class AssetListFiltersUtilTest {
 	}
 
 	@Test
+	public void testFilterQueriesWithCommonFields() {
+		_assertMatchQuery(
+			"localized_title_en_US", "Apple",
+			_assertCommonFieldRow(
+				BooleanClauseOccur.MUST,
+				_buildCommonFieldFilter("eq", "title", "Apple")));
+		_assertMatchQuery(
+			"localized_title_en_US", "App",
+			_assertCommonFieldRow(
+				BooleanClauseOccur.MUST,
+				_buildCommonFieldFilter("contains", "title", "App")));
+
+		_assertTermQuery(
+			"userName", "Alice",
+			_assertCommonFieldRow(
+				BooleanClauseOccur.MUST,
+				_buildCommonFieldFilter("eq", "userName", "Alice")));
+		_assertWildcardQuery(
+			"userName", "*Alice*",
+			_assertCommonFieldRow(
+				BooleanClauseOccur.MUST_NOT,
+				_buildCommonFieldFilter("not-contains", "userName", "Alice")));
+
+		_assertTermQuery(
+			"viewCount", "5",
+			_assertCommonFieldRow(
+				BooleanClauseOccur.MUST,
+				_buildCommonFieldFilter("eq", "viewCount", "5")));
+		_assertTermQuery(
+			"status", "0",
+			_assertCommonFieldRow(
+				BooleanClauseOccur.MUST_NOT,
+				_buildCommonFieldFilter("not-eq", "status", "0")));
+
+		_assertTermRangeQuery(
+			"priority", false, false, "0.5", null,
+			_assertCommonFieldRow(
+				BooleanClauseOccur.MUST,
+				_buildCommonFieldFilter("gt", "priority", "0.5")));
+
+		_assertTermRangeQuery(
+			"createDate", false, false, "20260115235959", null,
+			_assertCommonFieldRow(
+				BooleanClauseOccur.MUST,
+				_buildCommonFieldFilter("gt", "createDate", "2026-01-15")));
+		_assertTermRangeQuery(
+			"modified", true, true, "20260115000000", "20260115235959",
+			_assertCommonFieldRow(
+				BooleanClauseOccur.MUST,
+				_buildCommonFieldFilter("eq", "modified", "2026-01-15")));
+		_assertTermRangeQuery(
+			"modified", true, true, "20260115000000", "20260115235959",
+			_assertCommonFieldRow(
+				BooleanClauseOccur.MUST_NOT,
+				_buildCommonFieldFilter("not-eq", "modified", "2026-01-15")));
+		_assertTermRangeQuery(
+			"modified", true, true, "20260115000000", "20260120235959",
+			_assertCommonFieldRow(
+				BooleanClauseOccur.MUST,
+				_buildCommonFieldFilterWithJSONArrayValue(
+					"between", "modified",
+					JSONUtil.putAll("2026-01-15", "2026-01-20"))));
+
+		BooleanClause[] booleanClauses =
+			AssetListFiltersUtil.getFiltersBooleanClauses(
+				_COMPANY_ID,
+				JSONUtil.putAll(_buildCommonFieldFilter("eq", "bogus", "x")),
+				LocaleUtil.US);
+
+		Assert.assertEquals(
+			Arrays.toString(booleanClauses), 0, booleanClauses.length);
+	}
+
+	@Test
 	public void testFilterQueriesWithDateAndDateTimeOperators() {
 		String dateFieldName = RandomTestUtil.randomString();
 
@@ -598,6 +672,53 @@ public class AssetListFiltersUtilTest {
 			notContainsQuery instanceof MatchQuery);
 	}
 
+	private Query _assertCommonFieldRow(
+		BooleanClauseOccur expectedBooleanClauseOccur,
+		JSONObject filterJSONObject) {
+
+		BooleanClause[] booleanClauses =
+			AssetListFiltersUtil.getFiltersBooleanClauses(
+				_COMPANY_ID, JSONUtil.putAll(filterJSONObject), LocaleUtil.US);
+
+		Assert.assertEquals(
+			Arrays.toString(booleanClauses), 1, booleanClauses.length);
+
+		BooleanClause<?> filtersBooleanClause = booleanClauses[0];
+
+		Assert.assertEquals(
+			BooleanClauseOccur.MUST,
+			filtersBooleanClause.getBooleanClauseOccur());
+
+		BooleanQuery filtersBooleanQuery =
+			(BooleanQuery)filtersBooleanClause.getClause();
+
+		List<BooleanClause<Query>> filterBooleanClauses =
+			filtersBooleanQuery.clauses();
+
+		BooleanClause<Query> filterBooleanClause = filterBooleanClauses.get(0);
+
+		Assert.assertEquals(
+			expectedBooleanClauseOccur,
+			filterBooleanClause.getBooleanClauseOccur());
+
+		Query query = filterBooleanClause.getClause();
+
+		Assert.assertFalse(query.toString(), query instanceof NestedQuery);
+
+		return query;
+	}
+
+	private void _assertMatchQuery(
+		String expectedField, String expectedValue, Query query) {
+
+		Assert.assertTrue(query.toString(), query instanceof MatchQuery);
+
+		MatchQuery matchQuery = (MatchQuery)query;
+
+		Assert.assertEquals(expectedField, matchQuery.getField());
+		Assert.assertEquals(expectedValue, matchQuery.getValue());
+	}
+
 	private QueryTerm _assertNestedFieldQueryTerm(
 		BooleanClause<Query> booleanClause, String expectedField) {
 
@@ -746,6 +867,30 @@ public class AssetListFiltersUtilTest {
 
 		Assert.assertEquals(expectedField, queryTerm.getField());
 		Assert.assertEquals(expectedValue, queryTerm.getValue());
+	}
+
+	private JSONObject _buildCommonFieldFilter(
+		String operatorName, String propertyName, String value) {
+
+		return JSONUtil.put(
+			"operatorName", operatorName
+		).put(
+			"propertyName", propertyName
+		).put(
+			"value", value
+		);
+	}
+
+	private JSONObject _buildCommonFieldFilterWithJSONArrayValue(
+		String operatorName, String propertyName, JSONArray valueJSONArray) {
+
+		return JSONUtil.put(
+			"operatorName", operatorName
+		).put(
+			"propertyName", propertyName
+		).put(
+			"value", valueJSONArray
+		);
 	}
 
 	private JSONObject _getFilterJSONObject(
