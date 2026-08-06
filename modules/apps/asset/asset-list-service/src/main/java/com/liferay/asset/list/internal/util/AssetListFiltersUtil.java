@@ -443,68 +443,9 @@ public class AssetListFiltersUtil {
 
 		boolean dateField = subfield.endsWith(".value_date");
 
-		boolean dateTimeField = false;
-
-		if (dateField && _isDateTimeField(objectField)) {
-			dateTimeField = true;
-		}
-
-		if (operatorName.equals("between")) {
-			JSONArray valueJSONArray = filterJSONObject.getJSONArray("value");
-
-			if ((valueJSONArray == null) || (valueJSONArray.length() < 2)) {
-				return null;
-			}
-
-			String lowerTerm = GetterUtil.getString(
-				valueJSONArray.getString(0), null);
-			String upperTerm = GetterUtil.getString(
-				valueJSONArray.getString(1), null);
-
-			if (dateField) {
-				lowerTerm = _toDateTerm(dateTimeField, false, lowerTerm);
-				upperTerm = _toDateTerm(dateTimeField, true, upperTerm);
-			}
-
-			return new TermRangeQuery(
-				subfield, lowerTerm, upperTerm, true, true);
-		}
-
-		String value = filterJSONObject.getString("value");
-
-		if (Validator.isNull(value)) {
-			return null;
-		}
-
-		if (operatorName.equals("ge")) {
-			String lowerTerm =
-				dateField ? _toDateTerm(dateTimeField, false, value) : value;
-
-			return new TermRangeQuery(subfield, lowerTerm, null, true, false);
-		}
-
-		if (operatorName.equals("gt")) {
-			String lowerTerm =
-				dateField ? _toDateTerm(dateTimeField, true, value) : value;
-
-			return new TermRangeQuery(subfield, lowerTerm, null, false, false);
-		}
-
-		if (operatorName.equals("le")) {
-			String upperTerm =
-				dateField ? _toDateTerm(dateTimeField, true, value) : value;
-
-			return new TermRangeQuery(subfield, null, upperTerm, false, true);
-		}
-
-		if (operatorName.equals("lt")) {
-			String upperTerm =
-				dateField ? _toDateTerm(dateTimeField, false, value) : value;
-
-			return new TermRangeQuery(subfield, null, upperTerm, false, false);
-		}
-
-		return null;
+		return _toTermRangeQuery(
+			dateField, dateField && _isDateTimeField(objectField), subfield,
+			filterJSONObject, operatorName);
 	}
 
 	private static Query _toTermRangeQuery(
