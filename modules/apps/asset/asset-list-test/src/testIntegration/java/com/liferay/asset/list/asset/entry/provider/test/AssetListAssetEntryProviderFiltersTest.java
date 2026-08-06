@@ -40,6 +40,7 @@ import com.liferay.portal.kernel.json.JSONArray;
 import com.liferay.portal.kernel.json.JSONObject;
 import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.model.Group;
+import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
@@ -156,55 +157,61 @@ public class AssetListAssetEntryProviderFiltersTest {
 	@FeatureFlags(featureFlags = @FeatureFlag(value = "LPD-74731"))
 	@Test
 	public void testCommonFieldFilters() throws Exception {
+		String title1 = RandomTestUtil.randomString();
+
 		ObjectEntry objectEntry1 = _addObjectEntry(
 			HashMapBuilder.<String, Serializable>put(
-				_OBJECT_FIELD_NAME_TEXT, "alpha"
+				_OBJECT_FIELD_NAME_TEXT, title1
 			).build());
+
 		ObjectEntry objectEntry2 = _addObjectEntry(
 			HashMapBuilder.<String, Serializable>put(
-				_OBJECT_FIELD_NAME_TEXT, "beta"
+				_OBJECT_FIELD_NAME_TEXT, RandomTestUtil.randomString()
 			).build());
 
 		_assertFilteredClassPKs(
 			_buildFiltersJSONArray(
-				_buildCommonFieldFilter("eq", "title", "alpha")),
+				_buildCommonFieldFilter("eq", Field.TITLE, title1)),
 			objectEntry1);
 		_assertFilteredClassPKs(
 			_buildFiltersJSONArray(
-				_buildCommonFieldFilter("contains", "title", "alpha")),
+				_buildCommonFieldFilter("contains", Field.TITLE, title1)),
 			objectEntry1);
 		_assertFilteredClassPKs(
 			_buildFiltersJSONArray(
-				_buildCommonFieldFilter("not-contains", "title", "alpha")),
+				_buildCommonFieldFilter("not-contains", Field.TITLE, title1)),
 			objectEntry2);
 
 		_assertFilteredClassPKs(
 			_buildFiltersJSONArray(
-				_buildCommonFieldFilter("gt", "createDate", "2000-01-01")),
+				_buildCommonFieldFilter("gt", Field.CREATE_DATE, "2000-01-01")),
 			objectEntry1, objectEntry2);
 		_assertFilteredClassPKs(
 			_buildFiltersJSONArray(
-				_buildCommonFieldFilter("lt", "createDate", "2000-01-01")));
+				_buildCommonFieldFilter(
+					"lt", Field.CREATE_DATE, "2000-01-01")));
 	}
 
 	@FeatureFlags(featureFlags = @FeatureFlag(value = "LPD-74731"))
 	@Test
 	public void testCommonFieldFiltersMatchAcrossAssetTypes() throws Exception {
+		String title = RandomTestUtil.randomString();
+
 		ObjectEntry objectEntry = _addObjectEntry(
 			HashMapBuilder.<String, Serializable>put(
-				_OBJECT_FIELD_NAME_TEXT, "crossfilter"
+				_OBJECT_FIELD_NAME_TEXT, title
 			).build());
 
 		JournalArticle journalArticle = JournalTestUtil.addArticle(
 			_group.getGroupId(),
-			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID, 0, "crossfilter",
+			JournalFolderConstants.DEFAULT_PARENT_FOLDER_ID, 0, title,
 			StringPool.BLANK, "content", LocaleUtil.US, false, true,
 			ServiceContextTestUtil.getServiceContext(
 				_group.getGroupId(), TestPropsValues.getUserId()));
 
 		List<Long> actualClassPKs = _getFilteredClassPKs(
 			_buildFiltersJSONArray(
-				_buildCommonFieldFilter("contains", "title", "crossfilter")));
+				_buildCommonFieldFilter("contains", Field.TITLE, title)));
 
 		Assert.assertEquals(
 			actualClassPKs.toString(), 2, actualClassPKs.size());
@@ -373,12 +380,13 @@ public class AssetListAssetEntryProviderFiltersTest {
 		_assertFilteredClassPKs(
 			_buildFiltersJSONArray(
 				_buildCommonFieldFilter(
-					"contains", "userName", StringUtil.toUpperCase(userName))),
+					"contains", Field.USER_NAME,
+					StringUtil.toUpperCase(userName))),
 			objectEntry);
 		_assertFilteredClassPKs(
 			_buildFiltersJSONArray(
 				_buildCommonFieldFilter(
-					"eq", "userName", StringUtil.toUpperCase(userName))),
+					"eq", Field.USER_NAME, StringUtil.toUpperCase(userName))),
 			objectEntry);
 	}
 
@@ -601,14 +609,14 @@ public class AssetListAssetEntryProviderFiltersTest {
 		_assertFilteredClassPKs(
 			_buildFiltersJSONArray(
 				_buildCommonFieldFilter(
-					"eq", "status",
+					"eq", Field.STATUS,
 					String.valueOf(WorkflowConstants.STATUS_APPROVED))),
 			objectEntry);
 
 		_assertFilteredClassPKs(
 			_buildFiltersJSONArray(
 				_buildCommonFieldFilter(
-					"not-eq", "status",
+					"not-eq", Field.STATUS,
 					String.valueOf(WorkflowConstants.STATUS_APPROVED))));
 	}
 

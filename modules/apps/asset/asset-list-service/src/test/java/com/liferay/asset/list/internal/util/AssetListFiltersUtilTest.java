@@ -17,6 +17,7 @@ import com.liferay.portal.kernel.json.JSONUtil;
 import com.liferay.portal.kernel.search.BooleanClause;
 import com.liferay.portal.kernel.search.BooleanClauseOccur;
 import com.liferay.portal.kernel.search.BooleanQuery;
+import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.MatchQuery;
 import com.liferay.portal.kernel.search.NestedQuery;
 import com.liferay.portal.kernel.search.Query;
@@ -86,78 +87,92 @@ public class AssetListFiltersUtilTest {
 
 	@Test
 	public void testFilterQueriesWithCommonFields() {
-		_assertMatchQuery(
-			"localized_title_en_US", "Apple",
-			_assertCommonFieldRow(
-				BooleanClauseOccur.MUST,
-				_getCommonFieldFilterJSONObject("eq", "title", "Apple")));
-		_assertMatchQuery(
-			"localized_title_en_US", "App",
-			_assertCommonFieldRow(
-				BooleanClauseOccur.MUST,
-				_getCommonFieldFilterJSONObject("contains", "title", "App")));
+		String title = RandomTestUtil.randomString();
 
-		_assertTermQuery(
-			"userName", "john smith",
+		_assertMatchQuery(
+			"localized_title_en_US", title,
+			_assertCommonFieldRow(
+				BooleanClauseOccur.MUST,
+				_getCommonFieldFilterJSONObject("eq", Field.TITLE, title)));
+		_assertMatchQuery(
+			"localized_title_en_US", title,
 			_assertCommonFieldRow(
 				BooleanClauseOccur.MUST,
 				_getCommonFieldFilterJSONObject(
-					"eq", "userName", "John Smith")));
+					"contains", Field.TITLE, title)));
+
+		_assertTermQuery(
+			Field.USER_NAME, "john smith",
+			_assertCommonFieldRow(
+				BooleanClauseOccur.MUST,
+				_getCommonFieldFilterJSONObject(
+					"eq", Field.USER_NAME, "John Smith")));
 		_assertWildcardQuery(
-			"userName", "*john smith*",
+			Field.USER_NAME, "*john smith*",
 			_assertCommonFieldRow(
 				BooleanClauseOccur.MUST_NOT,
 				_getCommonFieldFilterJSONObject(
-					"not-contains", "userName", "John Smith")));
+					"not-contains", Field.USER_NAME, "John Smith")));
+
+		String viewCount = String.valueOf(RandomTestUtil.randomInt());
 
 		_assertTermQuery(
-			"viewCount", "5",
+			"viewCount", viewCount,
 			_assertCommonFieldRow(
 				BooleanClauseOccur.MUST,
-				_getCommonFieldFilterJSONObject("eq", "viewCount", "5")));
+				_getCommonFieldFilterJSONObject("eq", "viewCount", viewCount)));
+
+		String status = String.valueOf(RandomTestUtil.randomInt());
+
 		_assertTermQuery(
-			"status", "0",
-			_assertCommonFieldRow(
-				BooleanClauseOccur.MUST_NOT,
-				_getCommonFieldFilterJSONObject("not-eq", "status", "0")));
-
-		_assertTermRangeQuery(
-			"priority", false, false, "0.5", null,
-			_assertCommonFieldRow(
-				BooleanClauseOccur.MUST,
-				_getCommonFieldFilterJSONObject("gt", "priority", "0.5")));
-
-		_assertTermRangeQuery(
-			"createDate", false, false, "20260115235959", null,
-			_assertCommonFieldRow(
-				BooleanClauseOccur.MUST,
-				_getCommonFieldFilterJSONObject(
-					"gt", "createDate", "2026-01-15")));
-		_assertTermRangeQuery(
-			"modified", true, true, "20260115000000", "20260115235959",
-			_assertCommonFieldRow(
-				BooleanClauseOccur.MUST,
-				_getCommonFieldFilterJSONObject(
-					"eq", "modified", "2026-01-15")));
-		_assertTermRangeQuery(
-			"modified", true, true, "20260115000000", "20260115235959",
+			Field.STATUS, status,
 			_assertCommonFieldRow(
 				BooleanClauseOccur.MUST_NOT,
 				_getCommonFieldFilterJSONObject(
-					"not-eq", "modified", "2026-01-15")));
+					"not-eq", Field.STATUS, status)));
+
+		String priority = String.valueOf(RandomTestUtil.randomDouble());
+
 		_assertTermRangeQuery(
-			"modified", true, true, "20260115000000", "20260120235959",
+			Field.PRIORITY, false, false, priority, null,
 			_assertCommonFieldRow(
 				BooleanClauseOccur.MUST,
 				_getCommonFieldFilterJSONObject(
-					"between", "modified",
+					"gt", Field.PRIORITY, priority)));
+
+		_assertTermRangeQuery(
+			Field.CREATE_DATE, false, false, "20260115235959", null,
+			_assertCommonFieldRow(
+				BooleanClauseOccur.MUST,
+				_getCommonFieldFilterJSONObject(
+					"gt", Field.CREATE_DATE, "2026-01-15")));
+		_assertTermRangeQuery(
+			Field.MODIFIED_DATE, true, true, "20260115000000", "20260115235959",
+			_assertCommonFieldRow(
+				BooleanClauseOccur.MUST,
+				_getCommonFieldFilterJSONObject(
+					"eq", Field.MODIFIED_DATE, "2026-01-15")));
+		_assertTermRangeQuery(
+			Field.MODIFIED_DATE, true, true, "20260115000000", "20260115235959",
+			_assertCommonFieldRow(
+				BooleanClauseOccur.MUST_NOT,
+				_getCommonFieldFilterJSONObject(
+					"not-eq", Field.MODIFIED_DATE, "2026-01-15")));
+		_assertTermRangeQuery(
+			Field.MODIFIED_DATE, true, true, "20260115000000", "20260120235959",
+			_assertCommonFieldRow(
+				BooleanClauseOccur.MUST,
+				_getCommonFieldFilterJSONObject(
+					"between", Field.MODIFIED_DATE,
 					JSONUtil.putAll("2026-01-15", "2026-01-20"))));
 
 		BooleanClause[] booleanClauses =
 			AssetListFiltersUtil.getFiltersBooleanClauses(
 				_COMPANY_ID,
 				JSONUtil.putAll(
-					_getCommonFieldFilterJSONObject("eq", "bogus", "x")),
+					_getCommonFieldFilterJSONObject(
+						"eq", RandomTestUtil.randomString(),
+						RandomTestUtil.randomString())),
 				LocaleUtil.US);
 
 		Assert.assertEquals(
@@ -397,7 +412,7 @@ public class AssetListFiltersUtilTest {
 			ObjectFieldConstants.DB_TYPE_DATE, "modifiedDate");
 
 		_assertTermRangeQuery(
-			"modified", true, true, "20260115000000", "20260115235959",
+			Field.MODIFIED_DATE, true, true, "20260115000000", "20260115235959",
 			_assertCommonFieldRow(
 				BooleanClauseOccur.MUST,
 				_getFilterJSONObject("eq", "modifiedDate", "2026-01-15")));
@@ -407,7 +422,7 @@ public class AssetListFiltersUtilTest {
 			ObjectFieldConstants.DB_TYPE_STRING, "creator");
 
 		_assertTermQuery(
-			"userName", "john smith",
+			Field.USER_NAME, "john smith",
 			_assertCommonFieldRow(
 				BooleanClauseOccur.MUST,
 				_getFilterJSONObject("eq", "creator", "John Smith")));
