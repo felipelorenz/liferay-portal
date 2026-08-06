@@ -90,69 +90,74 @@ public class AssetListFiltersUtilTest {
 			"localized_title_en_US", "Apple",
 			_assertCommonFieldRow(
 				BooleanClauseOccur.MUST,
-				_buildCommonFieldFilter("eq", "title", "Apple")));
+				_getCommonFieldFilterJSONObject("eq", "title", "Apple")));
 		_assertMatchQuery(
 			"localized_title_en_US", "App",
 			_assertCommonFieldRow(
 				BooleanClauseOccur.MUST,
-				_buildCommonFieldFilter("contains", "title", "App")));
+				_getCommonFieldFilterJSONObject("contains", "title", "App")));
 
 		_assertTermQuery(
 			"userName", "john smith",
 			_assertCommonFieldRow(
 				BooleanClauseOccur.MUST,
-				_buildCommonFieldFilter("eq", "userName", "John Smith")));
+				_getCommonFieldFilterJSONObject(
+					"eq", "userName", "John Smith")));
 		_assertWildcardQuery(
 			"userName", "*john smith*",
 			_assertCommonFieldRow(
 				BooleanClauseOccur.MUST_NOT,
-				_buildCommonFieldFilter(
+				_getCommonFieldFilterJSONObject(
 					"not-contains", "userName", "John Smith")));
 
 		_assertTermQuery(
 			"viewCount", "5",
 			_assertCommonFieldRow(
 				BooleanClauseOccur.MUST,
-				_buildCommonFieldFilter("eq", "viewCount", "5")));
+				_getCommonFieldFilterJSONObject("eq", "viewCount", "5")));
 		_assertTermQuery(
 			"status", "0",
 			_assertCommonFieldRow(
 				BooleanClauseOccur.MUST_NOT,
-				_buildCommonFieldFilter("not-eq", "status", "0")));
+				_getCommonFieldFilterJSONObject("not-eq", "status", "0")));
 
 		_assertTermRangeQuery(
 			"priority", false, false, "0.5", null,
 			_assertCommonFieldRow(
 				BooleanClauseOccur.MUST,
-				_buildCommonFieldFilter("gt", "priority", "0.5")));
+				_getCommonFieldFilterJSONObject("gt", "priority", "0.5")));
 
 		_assertTermRangeQuery(
 			"createDate", false, false, "20260115235959", null,
 			_assertCommonFieldRow(
 				BooleanClauseOccur.MUST,
-				_buildCommonFieldFilter("gt", "createDate", "2026-01-15")));
+				_getCommonFieldFilterJSONObject(
+					"gt", "createDate", "2026-01-15")));
 		_assertTermRangeQuery(
 			"modified", true, true, "20260115000000", "20260115235959",
 			_assertCommonFieldRow(
 				BooleanClauseOccur.MUST,
-				_buildCommonFieldFilter("eq", "modified", "2026-01-15")));
+				_getCommonFieldFilterJSONObject(
+					"eq", "modified", "2026-01-15")));
 		_assertTermRangeQuery(
 			"modified", true, true, "20260115000000", "20260115235959",
 			_assertCommonFieldRow(
 				BooleanClauseOccur.MUST_NOT,
-				_buildCommonFieldFilter("not-eq", "modified", "2026-01-15")));
+				_getCommonFieldFilterJSONObject(
+					"not-eq", "modified", "2026-01-15")));
 		_assertTermRangeQuery(
 			"modified", true, true, "20260115000000", "20260120235959",
 			_assertCommonFieldRow(
 				BooleanClauseOccur.MUST,
-				_buildCommonFieldFilterWithJSONArrayValue(
+				_getCommonFieldFilterJSONObject(
 					"between", "modified",
 					JSONUtil.putAll("2026-01-15", "2026-01-20"))));
 
 		BooleanClause[] booleanClauses =
 			AssetListFiltersUtil.getFiltersBooleanClauses(
 				_COMPANY_ID,
-				JSONUtil.putAll(_buildCommonFieldFilter("eq", "bogus", "x")),
+				JSONUtil.putAll(
+					_getCommonFieldFilterJSONObject("eq", "bogus", "x")),
 				LocaleUtil.US);
 
 		Assert.assertEquals(
@@ -395,7 +400,7 @@ public class AssetListFiltersUtilTest {
 			"modified", true, true, "20260115000000", "20260115235959",
 			_assertCommonFieldRow(
 				BooleanClauseOccur.MUST,
-				_buildFilterJSONObject("eq", "modifiedDate", "2026-01-15")));
+				_getFilterJSONObject("eq", "modifiedDate", "2026-01-15")));
 
 		_setUpMetadataObjectField(
 			ObjectFieldConstants.BUSINESS_TYPE_TEXT,
@@ -405,7 +410,7 @@ public class AssetListFiltersUtilTest {
 			"userName", "john smith",
 			_assertCommonFieldRow(
 				BooleanClauseOccur.MUST,
-				_buildFilterJSONObject("eq", "creator", "John Smith")));
+				_getFilterJSONObject("eq", "creator", "John Smith")));
 
 		_setUpMetadataObjectField(
 			ObjectFieldConstants.BUSINESS_TYPE_LONG_INTEGER,
@@ -415,7 +420,7 @@ public class AssetListFiltersUtilTest {
 			AssetListFiltersUtil.getFiltersBooleanClauses(
 				_COMPANY_ID,
 				JSONUtil.putAll(
-					_buildFilterJSONObject(
+					_getFilterJSONObject(
 						"eq", "id",
 						String.valueOf(RandomTestUtil.randomLong()))),
 				LocaleUtil.US);
@@ -909,19 +914,7 @@ public class AssetListFiltersUtilTest {
 		Assert.assertEquals(expectedValue, queryTerm.getValue());
 	}
 
-	private JSONObject _buildCommonFieldFilter(
-		String operatorName, String propertyName, String value) {
-
-		return JSONUtil.put(
-			"operatorName", operatorName
-		).put(
-			"propertyName", propertyName
-		).put(
-			"value", value
-		);
-	}
-
-	private JSONObject _buildCommonFieldFilterWithJSONArrayValue(
+	private JSONObject _getCommonFieldFilterJSONObject(
 		String operatorName, String propertyName, JSONArray valueJSONArray) {
 
 		return JSONUtil.put(
@@ -930,6 +923,18 @@ public class AssetListFiltersUtilTest {
 			"propertyName", propertyName
 		).put(
 			"value", valueJSONArray
+		);
+	}
+
+	private JSONObject _getCommonFieldFilterJSONObject(
+		String operatorName, String propertyName, String value) {
+
+		return JSONUtil.put(
+			"operatorName", operatorName
+		).put(
+			"propertyName", propertyName
+		).put(
+			"value", value
 		);
 	}
 
