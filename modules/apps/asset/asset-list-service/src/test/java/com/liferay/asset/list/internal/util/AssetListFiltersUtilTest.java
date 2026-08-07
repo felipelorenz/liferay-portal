@@ -88,13 +88,13 @@ public class AssetListFiltersUtilTest {
 	@Test
 	public void testFilterQueriesWithCommonFields() {
 		_assertTermQuery(
-			Field.USER_NAME, "John Smith",
+			Field.USER_NAME, "john smith",
 			_assertCommonFieldRow(
 				BooleanClauseOccur.MUST,
 				_getCommonFieldFilterJSONObject(
 					"eq", Field.USER_NAME, "John Smith")));
 		_assertWildcardQuery(
-			Field.USER_NAME, "*John Smith*",
+			Field.USER_NAME, "*john smith*",
 			_assertCommonFieldRow(
 				BooleanClauseOccur.MUST_NOT,
 				_getCommonFieldFilterJSONObject(
@@ -422,7 +422,7 @@ public class AssetListFiltersUtilTest {
 			ObjectFieldConstants.DB_TYPE_STRING, "creator");
 
 		_assertTermQuery(
-			Field.USER_NAME, "John Smith",
+			Field.USER_NAME, "john smith",
 			_assertCommonFieldRow(
 				BooleanClauseOccur.MUST,
 				_getFilterJSONObject("eq", "creator", "John Smith")));
