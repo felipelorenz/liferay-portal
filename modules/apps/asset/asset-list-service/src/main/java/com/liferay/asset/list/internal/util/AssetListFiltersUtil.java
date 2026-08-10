@@ -23,6 +23,7 @@ import com.liferay.portal.kernel.search.MatchAllQuery;
 import com.liferay.portal.kernel.search.MatchQuery;
 import com.liferay.portal.kernel.search.NestedQuery;
 import com.liferay.portal.kernel.search.Query;
+import com.liferay.portal.kernel.search.StringQuery;
 import com.liferay.portal.kernel.search.TermQuery;
 import com.liferay.portal.kernel.search.TermRangeQuery;
 import com.liferay.portal.kernel.search.WildcardQuery;
@@ -242,6 +243,58 @@ public class AssetListFiltersUtil {
 		return format.format(calendar.getTime());
 	}
 
+	private static Query _toAssetFilterValueQuery(
+		JSONObject jsonObject, String propertyName) {
+
+		if (Objects.equals(propertyName, "keywords")) {
+			String value = jsonObject.getString("value");
+
+			if (Validator.isNull(value)) {
+				return null;
+			}
+
+			if (value.contains(StringPool.SPACE)) {
+				value = StringUtil.quote(value, CharPool.QUOTE);
+			}
+
+			return new StringQuery(value);
+		}
+
+		JSONArray valueJSONArray = jsonObject.getJSONArray("value");
+
+		if (JSONUtil.isEmpty(valueJSONArray)) {
+			return null;
+		}
+
+		BooleanQuery booleanQuery = new BooleanQuery();
+
+		BooleanClauseOccur booleanClauseOccur = BooleanClauseOccur.SHOULD;
+
+		if (Objects.equals(jsonObject.getString("quantifier"), "all")) {
+			booleanClauseOccur = BooleanClauseOccur.MUST;
+		}
+
+		String field = _assetFilterFieldNamesMap.get(propertyName);
+
+		for (int i = 0; i < valueJSONArray.length(); i++) {
+			JSONObject itemJSONObject = valueJSONArray.getJSONObject(i);
+
+			String value = itemJSONObject.getString("value");
+
+			if (Validator.isNull(value)) {
+				continue;
+			}
+
+			booleanQuery.add(new TermQuery(field, value), booleanClauseOccur);
+		}
+
+		if (!booleanQuery.hasClauses()) {
+			return null;
+		}
+
+		return booleanQuery;
+	}
+
 	private static Query _toCommonFieldQuery(
 		JSONObject jsonObject, Locale locale, String propertyName) {
 
@@ -416,8 +469,15 @@ public class AssetListFiltersUtil {
 		}
 
 		if (_isCommonFieldRow(jsonObject)) {
-			return _toCommonFieldQuery(
-				jsonObject, locale, jsonObject.getString("propertyName"));
+			String propertyName = jsonObject.getString("propertyName");
+
+			if (Objects.equals(propertyName, "keywords") ||
+				_assetFilterFieldNamesMap.containsKey(propertyName)) {
+
+				return _toAssetFilterValueQuery(jsonObject, propertyName);
+			}
+
+			return _toCommonFieldQuery(jsonObject, locale, propertyName);
 		}
 
 		ObjectField objectField = _fetchObjectField(
@@ -570,6 +630,12 @@ public class AssetListFiltersUtil {
 
 	private static final String _TYPE_TEXT = "text";
 
+	private static final Map<String, String> _assetFilterFieldNamesMap =
+		HashMapBuilder.put(
+			"assetCategories", Field.ASSET_CATEGORY_IDS
+		).put(
+			"assetTags", Field.ASSET_TAG_NAMES + ".raw"
+		).build();
 	private static final Map<String, String> _commonFieldTypesMap =
 		HashMapBuilder.put(
 			Field.CREATE_DATE, _TYPE_DATE
