@@ -180,6 +180,15 @@ public class AssetListFiltersUtilTest {
 
 		Assert.assertEquals(
 			Arrays.toString(booleanClauses), 0, booleanClauses.length);
+
+		booleanClauses = AssetListFiltersUtil.getFiltersBooleanClauses(
+			_COMPANY_ID,
+			JSONUtil.putAll(
+				_getCommonFieldFilterJSONObject("gt", Field.STATUS, status)),
+			LocaleUtil.US);
+
+		Assert.assertEquals(
+			Arrays.toString(booleanClauses), 0, booleanClauses.length);
 	}
 
 	@Test

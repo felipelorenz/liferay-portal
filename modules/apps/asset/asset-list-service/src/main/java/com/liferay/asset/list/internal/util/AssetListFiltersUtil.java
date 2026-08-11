@@ -269,6 +269,10 @@ public class AssetListFiltersUtil {
 			operatorName.equals("gt") || operatorName.equals("le") ||
 			operatorName.equals("lt")) {
 
+			if (type.equals(_TYPE_ENUM)) {
+				return null;
+			}
+
 			return _toTermRangeQuery(
 				type.equals(_TYPE_DATE), false, field, jsonObject,
 				operatorName);
@@ -551,6 +555,8 @@ public class AssetListFiltersUtil {
 
 	private static final String _TYPE_DECIMAL = "decimal";
 
+	private static final String _TYPE_ENUM = "enum";
+
 	private static final String _TYPE_INTEGER = "integer";
 
 	private static final String _TYPE_TEXT = "text";
@@ -571,7 +577,7 @@ public class AssetListFiltersUtil {
 		).put(
 			Field.REVIEW_DATE, _TYPE_DATE
 		).put(
-			Field.STATUS, _TYPE_INTEGER
+			Field.STATUS, _TYPE_ENUM
 		).put(
 			Field.TITLE, _TYPE_TEXT
 		).put(
