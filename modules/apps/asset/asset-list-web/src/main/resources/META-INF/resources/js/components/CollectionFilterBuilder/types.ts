@@ -10,6 +10,7 @@ export type PropertyType =
 	| 'date'
 	| 'date-time'
 	| 'decimal'
+	| 'enum'
 	| 'integer'
 	| 'numeric'
 	| 'picklist'

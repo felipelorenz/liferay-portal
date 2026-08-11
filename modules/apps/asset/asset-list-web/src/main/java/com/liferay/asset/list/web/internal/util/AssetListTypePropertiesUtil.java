@@ -158,7 +158,7 @@ public class AssetListTypePropertiesUtil {
 			).put(
 				"name", Field.STATUS
 			).put(
-				"type", "integer"
+				"type", "enum"
 			),
 			JSONUtil.put(
 				"label", LanguageUtil.get(locale, "title")
