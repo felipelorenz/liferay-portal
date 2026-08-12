@@ -374,9 +374,8 @@ public class AssetListAssetEntryProviderFiltersTest {
 			_buildFiltersJSONArray(
 				_buildFilterJSONObject(
 					"eq", "creator",
-					StringUtil.toLowerCase(
-						TestPropsValues.getUser(
-						).getFullName()))),
+					TestPropsValues.getUser(
+					).getFullName())),
 			objectEntry);
 
 		_assertFilteredClassPKs(
@@ -390,6 +389,32 @@ public class AssetListAssetEntryProviderFiltersTest {
 		_assertFilteredClassPKs(
 			_buildFiltersJSONArray(
 				_buildFilterJSONObject("lt", "modifiedDate", "2000-01-01")));
+	}
+
+	@FeatureFlags(featureFlags = @FeatureFlag(value = "LPD-74731"))
+	@Test
+	public void testGetAssetEntriesInfoPageWithMixedCaseUserNameFilters()
+		throws Exception {
+
+		ObjectEntry objectEntry = _addObjectEntry(
+			HashMapBuilder.<String, Serializable>put(
+				_OBJECT_FIELD_NAME_TEXT, RandomTestUtil.randomString()
+			).build());
+
+		String userName = TestPropsValues.getUser(
+		).getFullName();
+
+		_assertFilteredClassPKs(
+			_buildFiltersJSONArray(
+				_buildCommonFieldFilterJSONObject(
+					"contains", Field.USER_NAME,
+					StringUtil.toUpperCase(userName))),
+			objectEntry);
+		_assertFilteredClassPKs(
+			_buildFiltersJSONArray(
+				_buildCommonFieldFilterJSONObject(
+					"eq", Field.USER_NAME, StringUtil.toUpperCase(userName))),
+			objectEntry);
 	}
 
 	@FeatureFlags(featureFlags = @FeatureFlag(value = "LPD-74731"))
