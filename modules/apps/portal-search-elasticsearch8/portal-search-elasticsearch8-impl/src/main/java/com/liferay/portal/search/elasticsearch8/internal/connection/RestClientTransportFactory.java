@@ -30,6 +30,7 @@ import javax.net.ssl.SSLContext;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
+import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CredentialsProvider;
@@ -40,6 +41,7 @@ import org.apache.http.concurrent.FutureCallback;
 import org.apache.http.entity.BufferedHttpEntity;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.DefaultConnectionKeepAliveStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
@@ -195,6 +197,57 @@ public class RestClientTransportFactory {
 		_userName = builder._userName;
 	}
 
+	private CloseableHttpClient _createCloseableHttpClient() {
+		HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
+
+		if (_authenticationEnabled) {
+			httpClientBuilder.setDefaultCredentialsProvider(
+				_createCredentialsProvider());
+		}
+
+		if (_httpSSLEnabled) {
+			httpClientBuilder.setSSLContext(_createSSLContext());
+		}
+
+		if ((_proxyConfig != null) && _proxyConfig.shouldApplyConfig()) {
+			httpClientBuilder.setProxy(
+				new HttpHost(
+					_proxyConfig.getHost(), _proxyConfig.getPort(), "http"));
+		}
+
+		httpClientBuilder.disableAutomaticRetries();
+		httpClientBuilder.disableConnectionState();
+		httpClientBuilder.disableContentCompression();
+		httpClientBuilder.disableCookieManagement();
+		httpClientBuilder.disableDefaultUserAgent();
+		httpClientBuilder.disableRedirectHandling();
+
+		httpClientBuilder.setKeepAliveStrategy(
+			new DefaultConnectionKeepAliveStrategy() {
+
+				@Override
+				public long getKeepAliveDuration(
+					HttpResponse httpResponse, HttpContext httpContext) {
+
+					long keepAliveDuration = super.getKeepAliveDuration(
+						httpResponse, httpContext);
+
+					if ((keepAliveDuration > 0) &&
+						(keepAliveDuration < _KEEP_ALIVE_TIMEOUT)) {
+
+						return keepAliveDuration;
+					}
+
+					return _KEEP_ALIVE_TIMEOUT;
+				}
+
+			});
+		httpClientBuilder.setMaxConnPerRoute(_maxConnectionsPerRoute);
+		httpClientBuilder.setMaxConnTotal(_maxConnections);
+
+		return httpClientBuilder.build();
+	}
+
 	private CredentialsProvider _createCredentialsProvider() {
 		CredentialsProvider credentialsProvider =
 			new BasicCredentialsProvider();
@@ -244,34 +297,7 @@ public class RestClientTransportFactory {
 	private HttpAsyncClientBuilder _customizeHttpClient(
 		HttpAsyncClientBuilder httpAsyncClientBuilder) {
 
-		HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
-
-		if (_authenticationEnabled) {
-			httpClientBuilder.setDefaultCredentialsProvider(
-				_createCredentialsProvider());
-		}
-
-		if (_httpSSLEnabled) {
-			httpClientBuilder.setSSLContext(_createSSLContext());
-		}
-
-		if ((_proxyConfig != null) && _proxyConfig.shouldApplyConfig()) {
-			httpClientBuilder.setProxy(
-				new HttpHost(
-					_proxyConfig.getHost(), _proxyConfig.getPort(), "http"));
-		}
-
-		httpClientBuilder.disableAutomaticRetries();
-		httpClientBuilder.disableConnectionState();
-		httpClientBuilder.disableContentCompression();
-		httpClientBuilder.disableCookieManagement();
-		httpClientBuilder.disableDefaultUserAgent();
-		httpClientBuilder.disableRedirectHandling();
-
-		httpClientBuilder.setMaxConnPerRoute(_maxConnectionsPerRoute);
-		httpClientBuilder.setMaxConnTotal(_maxConnections);
-
-		CloseableHttpClient closeableHttpClient = httpClientBuilder.build();
+		CloseableHttpClient closeableHttpClient = _createCloseableHttpClient();
 
 		CloseableHttpAsyncClient closeableHttpAsyncClient =
 			new CloseableHttpAsyncClient() {
@@ -339,6 +365,8 @@ public class RestClientTransportFactory {
 
 		return requestConfigBuilder.setSocketTimeout(120000);
 	}
+
+	private static final long _KEEP_ALIVE_TIMEOUT = 180000;
 
 	private static final Log _log = LogFactoryUtil.getLog(
 		RestClientTransportFactory.class);
