@@ -5,6 +5,8 @@
 
 package com.liferay.portal.search.elasticsearch8.internal.connection;
 
+import co.elastic.clients.transport.rest_client.RestClientTransport;
+
 import com.liferay.portal.kernel.servlet.HttpHeaders;
 import com.liferay.portal.kernel.test.ReflectionTestUtil;
 import com.liferay.portal.kernel.test.util.RandomTestUtil;
@@ -20,6 +22,8 @@ import org.apache.http.impl.execchain.MainClientExec;
 import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.message.BasicStatusLine;
 import org.apache.http.protocol.BasicHttpContext;
+
+import org.elasticsearch.client.RestClient;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -37,11 +41,11 @@ public class RestClientTransportFactoryTest {
 		LiferayUnitTestRule.INSTANCE;
 
 	@Test
-	public void testCreateCloseableHttpClient() {
-		_testCreateCloseableHttpClient(180000, -1);
-		_testCreateCloseableHttpClient(180000, 0);
-		_testCreateCloseableHttpClient(180000, 600);
-		_testCreateCloseableHttpClient(60000, 60);
+	public void testNewRestClientTransport() throws Exception {
+		_testNewRestClientTransport(180000, -1);
+		_testNewRestClientTransport(180000, 0);
+		_testNewRestClientTransport(180000, 600);
+		_testNewRestClientTransport(60000, 60);
 	}
 
 	private ConnectionKeepAliveStrategy _getConnectionKeepAliveStrategy(
@@ -61,8 +65,9 @@ public class RestClientTransportFactoryTest {
 		}
 	}
 
-	private void _testCreateCloseableHttpClient(
-		long expectedKeepAliveDuration, long keepAliveTimeoutHeaderValue) {
+	private void _testNewRestClientTransport(
+			long expectedKeepAliveDuration, long keepAliveTimeoutHeaderValue)
+		throws Exception {
 
 		HttpResponse httpResponse = new BasicHttpResponse(
 			new BasicStatusLine(
@@ -75,16 +80,21 @@ public class RestClientTransportFactoryTest {
 				"timeout=" + keepAliveTimeoutHeaderValue);
 		}
 
-		ConnectionKeepAliveStrategy connectionKeepAliveStrategy =
-			_getConnectionKeepAliveStrategy(
-				ReflectionTestUtil.invoke(
-					_restClientTransportFactory, "_createCloseableHttpClient",
-					new Class<?>[0]));
+		try (RestClientTransport restClientTransport =
+				_restClientTransportFactory.newRestClientTransport()) {
 
-		Assert.assertEquals(
-			expectedKeepAliveDuration,
-			connectionKeepAliveStrategy.getKeepAliveDuration(
-				httpResponse, new BasicHttpContext(null)));
+			RestClient restClient = restClientTransport.restClient();
+
+			ConnectionKeepAliveStrategy connectionKeepAliveStrategy =
+				_getConnectionKeepAliveStrategy(
+					ReflectionTestUtil.getFieldValue(
+						restClient.getHttpClient(), "val$closeableHttpClient"));
+
+			Assert.assertEquals(
+				expectedKeepAliveDuration,
+				connectionKeepAliveStrategy.getKeepAliveDuration(
+					httpResponse, new BasicHttpContext(null)));
+		}
 	}
 
 	private final RestClientTransportFactory _restClientTransportFactory =
