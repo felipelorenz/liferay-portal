@@ -16,6 +16,7 @@ import com.liferay.portal.kernel.util.HashMapBuilder;
 import com.liferay.portal.kernel.util.ParamUtil;
 import com.liferay.portal.kernel.util.Portal;
 import com.liferay.portal.kernel.util.WebKeys;
+import com.liferay.portal.search.web.internal.search.results.portlet.shared.search.SearchResultsPortletSharedSearchContributor;
 
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
@@ -67,6 +68,10 @@ public class SearchResultsPortletInstanceConfigurationRenderer
 			HttpServletResponse httpServletResponse)
 		throws IOException {
 
+		httpServletRequest.setAttribute(
+			"portlet_instance_configuration.jsp-accurateResultCountLimit",
+			SearchResultsPortletSharedSearchContributor.
+				ACCURATE_RESULT_COUNT_LIMIT);
 		httpServletRequest.setAttribute(
 			SearchResultsPortletInstanceConfiguration.class.getName(),
 			_getSearchResultsPortletInstanceConfiguration(httpServletRequest));
