@@ -75,7 +75,7 @@ SearchResultsPortletPreferences searchResultsPortletPreferences = new SearchResu
 			<%
 			boolean limitResultCountAccuracyFeatureFlagEnabled = searchResultsPortletDisplayContext.isLimitResultCountAccuracyFeatureFlagEnabled();
 
-			String limitResultCountAccuracyHelpMessage = LanguageUtil.get(request, "limit-result-count-accuracy-help");
+			String limitResultCountAccuracyHelpMessage = LanguageUtil.format(request, "limit-result-count-accuracy-help", 10000, false);
 			String limitResultCountAccuracyInputName = SearchResultsPortletPreferences.PREFERENCE_KEY_LIMIT_RESULT_COUNT_ACCURACY;
 
 			if (limitResultCountAccuracyFeatureFlagEnabled) {

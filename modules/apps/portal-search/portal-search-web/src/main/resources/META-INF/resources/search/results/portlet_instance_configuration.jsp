@@ -36,7 +36,7 @@ boolean limitResultCountAccuracyAvailable = FeatureFlagManagerUtil.isEnabled("LP
 
 <div class="form-feedback-group mb-4">
 	<span class="form-help-text">
-		<liferay-ui:message key="limit-result-count-accuracy-help" />
+		<liferay-ui:message arguments="<%= 10000 %>" key="limit-result-count-accuracy-help" translateArguments="<%= false %>" />
 
 		<c:if test="<%= !limitResultCountAccuracyAvailable %>">
 			<liferay-ui:message arguments='<%= LanguageUtil.get(request, "feature.flag.LPD-98858.title") %>' key="instance-settings-enable-feature-flag-help" translateArguments="<%= false %>" />
